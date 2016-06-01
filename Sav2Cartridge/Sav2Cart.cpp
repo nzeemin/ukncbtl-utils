@@ -49,22 +49,23 @@ static WORD const loader[] =
     0077106,  // 000036  077106  SOB     R1, 000024
     0105712,  // 000040  105712  TSTB    (R2)
     0001356,  // 000042  001356  BNE     000000
-    //TODO: Подсчёт контрольной суммы
-    0000240,  // NOP
-    0000240,  // NOP
-    0000240,  // NOP
-    0000240,  // NOP
-    0000240,  // NOP
-    0000240,  // NOP
-    0000240,  // NOP
-    0000240,  // NOP
-    0000240,  // NOP
-    0000240,  // NOP
-    0012706,  // 000070  016706  MOV	#STACK, SP
-    0001000,  // 000072 <= STACK
-    0000137,  // 000074  000137  JMP    START   ; Переход на загруженный код
-    0001000,  // 000076 <= START
-    0000240,  // 000100 NOP
+    // Подсчёт контрольной суммы
+    0005003,  // 000044  005003  CLR     R3
+    0012701,  // 000046  012701  MOV     #001000, R1
+    0001000,  // 000050  001000
+    0012702,  // 000052  012702  MOV     #027400, R2
+    0027400,  // 000054  027400
+    0062103,  // 000056  062103  ADD     (R1)+, R3
+    0005503,  // 000060  005503  ADC     R3
+    0077203,  // 000062  077203  SOB     R2, 000056
+    0020327,  // 000064  020327  CMP     R3, #CHKSUM
+    0000000,  // 000066  ?????? <= CHKSUM
+    0001343,  // 000070  001343  BNE     000000
+    // Запуск загруженной программы на выполнение
+    0012706,  // 000072  016706  MOV	#STACK, SP
+    0001000,  // 000074  ?????? <= STACK
+    0000137,  // 000076  000137  JMP    START   ; Переход на загруженный код
+    0001000,  // 000100  ?????? <= START
     0000240,  // 000102 NOP
     // Массив параметров для получения данных с кассеты ПЗУ через канал 2
     0004000,  // 000104  004000   ; Команда (10) и ответ
@@ -133,8 +134,22 @@ int main(int argc, char* argv[])
     // Prepare the loader
     memcpy(pCartImage, loader, sizeof(loader));
 
-    *((WORD*)(pCartImage + 072)) = wStackAddr;
-    *((WORD*)(pCartImage + 076)) = wStartAddr;
+    *((WORD*)(pCartImage + 0074)) = wStackAddr;
+    *((WORD*)(pCartImage + 0100)) = wStartAddr;
+
+    // Calculate checksum
+    WORD* pData = ((WORD*)(pCartImage + 01000));
+    WORD wChecksum = 0;
+    for (int i = 0; i < 027400; i++)
+    {
+        WORD src = wChecksum;
+        WORD src2 = *pData;
+        wChecksum += src2;
+        if (((src & src2) | ((src ^ src2) & ~wChecksum)) & 0100000)  // if Carry
+            wChecksum++;
+        pData++;
+    }
+    *((WORD*)(pCartImage + 0066)) = wChecksum;
 
     outputfile = fopen(outputfilename, "w+b");
     if (outputfile == NULL)
