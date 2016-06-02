@@ -25,6 +25,7 @@ bool ParseCommandLine(int argc, _TCHAR* argv[]);
 
 void DoDiskList();
 void DoDiskExtractFile();
+void DoDiskExtractAllFiles();
 void DoDiskAddFile();
 void DoHardInvert();
 void DoHardList();
@@ -55,6 +56,7 @@ static g_CommandInfos[] =
 {
     { _T("l"),    false,  DoDiskList                    },
     { _T("e"),    false,  DoDiskExtractFile             },
+    { _T("x"),    false,  DoDiskExtractAllFiles         },
     { _T("a"),    false,  DoDiskAddFile                 },
     { _T("hi"),   true,   DoHardInvert                  },
     { _T("hl"),   true,   DoHardList                    },
@@ -227,6 +229,12 @@ void DoDiskExtractFile()
 
     g_diskimage.DecodeImageCatalog();
     g_diskimage.SaveEntryToExternalFile(g_sFileName);
+}
+
+void DoDiskExtractAllFiles()
+{
+    g_diskimage.DecodeImageCatalog();
+    g_diskimage.SaveAllEntriesToExternalFiles();
 }
 
 void DoDiskAddFile()

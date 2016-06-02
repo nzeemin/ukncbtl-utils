@@ -84,6 +84,7 @@ public:
     void DecodeImageCatalog();
     void UpdateCatalogSegment(CVolumeCatalogSegment* pSegment);
     void SaveEntryToExternalFile(LPCTSTR sFileName);
+    void SaveAllEntriesToExternalFiles();
     void AddFileToImage(LPCTSTR sFileName);
 
 private:

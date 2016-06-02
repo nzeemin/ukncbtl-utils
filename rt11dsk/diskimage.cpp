@@ -554,6 +554,62 @@ void CDiskImage::SaveEntryToExternalFile(LPCTSTR sFileName)
     wprintf(_T("\nDone.\n"));
 }
 
+void CDiskImage::SaveAllEntriesToExternalFiles()
+{
+    wprintf(_T("Extracting files:\n\n"));
+    PrintTableHeader();
+
+    for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
+    {
+        CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
+        if (pSegment->catalogentries == NULL) continue;
+
+        for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
+        {
+            CVolumeCatalogEntry* pEntry = pSegment->catalogentries + entryno;
+
+            if (pEntry->status == RT11_STATUS_ENDMARK) break;
+            if (pEntry->status == 0) continue;
+            if (pEntry->status == RT11_STATUS_EMPTY) continue;
+
+            pEntry->Print();
+
+            // Collect file name + ext without trailing spaces
+            TCHAR filename[11];
+            wcscpy(filename, pEntry->name);
+            TCHAR * p = filename + 5;
+            while (p > filename && *p == _T(' ')) p--;
+            p++;
+            *p = _T('.');
+            p++;
+            wcscpy(p, pEntry->ext);
+
+            WORD filestart = pEntry->start;
+            WORD filelength = pEntry->length;
+
+            FILE* foutput = NULL;
+            errno_t err = _wfopen_s(&foutput, filename, _T("wb"));
+            if (err != 0)
+            {
+                wprintf(_T("Failed to open output file %s: error %d\n"), filename, err);
+                return;
+            }
+
+            for (WORD blockpos = 0; blockpos < filelength; blockpos++)
+            {
+                BYTE* pData = (BYTE*)GetBlock(filestart + blockpos);
+                size_t nBytesWritten = fwrite(pData, sizeof(BYTE), RT11_BLOCK_SIZE, foutput);
+                //TODO: Check if nBytesWritten < RT11_BLOCK_SIZE
+            }
+
+            fclose(foutput);
+        }
+    }
+    PrintTableFooter();
+
+    wprintf(_T("\nDone.\n"));
+}
+
 // Помещение файла в образ.
 // Алгоритм:
 //   Помещаемый файл считывается в память
