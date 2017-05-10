@@ -865,6 +865,65 @@ void CDiskImage::DeleteFileFromImage(LPCTSTR sFileName)
     wprintf(_T("\nDone.\n"));
 }
 
+void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
+{
+    wprintf(_T("Extracting files:\n\n"));
+    PrintTableHeader();
+
+    int unusedno = 0;
+    for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
+    {
+        CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
+        if (pSegment->catalogentries == NULL) continue;
+
+        bool okSegmentChanged = false;
+        for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
+        {
+            CVolumeCatalogEntry* pEntry = pSegment->catalogentries + entryno;
+
+            if (pEntry->status == RT11_STATUS_ENDMARK) break;
+            if (pEntry->status != RT11_STATUS_EMPTY) continue;
+
+            pEntry->Print();
+            
+            unusedno++;
+            TCHAR filename[20];
+            _stprintf_s(filename, 20, _T("UNUSED%02d"), unusedno);
+
+            WORD filestart = pEntry->start;
+            WORD filelength = pEntry->length;
+
+            FILE* foutput = NULL;
+            errno_t err = _wfopen_s(&foutput, filename, _T("wb"));
+            if (err != 0)
+            {
+                wprintf(_T("Failed to open output file %s: error %d\n"), filename, err);
+                return;
+            }
+
+            for (WORD blockpos = 0; blockpos < filelength; blockpos++)
+            {
+                int blockno = filestart + blockpos;
+                if (blockno >= m_nTotalBlocks)
+                {
+                    wprintf(_T("WARNING: For file %s block %d is beyond the end of the image file.\n"), filename, blockno);
+                    break;
+                }
+                BYTE* pData = (BYTE*)GetBlock(blockno);
+                size_t nBytesWritten = fwrite(pData, sizeof(BYTE), RT11_BLOCK_SIZE, foutput);
+                //TODO: Check if nBytesWritten < RT11_BLOCK_SIZE
+            }
+
+            fclose(foutput);
+        }
+    }
+
+    PrintTableFooter();
+
+    FlushChanges();
+
+    wprintf(_T("\nDone.\n"));
+}
 
 //////////////////////////////////////////////////////////////////////
 

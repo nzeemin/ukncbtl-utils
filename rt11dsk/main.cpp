@@ -28,6 +28,7 @@ void DoDiskExtractFile();
 void DoDiskExtractAllFiles();
 void DoDiskAddFile();
 void DoDiskDeleteFile();
+void DoDiskExtractAllUnusedFiles();
 void DoHardInvert();
 void DoHardList();
 void DoHardExtractPartition();
@@ -60,6 +61,7 @@ static g_CommandInfos[] =
     { _T("x"),    false,  DoDiskExtractAllFiles         },
     { _T("a"),    false,  DoDiskAddFile                 },
     { _T("d"),    false,  DoDiskDeleteFile              },
+    { _T("xu"),   false,  DoDiskExtractAllUnusedFiles   },
     { _T("hi"),   true,   DoHardInvert                  },
     { _T("hl"),   true,   DoHardList                    },
     { _T("hx"),   true,   DoHardExtractPartition        },
@@ -91,6 +93,7 @@ void PrintUsage()
     wprintf(_T("    rt11dsk x <ImageFile>  - extract all files\n"));
     wprintf(_T("    rt11dsk a <ImageFile> <FileName>  - add file\n"));
     wprintf(_T("    rt11dsk d <ImageFile> <FileName>  - delete file\n"));
+    wprintf(_T("    rt11dsk ud <ImageFile>  - undelete all files\n"));
     wprintf(_T("  Hard disk image commands:\n"));
     wprintf(_T("    rt11dsk hi <HddImage>  - invert HDD image file\n"));
     wprintf(_T("    rt11dsk hl <HddImage>  - list HDD image partitions\n"));
@@ -275,6 +278,12 @@ void DoDiskDeleteFile()
 
     g_diskimage.DecodeImageCatalog();
     g_diskimage.DeleteFileFromImage(g_sFileName);
+}
+
+void DoDiskExtractAllUnusedFiles()
+{
+    g_diskimage.DecodeImageCatalog();
+    g_diskimage.SaveAllUnusedEntriesToExternalFiles();
 }
 
 void DoHardInvert()

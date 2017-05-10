@@ -87,6 +87,7 @@ public:
     void SaveAllEntriesToExternalFiles();
     void AddFileToImage(LPCTSTR sFileName);
     void DeleteFileFromImage(LPCTSTR sFileName);
+    void SaveAllUnusedEntriesToExternalFiles();
 
 private:
     void PostAttach();
