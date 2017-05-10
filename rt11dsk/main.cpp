@@ -48,27 +48,35 @@ bool    g_okHardCommand = false;
 LPCTSTR g_sPartition = NULL;
 int     g_nPartition = -1;
 
+enum CommandRequirements
+{
+    CMDR_PARAM_FILENAME        = 4,    // Need FileName parameter
+    CMDR_PARAM_PARTITION       = 8,    // Need Partition number parameter
+    CMDR_IMAGEFILERW           = 32,   // Image file should be writable (not read-only)
+};
+
 struct CommandInfo
 {
     LPCTSTR command;
-    bool    okHard;  // true for hard disk image command, false for disk image command
-    void    (*commandImpl)();
+    bool    okHard;             // true for hard disk image command, false for disk image command
+    void    (*commandImpl)();   // Function implementing the option
+    int     requirements;       // Command requirements, see CommandRequirements enum
 }
 static g_CommandInfos[] =
 {
-    { _T("l"),    false,  DoDiskList                    },
-    { _T("e"),    false,  DoDiskExtractFile             },
-    { _T("x"),    false,  DoDiskExtractAllFiles         },
-    { _T("a"),    false,  DoDiskAddFile                 },
-    { _T("d"),    false,  DoDiskDeleteFile              },
-    { _T("xu"),   false,  DoDiskExtractAllUnusedFiles   },
-    { _T("hi"),   true,   DoHardInvert                  },
-    { _T("hl"),   true,   DoHardList                    },
-    { _T("hx"),   true,   DoHardExtractPartition        },
-    { _T("hu"),   true,   DoHardUpdatePartition         },
-    { _T("hpl"),  true,   DoHardPartitionList           },
-    { _T("hpe"),  true,   DoHardPartitionExtractFile    },
-    { _T("hpa"),  true,   DoHardPartitionAddFile        },
+    { _T("l"),    false,  DoDiskList,                   },
+    { _T("e"),    false,  DoDiskExtractFile,            CMDR_PARAM_FILENAME },
+    { _T("x"),    false,  DoDiskExtractAllFiles,        },
+    { _T("a"),    false,  DoDiskAddFile,                CMDR_PARAM_FILENAME | CMDR_IMAGEFILERW },
+    { _T("d"),    false,  DoDiskDeleteFile,             CMDR_PARAM_FILENAME | CMDR_IMAGEFILERW },
+    { _T("xu"),   false,  DoDiskExtractAllUnusedFiles,  },
+    { _T("hi"),   true,   DoHardInvert,                 CMDR_IMAGEFILERW },
+    { _T("hl"),   true,   DoHardList,                   },
+    { _T("hx"),   true,   DoHardExtractPartition,       CMDR_PARAM_PARTITION | CMDR_PARAM_FILENAME },
+    { _T("hu"),   true,   DoHardUpdatePartition,        CMDR_PARAM_PARTITION | CMDR_PARAM_FILENAME | CMDR_IMAGEFILERW },
+    { _T("hpl"),  true,   DoHardPartitionList,          CMDR_PARAM_PARTITION },
+    { _T("hpe"),  true,   DoHardPartitionExtractFile,   CMDR_PARAM_PARTITION | CMDR_PARAM_FILENAME },
+    { _T("hpa"),  true,   DoHardPartitionAddFile,       CMDR_PARAM_PARTITION | CMDR_PARAM_FILENAME | CMDR_IMAGEFILERW },
 };
 
 CDiskImage      g_diskimage;
@@ -93,7 +101,7 @@ void PrintUsage()
     wprintf(_T("    rt11dsk x <ImageFile>  - extract all files\n"));
     wprintf(_T("    rt11dsk a <ImageFile> <FileName>  - add file\n"));
     wprintf(_T("    rt11dsk d <ImageFile> <FileName>  - delete file\n"));
-    wprintf(_T("    rt11dsk ud <ImageFile>  - undelete all files\n"));
+    wprintf(_T("    rt11dsk xu <ImageFile>  - extract all unused space\n"));
     wprintf(_T("  Hard disk image commands:\n"));
     wprintf(_T("    rt11dsk hi <HddImage>  - invert HDD image file\n"));
     wprintf(_T("    rt11dsk hl <HddImage>  - list HDD image partitions\n"));
@@ -160,18 +168,31 @@ bool ParseCommandLine(int argc, _TCHAR* argv[])
     }
     g_pCommand = pcinfo;
 
-    if (pcinfo->okHard)
+    g_okHardCommand = pcinfo->okHard;
+    if (pcinfo->okHard && g_sPartition != NULL)
     {
-        g_okHardCommand = true;
-        if (g_sPartition != NULL)
-        {
-            g_nPartition = _wtoi(g_sPartition);
-        }
+        g_nPartition = _wtoi(g_sPartition);
     }
 
+    // More pre-checks based on command requirements
     if (g_sImageFileName == NULL)
     {
         wprintf(_T("Image file not specified.\n"));
+        return false;
+    }
+    if ((pcinfo->requirements & CMDR_PARAM_PARTITION) != 0 && g_nPartition < 0)
+    {
+        wprintf(_T("Partition number expected.\n"));
+        return false;
+    }
+    if ((pcinfo->requirements & CMDR_PARAM_FILENAME) != 0 && g_sFileName == NULL)
+    {
+        wprintf(_T("File name expected.\n"));
+        return false;
+    }
+    if ((pcinfo->requirements & CMDR_IMAGEFILERW) != 0 && g_diskimage.IsReadOnly())
+    {
+        wprintf(_T("Cannot perform the operation: disk image file is read-only.\n"));
         return false;
     }
 
@@ -228,12 +249,6 @@ void DoDiskList()
 
 void DoDiskExtractFile()
 {
-    if (g_sFileName == NULL)
-    {
-        wprintf(_T("Output file name expected.\n"));
-        return;
-    }
-
     g_diskimage.DecodeImageCatalog();
     g_diskimage.SaveEntryToExternalFile(g_sFileName);
 }
@@ -246,36 +261,12 @@ void DoDiskExtractAllFiles()
 
 void DoDiskAddFile()
 {
-    if (g_sFileName == NULL)
-    {
-        wprintf(_T("Input file name expected.\n"));
-        return;
-    }
-
-    if (g_diskimage.IsReadOnly())
-    {
-        wprintf(_T("Cannot perform the operation: disk image file is read-only.\n"));
-        return;
-    }
-
     g_diskimage.DecodeImageCatalog();
     g_diskimage.AddFileToImage(g_sFileName);
 }
 
 void DoDiskDeleteFile()
 {
-    if (g_sFileName == NULL)
-    {
-        wprintf(_T("Input file name expected.\n"));
-        return;
-    }
-
-    if (g_diskimage.IsReadOnly())
-    {
-        wprintf(_T("Cannot perform the operation: disk image file is read-only.\n"));
-        return;
-    }
-
     g_diskimage.DecodeImageCatalog();
     g_diskimage.DeleteFileFromImage(g_sFileName);
 }
@@ -288,12 +279,6 @@ void DoDiskExtractAllUnusedFiles()
 
 void DoHardInvert()
 {
-    if (g_hardimage.IsReadOnly())
-    {
-        wprintf(_T("Cannot perform the operation: hard disk image file is read-only.\n"));
-        return;
-    }
-
     g_hardimage.PrintImageInfo();
     wprintf(_T("\n"));
     g_hardimage.InvertImage();
@@ -315,17 +300,6 @@ void DoHardList()
 
 void DoHardExtractPartition()
 {
-    if (g_nPartition < 0)
-    {
-        wprintf(_T("Partition number expected.\n"));
-        return;
-    }
-    if (g_sFileName == NULL)
-    {
-        wprintf(_T("Output file name expected.\n"));
-        return;
-    }
-
     if (!g_hardimage.IsChecksum())
     {
         wprintf(_T("Cannot perform the operation: home block checksum is incorrect.\n"));
@@ -337,22 +311,6 @@ void DoHardExtractPartition()
 
 void DoHardUpdatePartition()
 {
-    if (g_nPartition < 0)
-    {
-        wprintf(_T("Partition number expected.\n"));
-        return;
-    }
-    if (g_sFileName == NULL)
-    {
-        wprintf(_T("Input file name expected.\n"));
-        return;
-    }
-
-    if (g_hardimage.IsReadOnly())
-    {
-        wprintf(_T("Cannot perform the operation: hard disk image file is read-only.\n"));
-        return;
-    }
     if (!g_hardimage.IsChecksum())
     {
         wprintf(_T("Cannot perform the operation: home block checksum is incorrect.\n"));
@@ -364,12 +322,6 @@ void DoHardUpdatePartition()
 
 void DoHardPartitionList()
 {
-    if (g_nPartition < 0)
-    {
-        wprintf(_T("Partition number expected.\n"));
-        return;
-    }
-
     if (!g_hardimage.IsChecksum())
     {
         wprintf(_T("Cannot perform the operation: home block checksum is incorrect.\n"));
@@ -388,17 +340,6 @@ void DoHardPartitionList()
 
 void DoHardPartitionExtractFile()
 {
-    if (g_nPartition < 0)
-    {
-        wprintf(_T("Partition number expected.\n"));
-        return;
-    }
-    if (g_sFileName == NULL)
-    {
-        wprintf(_T("Output file name expected.\n"));
-        return;
-    }
-
     if (!g_hardimage.IsChecksum())
     {
         wprintf(_T("Cannot perform the operation: home block checksum is incorrect.\n"));
@@ -417,26 +358,9 @@ void DoHardPartitionExtractFile()
 
 void DoHardPartitionAddFile()
 {
-    if (g_nPartition < 0)
-    {
-        wprintf(_T("Partition number expected.\n"));
-        return;
-    }
-    if (g_sFileName == NULL)
-    {
-        wprintf(_T("Input file name expected.\n"));
-        return;
-    }
-
     if (!g_hardimage.IsChecksum())
     {
         wprintf(_T("Cannot perform the operation: home block checksum is incorrect.\n"));
-        return;
-    }
-
-    if (g_diskimage.IsReadOnly())
-    {
-        wprintf(_T("Cannot perform the operation: disk image file is read-only.\n"));
         return;
     }
 

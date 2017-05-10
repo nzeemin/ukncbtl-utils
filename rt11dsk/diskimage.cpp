@@ -97,6 +97,37 @@ void CDiskImage::UpdateCatalogSegment(CVolumeCatalogSegment* pSegment)
     MarkBlockChanged(pSegment->segmentblock + 1);
 }
 
+// Parse sFileName as RT11 file name, 6.3 format
+static void ParseFileName63(LPCTSTR sFileName, TCHAR * filename, TCHAR * fileext)
+{
+    LPCTSTR sFilenameExt = wcsrchr(sFileName, _T('.'));
+    if (sFilenameExt == NULL)
+    {
+        wprintf(_T("Wrong filename format: %s\n"), sFileName);
+        return;
+    }
+    size_t nFilenameLength = sFilenameExt - sFileName;
+    if (nFilenameLength == 0 || nFilenameLength > 6)
+    {
+        wprintf(_T("Wrong filename format: %s\n"), sFileName);
+        return;
+    }
+    size_t nFileextLength = wcslen(sFileName) - nFilenameLength - 1;
+    if (nFileextLength == 0 || nFileextLength > 3)
+    {
+        wprintf(_T("Wrong filename format: %s\n"), sFileName);
+        return;
+    }
+    for (int i = 0; i < 6; i++) filename[i] = _T(' ');
+    for (WORD i = 0; i < nFilenameLength; i++) filename[i] = sFileName[i];
+    filename[6] = 0;
+    _wcsupr_s(filename, 7);
+    for (int i = 0; i < 3; i++) fileext[i] = _T(' ');
+    for (WORD i = 0; i < nFileextLength; i++) fileext[i] = sFilenameExt[i + 1];
+    fileext[3] = 0;
+    _wcsupr_s(fileext, 4);
+}
+
 
 //////////////////////////////////////////////////////////////////////
 
@@ -470,33 +501,10 @@ void CDiskImage::PrintCatalogDirectory()
 
 void CDiskImage::SaveEntryToExternalFile(LPCTSTR sFileName)
 {
-    // Parse g_sFileName
-    LPCTSTR sFilenameExt = wcsrchr(sFileName, _T('.'));
-    if (sFilenameExt == NULL)
-    {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
-        return;
-    }
-    size_t nFilenameLength = sFilenameExt - sFileName;
-    if (nFilenameLength == 0 || nFilenameLength > 6)
-    {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
-        return;
-    }
-    size_t nFileextLength = wcslen(sFileName) - nFilenameLength - 1;
-    if (nFileextLength == 0 || nFileextLength > 3)
-    {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
-        return;
-    }
+    // Parse sFileName
     TCHAR filename[7];
-    for (int i = 0; i < 6; i++) filename[i] = _T(' ');
-    for (WORD i = 0; i < nFilenameLength; i++) filename[i] = sFileName[i];
-    filename[6] = 0;
     TCHAR fileext[4];
-    for (int i = 0; i < 3; i++) fileext[i] = _T(' ');
-    for (WORD i = 0; i < nFileextLength; i++) fileext[i] = sFilenameExt[i + 1];
-    fileext[3] = 0;
+    ParseFileName63(sFileName, filename, fileext);
 
     // Search for the filename/fileext
     CVolumeCatalogEntry* pFileEntry = NULL;
@@ -531,11 +539,21 @@ void CDiskImage::SaveEntryToExternalFile(LPCTSTR sFileName)
     pFileEntry->Print();
     PrintTableFooter();
 
+    // Collect file name + ext without trailing spaces
+    TCHAR sfilename[11];
+    wcscpy(sfilename, pFileEntry->name);
+    TCHAR * p = sfilename + 5;
+    while (p > sfilename && *p == _T(' ')) p--;
+    p++;
+    *p = _T('.');
+    p++;
+    wcscpy(p, pFileEntry->ext);
+
     WORD filestart = pFileEntry->start;
     WORD filelength = pFileEntry->length;
 
     FILE* foutput = NULL;
-    errno_t err = _wfopen_s(&foutput, sFileName, _T("wb"));
+    errno_t err = _wfopen_s(&foutput, sfilename, _T("wb"));
     if (err != 0)
     {
         wprintf(_T("Failed to open output file %s: error %d\n"), sFileName, err);
@@ -622,35 +640,10 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
 //NOTE: Пока НЕ проверяем что файл с таким именем уже есть, и НЕ выдаем ошибки
 void CDiskImage::AddFileToImage(LPCTSTR sFileName)
 {
-    // Parse g_sFileName
-    LPCTSTR sFilenameExt = wcsrchr(sFileName, _T('.'));
-    if (sFilenameExt == NULL)
-    {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
-        return;
-    }
-    size_t nFilenameLength = sFilenameExt - sFileName;
-    if (nFilenameLength == 0 || nFilenameLength > 6)
-    {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
-        return;
-    }
-    size_t nFileextLength = wcslen(sFileName) - nFilenameLength - 1;
-    if (nFileextLength == 0 || nFileextLength > 3)
-    {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
-        return;
-    }
+    // Parse sFileName
     TCHAR filename[7];
-    for (int i = 0; i < 6; i++) filename[i] = _T(' ');
-    for (WORD i = 0; i < nFilenameLength; i++) filename[i] = sFileName[i];
-    filename[6] = 0;
-    _wcsupr_s(filename, 7);
     TCHAR fileext[4];
-    for (int i = 0; i < 3; i++) fileext[i] = _T(' ');
-    for (WORD i = 0; i < nFileextLength; i++) fileext[i] = sFilenameExt[i + 1];
-    fileext[3] = 0;
-    _wcsupr_s(fileext, 4);
+    ParseFileName63(sFileName, filename, fileext);
 
     // Открываем помещаемый файл на чтение
     FILE* fpFile = ::_wfopen(sFileName, _T("rb"));
@@ -786,37 +779,14 @@ void CDiskImage::AddFileToImage(LPCTSTR sFileName)
 
 // Удаление файла
 // Алгоритм:
-//   Перебираются все записи каталога, пока не будет найдена пустая запись данного файла
+//   Перебираются все записи каталога, пока не будет найдена запись данного файла
 //   Запись каталога помечается как удалённая
 void CDiskImage::DeleteFileFromImage(LPCTSTR sFileName)
 {
-    // Parse g_sFileName
-    LPCTSTR sFilenameExt = wcsrchr(sFileName, _T('.'));
-    if (sFilenameExt == NULL)
-    {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
-        return;
-    }
-    size_t nFilenameLength = sFilenameExt - sFileName;
-    if (nFilenameLength == 0 || nFilenameLength > 6)
-    {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
-        return;
-    }
-    size_t nFileextLength = wcslen(sFileName) - nFilenameLength - 1;
-    if (nFileextLength == 0 || nFileextLength > 3)
-    {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
-        return;
-    }
+    // Parse sFileName
     TCHAR filename[7];
-    for (int i = 0; i < 6; i++) filename[i] = _T(' ');
-    for (WORD i = 0; i < nFilenameLength; i++) filename[i] = sFileName[i];
-    filename[6] = 0;
     TCHAR fileext[4];
-    for (int i = 0; i < 3; i++) fileext[i] = _T(' ');
-    for (WORD i = 0; i < nFileextLength; i++) fileext[i] = sFilenameExt[i + 1];
-    fileext[3] = 0;
+    ParseFileName63(sFileName, filename, fileext);
 
     // Search for the filename/fileext
     CVolumeCatalogEntry* pFileEntry = NULL;
