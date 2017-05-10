@@ -27,6 +27,7 @@ void DoDiskList();
 void DoDiskExtractFile();
 void DoDiskExtractAllFiles();
 void DoDiskAddFile();
+void DoDiskDeleteFile();
 void DoHardInvert();
 void DoHardList();
 void DoHardExtractPartition();
@@ -58,6 +59,7 @@ static g_CommandInfos[] =
     { _T("e"),    false,  DoDiskExtractFile             },
     { _T("x"),    false,  DoDiskExtractAllFiles         },
     { _T("a"),    false,  DoDiskAddFile                 },
+    { _T("d"),    false,  DoDiskDeleteFile              },
     { _T("hi"),   true,   DoHardInvert                  },
     { _T("hl"),   true,   DoHardList                    },
     { _T("hx"),   true,   DoHardExtractPartition        },
@@ -86,7 +88,9 @@ void PrintUsage()
     wprintf(_T("  Disk image commands:\n"));
     wprintf(_T("    rt11dsk l <ImageFile>  - list image contents\n"));
     wprintf(_T("    rt11dsk e <ImageFile> <FileName>  - extract file\n"));
+    wprintf(_T("    rt11dsk x <ImageFile>  - extract all files\n"));
     wprintf(_T("    rt11dsk a <ImageFile> <FileName>  - add file\n"));
+    wprintf(_T("    rt11dsk d <ImageFile> <FileName>  - delete file\n"));
     wprintf(_T("  Hard disk image commands:\n"));
     wprintf(_T("    rt11dsk hi <HddImage>  - invert HDD image file\n"));
     wprintf(_T("    rt11dsk hl <HddImage>  - list HDD image partitions\n"));
@@ -253,6 +257,24 @@ void DoDiskAddFile()
 
     g_diskimage.DecodeImageCatalog();
     g_diskimage.AddFileToImage(g_sFileName);
+}
+
+void DoDiskDeleteFile()
+{
+    if (g_sFileName == NULL)
+    {
+        wprintf(_T("Input file name expected.\n"));
+        return;
+    }
+
+    if (g_diskimage.IsReadOnly())
+    {
+        wprintf(_T("Cannot perform the operation: disk image file is read-only.\n"));
+        return;
+    }
+
+    g_diskimage.DecodeImageCatalog();
+    g_diskimage.DeleteFileFromImage(g_sFileName);
 }
 
 void DoHardInvert()

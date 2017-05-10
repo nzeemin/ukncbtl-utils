@@ -784,6 +784,87 @@ void CDiskImage::AddFileToImage(LPCTSTR sFileName)
     wprintf(_T("\nDone.\n"));
 }
 
+// Удаление файла
+// Алгоритм:
+//   Перебираются все записи каталога, пока не будет найдена пустая запись данного файла
+//   Запись каталога помечается как удалённая
+void CDiskImage::DeleteFileFromImage(LPCTSTR sFileName)
+{
+    // Parse g_sFileName
+    LPCTSTR sFilenameExt = wcsrchr(sFileName, _T('.'));
+    if (sFilenameExt == NULL)
+    {
+        wprintf(_T("Wrong filename format: %s\n"), sFileName);
+        return;
+    }
+    size_t nFilenameLength = sFilenameExt - sFileName;
+    if (nFilenameLength == 0 || nFilenameLength > 6)
+    {
+        wprintf(_T("Wrong filename format: %s\n"), sFileName);
+        return;
+    }
+    size_t nFileextLength = wcslen(sFileName) - nFilenameLength - 1;
+    if (nFileextLength == 0 || nFileextLength > 3)
+    {
+        wprintf(_T("Wrong filename format: %s\n"), sFileName);
+        return;
+    }
+    TCHAR filename[7];
+    for (int i = 0; i < 6; i++) filename[i] = _T(' ');
+    for (WORD i = 0; i < nFilenameLength; i++) filename[i] = sFileName[i];
+    filename[6] = 0;
+    TCHAR fileext[4];
+    for (int i = 0; i < 3; i++) fileext[i] = _T(' ');
+    for (WORD i = 0; i < nFileextLength; i++) fileext[i] = sFilenameExt[i + 1];
+    fileext[3] = 0;
+
+    // Search for the filename/fileext
+    CVolumeCatalogEntry* pFileEntry = NULL;
+    CVolumeCatalogSegment* pFileSegment = NULL;
+    for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
+    {
+        CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
+        if (pSegment->catalogentries == NULL) continue;
+
+        for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
+        {
+            CVolumeCatalogEntry* pEntry = pSegment->catalogentries + entryno;
+
+            if (pEntry->status == RT11_STATUS_ENDMARK) break;
+            if (pEntry->status == 0) continue;
+            if (pEntry->status == RT11_STATUS_EMPTY) continue;
+
+            if (_wcsnicmp(filename, pEntry->name, 6) == 0 &&
+                _wcsnicmp(fileext, pEntry->ext, 3) == 0)
+            {
+                pFileEntry = pEntry;
+                pFileSegment = pSegment;
+                break;
+            }
+        }
+    }
+    if (pFileEntry == NULL)
+    {
+        wprintf(_T("Filename not found: %s\n"), sFileName);
+        return;
+    }
+    wprintf(_T("Deleting file:\n\n"));
+    PrintTableHeader();
+    pFileEntry->Print();
+    PrintTableFooter();
+
+    // Изменяем существующую запись каталога
+    pFileEntry->status = RT11_STATUS_EMPTY;
+
+    // Сохраняем сегмент каталога на диск
+    wprintf(_T("Updating catalog segment...\n"));
+    UpdateCatalogSegment(pFileSegment);
+
+    FlushChanges();
+
+    wprintf(_T("\nDone.\n"));
+}
+
 
 //////////////////////////////////////////////////////////////////////
 
