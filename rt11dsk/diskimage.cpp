@@ -364,6 +364,11 @@ void CDiskImage::DecodeImageCatalog()
     // Разбор Home Block
     BYTE* pHomeSector = (BYTE*) GetBlock(1);
     WORD nFirstCatalogBlock = pHomeSector[0724];  // Это должен быть блок номер 6
+    if (nFirstCatalogBlock > 10)
+    {
+        wprintf(_T("First catalog block is %d, out of range.\n"), nFirstCatalogBlock);
+        _exit(-1);
+    }
     if (nFirstCatalogBlock == 0) nFirstCatalogBlock = 6;
     m_volumeinfo.firstcatalogblock = nFirstCatalogBlock;
     m_volumeinfo.systemversion = pHomeSector[0726];
@@ -389,6 +394,11 @@ void CDiskImage::DecodeImageCatalog()
     m_volumeinfo.catalogentrylength = nEntryLength;
     WORD nEntriesPerSegment = (512 - 5) / nEntryLength;
     m_volumeinfo.catalogentriespersegment = nEntriesPerSegment;
+    if (m_volumeinfo.catalogsegmentcount == 0 || m_volumeinfo.catalogsegmentcount > 31)
+    {
+        wprintf(_T("Catalog segment count is %d, out of range (1..31).\n"), m_volumeinfo.catalogsegmentcount);
+        _exit(-1);
+    }
 
     // Получаем память под список сегментов
     m_volumeinfo.catalogsegments = (CVolumeCatalogSegment*) ::malloc(
