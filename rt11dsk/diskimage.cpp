@@ -147,14 +147,18 @@ CDiskImage::~CDiskImage()
 }
 
 // Open the specified disk image file
-bool CDiskImage::Attach(LPCTSTR sImageFileName)
+bool CDiskImage::Attach(LPCTSTR sImageFileName, long offset)
 {
-    // Определяем, это .dsk-образ или .rtd-образ - по расширению файла
-    m_lStartOffset = 0;
-    LPCTSTR sImageFilenameExt = wcsrchr(sImageFileName, _T('.'));
-    if (sImageFilenameExt != NULL && _wcsicmp(sImageFilenameExt, _T(".rtd")) == 0)
-        m_lStartOffset = NETRT11_IMAGE_HEADER_SIZE;
-    //NOTE: Можно также определять по длине файла: кратна 512 -- .dsk, длина минус 256 кратна 512 -- .rtd
+    m_lStartOffset = offset;
+    if (m_lStartOffset <= 0)
+    {
+        m_lStartOffset = 0;
+        // Определяем, это .dsk-образ или .rtd-образ - по расширению файла
+        LPCTSTR sImageFilenameExt = wcsrchr(sImageFileName, _T('.'));
+        if (sImageFilenameExt != NULL && _wcsicmp(sImageFilenameExt, _T(".rtd")) == 0)
+            m_lStartOffset = NETRT11_IMAGE_HEADER_SIZE;
+        //NOTE: Можно также определять по длине файла: кратна 512 -- .dsk, длина минус 256 кратна 512 -- .rtd
+    }
 
     // Try to open as Normal first, then as ReadOnly
     m_okReadOnly = false;
@@ -320,6 +324,11 @@ void* CDiskImage::GetBlock(int nBlock)
     m_pCache[iEmpty].nBlock = nBlock;
     m_pCache[iEmpty].bChanged = false;
     m_pCache[iEmpty].pData = ::malloc(RT11_BLOCK_SIZE);
+    if (m_pCache[iEmpty].pData == NULL)
+    {
+        wprintf(_T("Failed to allocate memory for block number %d.\n"), nBlock);
+        _exit(-1);
+    }
     ::memset(m_pCache[iEmpty].pData, 0, RT11_BLOCK_SIZE);
     m_pCache[iEmpty].cLastUsage = ::clock();
 

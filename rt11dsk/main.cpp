@@ -47,6 +47,7 @@ LPCTSTR g_sFileName = NULL;
 bool    g_okHardCommand = false;
 LPCTSTR g_sPartition = NULL;
 int     g_nPartition = -1;
+long    g_lStartOffset = 0;
 
 enum CommandRequirements
 {
@@ -115,6 +116,8 @@ void PrintUsage()
     wprintf(_T("    <HddImage>  is UKNC hard disk image file name\n"));
     wprintf(_T("    <Partn>     is hard disk image partition number, 0..23\n"));
     wprintf(_T("    <FileName>  is a file name to read from or save to\n"));
+    wprintf(_T("  Options:\n"));
+    wprintf(_T("    -oXXXXX  Set start offset to XXXXX; 0 by default\n"));
 }
 
 bool ParseCommandLine(int argc, _TCHAR* argv[])
@@ -124,9 +127,19 @@ bool ParseCommandLine(int argc, _TCHAR* argv[])
         LPCTSTR arg = argv[argn];
         if (arg[0] == _T('-') || arg[0] == _T('/'))
         {
-            //TODO
-            wprintf(_T("Unknown option: %s\n"), arg);
-            return false;
+            if (arg[1] == 'o')
+            {
+                if (1 != swscanf(arg + 2, _T("%ld"), &g_lStartOffset))
+                {
+                    wprintf(_T("Failed to parse option argument: %s\n"), arg);
+                    return false;
+                }
+            }
+            else
+            {
+                wprintf(_T("Unknown option: %s\n"), arg);
+                return false;
+            }
         }
         else
         {
@@ -220,7 +233,7 @@ int _tmain(int argc, _TCHAR* argv[])
     }
     else
     {
-        if (!g_diskimage.Attach(g_sImageFileName))
+        if (!g_diskimage.Attach(g_sImageFileName, g_lStartOffset))
         {
             wprintf(_T("Failed to open the image file.\n"));
             return 255;

@@ -66,7 +66,7 @@ public:
     ~CDiskImage();
 
 public:
-    bool Attach(LPCTSTR sFileName);
+    bool Attach(LPCTSTR sFileName, long offset = 0);
     bool Attach(FILE* fpfile, long offset, int blocks, bool readonly);
     void Detach();
 
