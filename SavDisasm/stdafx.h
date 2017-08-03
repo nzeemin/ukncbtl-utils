@@ -8,22 +8,19 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 // Windows Header Files:
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-#include <windows.h>
+//#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+//#include <windows.h>
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <tchar.h>
 #include <malloc.h>
 #include <memory.h>
 #include <string.h>
+#include <ctype.h>
 
-//typedef unsigned long   DWORD;
-//typedef unsigned char   BYTE;
-//typedef unsigned short  WORD;
-typedef const TCHAR* LPCTSTR;
+typedef const char * LPCSTR;
 
-// Define C99 stdint.h types for VS2008
+// Define C99 stdint.h types for Visual Studio
 #ifdef _MSC_VER
    typedef unsigned __int8   uint8_t;
    typedef unsigned __int16  uint16_t;

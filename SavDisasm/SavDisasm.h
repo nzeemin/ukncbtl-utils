@@ -21,13 +21,13 @@ NEMIGABTL. If not, see <http://www.gnu.org/licenses/>. */
 /// \param[out] sInstr  Instruction mnemonics buffer - at least 8 characters
 /// \param[out] sArg    Instruction arguments buffer - at least 32 characters
 /// \return  Number of words in the instruction
-uint16_t DisassembleInstruction(uint16_t* pMemory, uint16_t addr, TCHAR* sInstr, TCHAR* sArg);
+uint16_t DisassembleInstruction(uint16_t* pMemory, uint16_t addr, char* sInstr, char* sArg);
 
 //////////////////////////////////////////////////////////////////////
 
 
 // Processor register names
-const TCHAR* REGISTER_NAME[];
+const char* REGISTER_NAME[];
 
 
 //////////////////////////////////////////////////////////////////////
