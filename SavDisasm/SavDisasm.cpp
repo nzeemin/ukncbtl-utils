@@ -4,17 +4,6 @@
 #include "stdafx.h"
 
 //////////////////////////////////////////////////////////////////////
-// Disassembler
-
-/// \brief Disassemble one instruction of KM1801VM2 processor
-/// \param[in]  pMemory Memory image (we read only words of the instruction)
-/// \param[in]  addr    Address of the instruction
-/// \param[out] sInstr  Instruction mnemonics buffer - at least 8 characters
-/// \param[out] sArg    Instruction arguments buffer - at least 32 characters
-/// \return  Number of words in the instruction
-uint16_t DisassembleInstruction(uint16_t* pMemory, uint16_t addr, TCHAR* sInstr, TCHAR* sArg);
-
-//////////////////////////////////////////////////////////////////////
 // Preliminary function declarations
 
 void PrintWelcome();
@@ -28,6 +17,7 @@ LPCTSTR g_sSavFileName = NULL;
 bool g_okShowValues = false;
 uint16_t g_wStartAddress = 001000;
 uint16_t g_wEndAddress = 0xffff;
+TCHAR g_sOutFileName[255] = { 0 };
 
 //////////////////////////////////////////////////////////////////////
 
@@ -39,24 +29,25 @@ const TCHAR* REGISTER_NAME[] = { _T("R0"), _T("R1"), _T("R2"), _T("R3"), _T("R4"
 
 void PrintWelcome()
 {
-    wprintf(_T("SavDisasm Utility  by Nikita Zimin  [%S %S]\n\n"), __DATE__, __TIME__);
+    _tprintf(_T("SavDisasm Utility  by Nikita Zimin  [%S %S]\n\n"), __DATE__, __TIME__);
 }
 
 void PrintUsage()
 {
-    wprintf(_T("\nUsage:\n"));
-    wprintf(_T("    SavDisasm [options] <SavFileFile>\n"));
-    wprintf(_T("  Parameters:\n"));
-    wprintf(_T("    <SavFileName> is name of .sav file to disassemble\n"));
-    wprintf(_T("  Options:\n"));
-    wprintf(_T("    -v        Show original values\n"));
-    wprintf(_T("    -sXXXXXX  Set disassembly start address (octal)\n"));
-    wprintf(_T("    -eXXXXXX  Set disassembly end address (octal)\n"));
+    _tprintf(_T("\nUsage:\n"));
+    _tprintf(_T("    SavDisasm [options] <SavFileFile>\n"));
+    _tprintf(_T("  Parameters:\n"));
+    _tprintf(_T("    <SavFileName> is name of .sav file to disassemble\n"));
+    _tprintf(_T("  Options:\n"));
+    _tprintf(_T("    /O:<OutFileName>  Set output file name\n"));
+    _tprintf(_T("    /SXXXXXX  Set disassembly start address (octal)\n"));
+    _tprintf(_T("    /EXXXXXX  Set disassembly end address (octal)\n"));
+    _tprintf(_T("    /V        Show original values\n"));
 }
 
 // Print octal 16-bit value to buffer
 // buffer size at least 7 characters
-void PrintOctalValue(TCHAR* buffer, WORD value)
+void PrintOctalValue(TCHAR* buffer, uint16_t value)
 {
     for (int p = 0; p < 6; p++)
     {
@@ -68,22 +59,22 @@ void PrintOctalValue(TCHAR* buffer, WORD value)
 }
 
 // Parse octal value from text
-BOOL ParseOctalValue(LPCTSTR text, WORD* pValue)
+bool ParseOctalValue(LPCTSTR text, uint16_t* pValue)
 {
-    WORD value = 0;
+    uint16_t value = 0;
     TCHAR* pChar = (TCHAR*)text;
     for (int p = 0;; p++)
     {
-        if (p > 6) return FALSE;
+        if (p > 6) return false;
         TCHAR ch = *pChar;  pChar++;
         if (ch == 0) break;
-        if (ch < _T('0') || ch > _T('7')) return FALSE;
+        if (ch < _T('0') || ch > _T('7')) return false;
         value = (value << 3);
         TCHAR digit = ch - _T('0');
         value += digit;
     }
     *pValue = value;
-    return TRUE;
+    return true;
 }
 
 bool ParseCommandLine(int argc, _TCHAR* argv[])
@@ -93,29 +84,40 @@ bool ParseCommandLine(int argc, _TCHAR* argv[])
         LPCTSTR arg = argv[argn];
         if (arg[0] == _T('-') || arg[0] == _T('/'))
         {
-            if (arg[1] == 's')
+            TCHAR option = _totlower(arg[1]);
+            switch (option)
             {
+            case _T('s'):  // Set disasm Start address
                 if (!ParseOctalValue(arg + 2, &g_wStartAddress))
                 {
-                    wprintf(_T("Failed to parse start address: %s\n"), arg);
+                    _tprintf(_T("Failed to parse start address: %s\n"), arg);
                     return false;
                 }
-            }
-            else if (arg[1] == 'e')
-            {
+                break;
+            case _T('e'):  // Set disasm End address
                 if (!ParseOctalValue(arg + 2, &g_wEndAddress))
                 {
-                    wprintf(_T("Failed to parse end address: %s\n"), arg);
+                    _tprintf(_T("Failed to parse end address: %s\n"), arg);
                     return false;
                 }
-            }
-            else if (arg[1] == 'v')
-            {
+                break;
+            case _T('v'):  // Show original Values in the disassembly
                 g_okShowValues = true;
-            }
-            else
-            {
-                wprintf(_T("Unknown option: %s\n"), arg);
+                break;
+            case _T('o'):  // Set Output file name
+                {
+                    LPCTSTR pOuFileName = arg + 2;
+                    if (*pOuFileName == _T(':')) pOuFileName++;  // Skip ':' if found
+                    if (*pOuFileName == 0)
+                    {
+                        _tprintf(_T("Output file name is not specified: %s\n"), arg);
+                        return false;
+                    }
+                    _tcscpy(g_sOutFileName, pOuFileName);
+                    break;
+                }
+            default:
+                _tprintf(_T("Unknown option: %s\n"), arg);
                 return false;
             }
         }
@@ -125,7 +127,7 @@ bool ParseCommandLine(int argc, _TCHAR* argv[])
                 g_sSavFileName = arg;
             else
             {
-                wprintf(_T("Unknown param: %s\n"), arg);
+                _tprintf(_T("Unknown param: %s\n"), arg);
                 return false;
             }
         }
@@ -134,7 +136,7 @@ bool ParseCommandLine(int argc, _TCHAR* argv[])
     // Parsed options validation
     if (g_sSavFileName == NULL)
     {
-        wprintf(_T("<SavFileName> not specified.\n"));
+        _tprintf(_T("<SavFileName> not specified.\n"));
         return false;
     }
 
@@ -164,15 +166,15 @@ void DisasmSavImage(uint16_t* pImage, uint16_t wImageSize, FILE* fpOutFile)
             PrintOctalValue(value0, pImage[address / 2]);
             if (length > 1) PrintOctalValue(value1, pImage[address / 2 + 2]); else *value1 = 0;
             if (length > 2) PrintOctalValue(value2, pImage[address / 2 + 4]); else *value2 = 0;
-            wsprintf(buffer, _T("%s\t%s\t%s\t%s\t%-7s\t%s\r\n"), bufaddr, value0, value1, value2, bufinstr, bufargs);
+            _stprintf_s(buffer, 128, _T("%s\t%s\t%s\t%s\t%-7s\t%s\r\n"), bufaddr, value0, value1, value2, bufinstr, bufargs);
         }
         else
         {
-            wsprintf(buffer, _T("%s\t%-7s\t%s\r\n"), bufaddr, bufinstr, bufargs);
+            _stprintf_s(buffer, 128, _T("%s\t%-7s\t%s\r\n"), bufaddr, bufinstr, bufargs);
         }
 
         char ascii[256];  *ascii = 0;
-        DWORD dwLength = lstrlen(buffer) * sizeof(TCHAR);
+        uint16_t dwLength = lstrlen(buffer) * sizeof(TCHAR);
         WideCharToMultiByte(CP_ACP, 0, buffer, dwLength, ascii, 256, NULL, NULL);
 
         ::fwrite(ascii, 1, strlen(ascii), fpOutFile);
@@ -189,14 +191,24 @@ int _tmain(int argc, _TCHAR* argv[])
 
     if (!ParseCommandLine(argc, argv))
     {
-        PrintUsage();
+        if (g_sSavFileName == NULL)
+            PrintUsage();
         return 255;
     }
+
+    if (*g_sOutFileName == 0)
+        _tcscpy(g_sOutFileName, _T("disasm.txt"));
+
+    // Show current settings
+    _tprintf(_T("Input file:\t%s\n"), g_sSavFileName);
+    _tprintf(_T("Output file:\t%s\n"), g_sOutFileName);
+    _tprintf(_T("Start address:\t%06o\n"), g_wStartAddress);
+    _tprintf(_T("End address:\t%06o\n"), g_wEndAddress);
 
     FILE* fpFile = ::_wfopen(g_sSavFileName, _T("rb"));
     if (fpFile == NULL)
     {
-        wprintf(_T("Failed to open the input file.\n"));
+        _tprintf(_T("Failed to open the input file.\n"));
         return 255;
     }
 
@@ -211,15 +223,15 @@ int _tmain(int argc, _TCHAR* argv[])
     ::fclose(fpFile);
     if (lReadSizeFact != lReadSize)
     {
-        wprintf(_T("Failed to read the input file.\n"));
+        _tprintf(_T("Failed to read the input file.\n"));
         ::free(pImage);
         return 255;
     }
 
-    FILE* fpOutFile = ::_wfopen(_T("disasm.txt"), _T("w+b"));
+    FILE* fpOutFile = ::_wfopen(g_sOutFileName, _T("w+b"));
     if (fpOutFile == NULL)
     {
-        wprintf(_T("Failed to open the output file.\n"));
+        _tprintf(_T("Failed to open the output file.\n"));
         ::free(pImage);
         return 255;
     }

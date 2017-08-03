@@ -13,6 +13,17 @@ NEMIGABTL. If not, see <http://www.gnu.org/licenses/>. */
 #pragma once
 
 //////////////////////////////////////////////////////////////////////
+// Disassembler
+
+/// \brief Disassemble one instruction of KM1801VM2 processor
+/// \param[in]  pMemory Memory image (we read only words of the instruction)
+/// \param[in]  addr    Address of the instruction
+/// \param[out] sInstr  Instruction mnemonics buffer - at least 8 characters
+/// \param[out] sArg    Instruction arguments buffer - at least 32 characters
+/// \return  Number of words in the instruction
+uint16_t DisassembleInstruction(uint16_t* pMemory, uint16_t addr, TCHAR* sInstr, TCHAR* sArg);
+
+//////////////////////////////////////////////////////////////////////
 
 
 // Processor register names
