@@ -143,13 +143,13 @@ bool ParseCommandLine(int argc, char* argv[])
     return true;
 }
 
-void DisasmSavImage(uint16_t* pImage, uint16_t wImageSize, FILE* fpOutFile)
+void DisasmSavImage(uint16_t* pImage, FILE* fpOutFile)
 {
     uint16_t address = g_wStartAddress;
 
     for (;;)
     {
-        if (address >= g_wEndAddress || address >= wImageSize)
+        if (address >= g_wEndAddress)
             break;
 
         char bufaddr[8];
@@ -195,12 +195,7 @@ int main(int argc, char* argv[])
     if (*g_sOutFileName == 0)
         strcpy(g_sOutFileName, ("disasm.txt"));
 
-    // Show current settings
-    printf(("Input file:\t%s\n"), g_sSavFileName);
-    printf(("Output file:\t%s\n"), g_sOutFileName);
-    printf(("Start address:\t%06o\n"), g_wStartAddress);
-    printf(("End address:\t%06o\n"), g_wEndAddress);
-
+    printf("Input file:       %s\n", g_sSavFileName);
     FILE* fpFile = ::fopen(g_sSavFileName, ("rb"));
     if (fpFile == NULL)
     {
@@ -223,7 +218,17 @@ int main(int argc, char* argv[])
         ::free(pImage);
         return 255;
     }
+    printf("Input file size:  %06lo  %04lx  %5ld bytes\n", lFileSize, lFileSize, lFileSize);
 
+    // .SAV file analysis
+    uint16_t wStartAddr = *(pImage + 040 / 2);
+    uint16_t wStackAddr = *(pImage + 042 / 2);
+    uint16_t wTopAddr = *(pImage + 050 / 2);
+    printf("SAV Start:        %06o  %04x  %5d\n", wStartAddr, wStartAddr, wStartAddr);
+    printf("SAV Stack:        %06o  %04x  %5d\n", wStackAddr, wStackAddr, wStackAddr);
+    printf("SAV Top:          %06o  %04x  %5d\n", wTopAddr, wTopAddr, wTopAddr);
+
+    printf("Output file:      %s\n", g_sOutFileName);
     FILE* fpOutFile = ::fopen(g_sOutFileName, ("w+b"));
     if (fpOutFile == NULL)
     {
@@ -232,7 +237,16 @@ int main(int argc, char* argv[])
         return 255;
     }
 
-    DisasmSavImage(pImage, (uint16_t)lReadSize, fpOutFile);
+    if (g_wEndAddress > lReadSize) g_wEndAddress = (uint16_t)lReadSize;
+
+    printf("Disasm start:     %06o  %04x  %5d\n", g_wStartAddress, g_wStartAddress, g_wStartAddress);
+    printf("Disasm end:       %06o  %04x  %5d\n", g_wEndAddress, g_wEndAddress, g_wEndAddress);
+
+    DisasmSavImage(pImage, fpOutFile);
+
+    long lOutFileSize = ::ftell(fpOutFile);
+    ::fclose(fpOutFile);
+    printf("Output file size:             %7ld bytes\n", lOutFileSize, lOutFileSize, lOutFileSize);
 
     ::free(pImage);
 
