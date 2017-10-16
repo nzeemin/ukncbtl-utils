@@ -37,6 +37,8 @@ bool ParseCommandLine(int argc, char* argv[])
                 g_OutputDriverType = OUTPUT_DRIVER_SVG;
             else if (_stricmp(arg + 1, "ps") == 0)
                 g_OutputDriverType = OUTPUT_DRIVER_POSTSCRIPT;
+            else if (_stricmp(arg + 1, "pdf") == 0)
+                g_OutputDriverType = OUTPUT_DRIVER_PDF;
             else
             {
                 std::cerr << "Unknown option: " << arg << std::endl;
@@ -88,6 +90,9 @@ void main(int argc, char* argv[])
         break;
     case OUTPUT_DRIVER_POSTSCRIPT:
         g_pOutputDriver = new OutputDriverPostScript(std::cout);
+        break;
+    case OUTPUT_DRIVER_PDF:
+        g_pOutputDriver = new OutputDriverPdf(std::cout);
         break;
     default:
         std::cerr << "Output driver type is not defined." << std::endl;

@@ -12,6 +12,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #define _ESCPARSER_H_
 
 #include <iostream>
+#include <vector>
 
 extern unsigned short RobotronFont[];
 
@@ -24,6 +25,7 @@ enum
     OUTPUT_DRIVER_UNKNOWN = 0,
     OUTPUT_DRIVER_SVG = 1,
     OUTPUT_DRIVER_POSTSCRIPT = 2,
+    OUTPUT_DRIVER_PDF = 3,
 };
 
 // Base abstract class for output drivers
@@ -82,6 +84,39 @@ public:
     virtual void WritePageBeginning(int pageno);
     virtual void WritePageEnding();
     virtual void WriteStrike(float x, float y, float r);
+};
+
+
+struct PdfXrefItem
+{
+    std::streamoff offset;
+    int size;
+    char flag;
+public:
+    PdfXrefItem(std::streamoff anoffset, int asize, char aflag)
+    {
+        offset = anoffset;
+        size = asize;
+        flag = aflag;
+    }
+};
+// PDF driver with multipage support
+class OutputDriverPdf : public OutputDriver
+{
+public:
+    OutputDriverPdf(std::ostream& output) : OutputDriver(output) { };
+
+public:
+    virtual void WriteBeginning(int pagestotal);
+    virtual void WriteEnding();
+    virtual void WritePageBeginning(int pageno);
+    virtual void WritePageEnding();
+    virtual void WriteStrike(float x, float y, float r);
+
+private:
+    std::vector<PdfXrefItem> xref;
+    std::string pagebuf;
+    float strikesize;
 };
 
 
