@@ -1,2 +1,8 @@
 /Debug
 /Release
+/*.ncb
+/*.suo
+*.user
+/ipch
+*.sdf
+*.opensdf

@@ -11,6 +11,8 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "ESCParser.h"
 #include <iomanip>
 
+#include "zlib/zlib.h"
+
 
 //////////////////////////////////////////////////////////////////////
 // SVG driver
@@ -82,6 +84,9 @@ void OutputDriverPostScript::WriteStrike(float x, float y, float r)
 //////////////////////////////////////////////////////////////////////
 // PDF driver
 
+// See below
+void ascii85_encode_tuple(const unsigned char* src, char* dst);
+
 const float PdfPageSizeX = 595.0f;
 const float PdfPageSizeY = 842.0f;
 
@@ -151,9 +156,51 @@ void OutputDriverPdf::WritePageBeginning(int pageno)
 
 void OutputDriverPdf::WritePageEnding()
 {
-    m_output << "/Length " << pagebuf.length() << ">>stream" << std::endl;
-    m_output << pagebuf.c_str() << std::endl;
-    m_output << "endstream" << std::endl << "endobj" << std::endl;
+    // Preparing for inflate
+    size_t outsize = pagebuf.length() + pagebuf.length() / 2 + 200;
+    outsize = (outsize + 3) / 4 * 4;  // Make sure we have 4-byte aligned size
+    Bytef* zbuffer = new Bytef[outsize];  memset(zbuffer, 0, outsize);
+    z_stream zstrm;  memset(&zstrm, 0, sizeof(zstrm));
+    zstrm.avail_in = pagebuf.length();
+    zstrm.avail_out = outsize;
+    zstrm.next_in = (Bytef*) pagebuf.c_str();
+    zstrm.next_out = zbuffer;
+    // Trying to inflate
+    bool inflatedok = false;
+    int rsti = deflateInit(&zstrm, Z_DEFAULT_COMPRESSION);
+    if (rsti == Z_OK)
+    {
+        int rst2 = deflate(&zstrm, Z_FINISH);
+        if (rst2 >= 0)
+            inflatedok = true;
+    }
+    size_t inflatesize = zstrm.total_out;
+
+    if (inflatedok)
+    {
+        std::string pagebufz;
+        char buffer[6];  memset(buffer, 0, sizeof(buffer));
+        for (size_t i = 0; i < inflatesize; i += 4)
+        {
+            unsigned char * bytes = zbuffer + i;
+            ascii85_encode_tuple(bytes, buffer);
+            pagebufz.append(buffer);
+        }
+        pagebufz.append("~>");
+
+        m_output << "/Length " << pagebufz.length() << " /Filter [/ASCII85Decode /FlateDecode]>>stream" << std::endl;
+        m_output << pagebufz.c_str() << std::endl;
+        m_output << "endstream" << std::endl << "endobj" << std::endl;
+    }
+    else
+    {
+        m_output << "/Length " << pagebuf.length() << ">>stream" << std::endl;
+        m_output << pagebuf.c_str() << std::endl;
+        m_output << "endstream" << std::endl << "endobj" << std::endl;
+    }
+
+    deflateEnd(&zstrm);
+    delete[] zbuffer;  zbuffer = 0;
 }
 
 void OutputDriverPdf::WriteStrike(float x, float y, float r)
@@ -174,5 +221,43 @@ void OutputDriverPdf::WriteStrike(float x, float y, float r)
     pagebuf.append(buffer);
 }
 
+//////////////////////////////////////////////////////////////////////
+// ASCII85 encoding for PDF
+
+typedef unsigned int  uint32_t;
+// make sure uint32_t is 32-bit
+typedef char Z85_uint32_t_static_assert[(sizeof(uint32_t) * 8 == 32) * 2 - 1];
+
+#define DIV85_MAGIC 3233857729ULL
+// make sure magic constant is 64-bit
+typedef char Z85_div85_magic_static_assert[(sizeof(DIV85_MAGIC) * 8 == 64) * 2 - 1];
+
+#define DIV85(number) ((uint32_t)((DIV85_MAGIC * number) >> 32) >> 6)
+
+static const char* base85 =
+    "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu";
+
+void ascii85_encode_tuple(const unsigned char* src, char* dst)
+{
+    uint32_t value;
+    uint32_t value2;
+
+    // unpack big-endian frame
+    value = (src[0] << 24) | (src[1] << 16) | (src[2] << 8) | src[3];
+
+    if (value == 0)  // Special case for zero
+    {
+        dst[0] = 'z';
+        dst[2] = dst[3] = dst[4] = dst[5] = 0;
+    }
+    else
+    {
+        value2 = DIV85(value); dst[4] = base85[value - value2 * 85]; value = value2;
+        value2 = DIV85(value); dst[3] = base85[value - value2 * 85]; value = value2;
+        value2 = DIV85(value); dst[2] = base85[value - value2 * 85]; value = value2;
+        value2 = DIV85(value); dst[1] = base85[value - value2 * 85];
+        dst[0] = base85[value2];
+    }
+}
 
 //////////////////////////////////////////////////////////////////////
