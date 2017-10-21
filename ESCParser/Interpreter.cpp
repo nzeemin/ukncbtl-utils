@@ -62,8 +62,9 @@ void EscInterpreter::UpdateShiftX()
 bool EscInterpreter::InterpretNext()
 {
     if (IsEndOfFile()) return false;
-
     unsigned char ch = GetNextByte();
+    if (IsEndOfFile()) return false;
+
     switch (ch)
     {
     case 0/*NUL*/: case 7/*BEL*/: case 17/*DC1*/: case 19/*DC3*/: case 127/*DEL*/:

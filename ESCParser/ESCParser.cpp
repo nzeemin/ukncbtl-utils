@@ -69,7 +69,8 @@ void PrintUsage()
             << "\tESCParser [options] InputFile > OutputFile" << std::endl
             << "Options:" << std::endl
             << "\t-ps\tPostScript output with multipage support" << std::endl
-            << "\t-svg\tSVG output, no multipage support" << std::endl;
+            << "\t-svg\tSVG output, no multipage support" << std::endl
+            << "\t-pdf\tPDF output with multipage support" << std::endl;
 }
 
 void main(int argc, char* argv[])
@@ -151,18 +152,18 @@ void main(int argc, char* argv[])
         // Run the interpreter to produce the pages
         while (true)
         {
-            if (!intrpr.InterpretNext())
-            {
-                g_pOutputDriver->WritePageEnding();
+            if (intrpr.InterpretNext())
+                continue;
 
-                if (intrpr.IsEndOfFile())
-                    break;
+            g_pOutputDriver->WritePageEnding();
 
-                pageno++;
-                std::cerr << "Page " << pageno << std::endl;
+            if (intrpr.IsEndOfFile())
+                break;
 
-                g_pOutputDriver->WritePageBeginning(pageno);
-            }
+            pageno++;
+            std::cerr << "Page " << pageno << std::endl;
+
+            g_pOutputDriver->WritePageBeginning(pageno);
         }
 
         g_pOutputDriver->WriteEnding();
