@@ -143,7 +143,7 @@ void main(int argc, char* argv[])
         // Prepare the output driver
         g_pOutputDriver->WriteBeginning(pagestotal);
         int pageno = 1;
-        std::cerr << "Page " << pageno << std::endl;
+        std::cerr << "Page " << pageno << " ";
         g_pOutputDriver->WritePageBeginning(pageno);
 
         // Initialize the interpreter
@@ -156,15 +156,17 @@ void main(int argc, char* argv[])
                 continue;
 
             g_pOutputDriver->WritePageEnding();
+            std::cerr << "\r";
 
             if (intrpr.IsEndOfFile())
                 break;
 
             pageno++;
-            std::cerr << "Page " << pageno << std::endl;
+            std::cerr << "Page " << pageno << " ";
 
             g_pOutputDriver->WritePageBeginning(pageno);
         }
+        std::cerr << std::endl;
 
         g_pOutputDriver->WriteEnding();
     }

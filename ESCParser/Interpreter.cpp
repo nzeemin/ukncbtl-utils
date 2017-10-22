@@ -40,6 +40,7 @@ void EscInterpreter::PrinterReset()
     m_fontsp = m_fontdo = m_fontfe = m_fontks = m_fontel = m_fontun = false;
     m_shifty = 720 / 6;  // 6 lines/inch
     UpdateShiftX();
+    m_limitright = m_shiftx * 80;
 
     m_superscript = m_subscript = false;
     m_charset = 0;
@@ -116,6 +117,11 @@ bool EscInterpreter::InterpretNext()
 
         /* иначе "напечатать" символ */
     default:
+        if (m_x >= m_limitright)  // При превышении длины строки -- автоматический переход на следующую
+        {
+            m_x = 0;
+            m_y += m_shifty;
+        }
         PrintCharacter(ch);
         m_x += m_shiftx;
         break;
@@ -188,8 +194,12 @@ bool EscInterpreter::InterpretEscape()
         while (GetNextByte() != 0);
         break;
     case 'Q': //Set right margin - игнорировать ???
-        GetNextByte();
+    {
+        int n = (int)GetNextByte();
+        if (n > 0 && m_shiftx * n <= 720 * 8)  // Не меньше одного символа и не больше полезной ширины формата (8 дюймов)
+            m_limitright = m_shiftx * n;
         break;
+    }
 
     case 'K': /* 8-bit single density graphics */
         printGR9(12);  // 72 / 1.2 = 60

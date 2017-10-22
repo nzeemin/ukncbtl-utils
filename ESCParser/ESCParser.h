@@ -132,6 +132,7 @@ private:  // Input and output
 private:  // Current state
     int  m_x, m_y;      // Current position
     int  m_marginleft, m_margintop;
+    int  m_limitright;
     int  m_shiftx, m_shifty;  // Shift for text printout
     bool m_printmode;   // false - DRAFT, true - LQ
     bool m_endofpage;
