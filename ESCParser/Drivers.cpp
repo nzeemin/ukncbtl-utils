@@ -87,8 +87,8 @@ void OutputDriverPostScript::WriteStrike(float x, float y, float r)
 // See below
 void ascii85_encode_tuple(const unsigned char* src, char* dst);
 
-const float PdfPageSizeX = 595.0f;
-const float PdfPageSizeY = 842.0f;
+const float PdfPageSizeX = 595.0f;  // A4 210mm / 25.4 * 72, rounded
+const float PdfPageSizeY = 842.0f;  // A4 297mm / 25.4 * 72, rounded
 
 void OutputDriverPdf::WriteBeginning(int pagestotal)
 {

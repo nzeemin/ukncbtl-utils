@@ -163,7 +163,7 @@ protected:
     // Reset the printer settings
     void PrinterReset();
     // Print graphics
-    void printGR9(int dx);
+    void printGR9(int dx, bool dblspeed = false);
     // Print graphics
     void printGR24(int dx);
     // Print the symbol using current charset

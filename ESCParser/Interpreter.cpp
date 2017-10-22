@@ -17,7 +17,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 EscInterpreter::EscInterpreter(std::istream& input, OutputDriver& output) :
     m_output(output), m_input(input)
 {
-    m_marginleft = 320;
+    m_marginleft = 96;
     m_margintop = 160;
 
     PrinterReset();
@@ -191,44 +191,50 @@ bool EscInterpreter::InterpretEscape()
         GetNextByte();
         break;
 
-        //Bit image graphics mode !!! - недоделано
     case 'K': /* 8-bit single density graphics */
-    case 'L': /* the same */
-        printGR9(2 * 6);
+        printGR9(12);  // 72 / 1.2 = 60
+        break;
+    case 'L': /* 8-bit double density graphics */
+        printGR9(6);  // 72 / 0.6 = 120
         break;
     case 'Y': /* 8-bit double-speed double-density graphics */
-        printGR9(2 * 3);
+        printGR9(6, true);  // 72 / 0.6 = 120
         break;
     case 'Z': /* 8-bit quadple-density graphics */
-        printGR9(3 /* = 2*1.5 */);
+        printGR9(3, true);  // 72 / 0.3 = 240
         break;
     case '*': /* Bit Image Graphics Mode */
         switch (GetNextByte())
         {
-        case 0: /* same as ESC K graphic command */
-        case 1: /* same as ESC L graphic command */
-            printGR9(2 * 6);
+        case 0: /* same as ESC K, Normal 60 dpi */
+            printGR9(12);  // 72 / 1.2 = 60
             break;
-        case 2: /* same as ESC Y graphic command */
-            printGR9(2 * 3);
+        case 1: /* same as ESC L, Double 120 dpi */
+            printGR9(6);  // 72 / 0.6 = 120
             break;
-        case 3: /* same as ESC Z graphic command */
-            printGR9(3);
+        case 2: /* same as ESC Y, Double speed 120 dpi */
+            printGR9(6, true);  // 72 / 0.6 = 120
             break;
-        case 4: /* CRT 1 */
-            printGR9(9);
+        case 3: /* same as ESC Z, Quadruple 240 dpi */
+            printGR9(3, true);  // 72 / 0.3 = 240
             break;
-        case 5:
-            //TODO
+        case 4: /* CRT 1, Semi-double 80 dpi */
+            printGR9(9);  // 72 / 0.9 = 80
             break;
-        case 6: /* CRT 2 */
-            printGR9(8);
+        case 5: /* Plotter 72 dpi */
+            printGR9(10);  // 72 / 1.0 = 72
+            break;
+        case 6: /* CRT 2, 90 dpi */
+            printGR9(8);  // 72 / 0.8 = 90
+            break;
+        case 7: /* Double Plotter 144 pdi */
+            printGR9(5);  // 72 / 0.5 = 144
             break;
         case 32:  /* High-resolution for ESC K */
             printGR24(2 * 6);
             break;
         case 33:  /* High-resolution for ESC L */
-            printGR24(2 * 3);
+            printGR24(6);
             break;
         case 38:  /* CRT 3 */
             printGR24(2 * 4);
@@ -359,22 +365,28 @@ bool EscInterpreter::InterpretEscape()
     return true;
 }
 
-void EscInterpreter::printGR9(int dx)
+void EscInterpreter::printGR9(int dx, bool dblspeed)
 {
     int width = GetNextByte();  // Количество "кусочков" данных о изображении
     width += 256 * (int)GetNextByte();
 
     // Читать и выводить данные
+    unsigned char lastfbyte = 0;
     for (; width > 0; width--)
     {
         unsigned char fbyte = GetNextByte();
+        if (dblspeed)  // В режиме высокой скорости игнорируем подряд встречающиеся удары
+        {
+            fbyte &= ~lastfbyte;
+            lastfbyte = fbyte;
+        }
         unsigned char mask = 0x80;
         for (int i = 0; i < 8; i++)
         {
             if (fbyte & mask)
             {
                 DrawStrike(float(m_x), float(m_y + i * 12));
-                /* 12 соответствует 1/60 inch... На самом деле расстояние мажду иглами у
+                /* 12 соответствует 1/60 inch... На самом деле расстояние между иглами у
                 9-pin dot matrix printers = 1/72 inch, но при эмуляции на 24-pin принимается 1/60 */
             }
             mask >>= 1;
@@ -400,7 +412,7 @@ void EscInterpreter::printGR24(int dx)
                 if (fbyte & mask)
                 {
                     DrawStrike(float(m_x), float((m_y + (n * 4 * 8/*игл*/) + i * 4)));
-                    /* 4 соответствует 1/180 inch - расстояние мажду иглами у 24-pin dot matrix printers */
+                    /* 4 соответствует 1/180 inch - расстояние между иглами у 24-pin dot matrix printers */
                 }
                 mask >>= 1;
             }
