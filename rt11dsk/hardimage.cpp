@@ -45,10 +45,10 @@ static DWORD CheckHomeBlockChecksum(void* buffer)
     DWORD crc = 0;
     for (int i = 0; i < 255; i++)
     {
-        crc += (DWORD) *p;
+        crc += (DWORD) * p;
         p++;
     }
-    crc += ((DWORD)*p) << 16;
+    crc += ((DWORD) * p) << 16;
 
     return crc;
 }
@@ -335,7 +335,7 @@ void CHardImage::InvertImage()
             return;
         }
     }
-    
+
     wprintf(_T("\nDone.\n"));
 }
 

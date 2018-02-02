@@ -166,7 +166,7 @@ bool ParseCommandLine(int argc, _TCHAR* argv[])
         return false;
     }
     CommandInfo* pcinfo = NULL;
-    for (int i = 0; i < sizeof(g_CommandInfos)/sizeof(CommandInfo); i++)
+    for (int i = 0; i < sizeof(g_CommandInfos) / sizeof(CommandInfo); i++)
     {
         if (wcscmp(g_sCommand, g_CommandInfos[i].command) == 0)
         {

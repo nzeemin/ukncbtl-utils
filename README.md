@@ -13,3 +13,5 @@ Utilites:
 * [sav2wav](https://github.com/nzeemin/ukncbtl-utils/wiki/sav2wav) -- converts RT11 SAV files to WAV sound files.
 * [UkncComSender](https://github.com/nzeemin/ukncbtl-utils/wiki/UkncComSender) -- sends RT11 SAV files to UKNC using serial port.
 * [ESCParser](https://github.com/nzeemin/ukncbtl-utils/wiki/ESCParser) -- ESC/P parser/interpreter with PostScript/SVG output.
+* [Sav2Cartridge](https://github.com/nzeemin/ukncbtl-utils/wiki/Sav2Cartridge) -- converts RT11 SAV files into UKNCBTL cartridge images.
+* [SavDisasm](https://github.com/nzeemin/ukncbtl-utils/wiki/SavDisasm) -- SAV files disassembler.

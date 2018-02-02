@@ -402,9 +402,9 @@ void CDiskImage::DecodeImageCatalog()
 
     // Получаем память под список сегментов
     m_volumeinfo.catalogsegments = (CVolumeCatalogSegment*) ::malloc(
-        sizeof(CVolumeCatalogSegment) * m_volumeinfo.catalogsegmentcount);
+            sizeof(CVolumeCatalogSegment) * m_volumeinfo.catalogsegmentcount);
     memset(m_volumeinfo.catalogsegments, 0,
-        sizeof(CVolumeCatalogSegment) * m_volumeinfo.catalogsegmentcount);
+           sizeof(CVolumeCatalogSegment) * m_volumeinfo.catalogsegmentcount);
 
     //TODO: Для заголовка самого первого сегмента каталога существует правило:
     //      если удвоить содержимое слова 1 и к результату прибавить начальный блок каталога (обычно 6),
@@ -427,9 +427,9 @@ void CDiskImage::DecodeImageCatalog()
 
         // Выделяем память под записи сегмента
         pSegment->catalogentries = (CVolumeCatalogEntry*) ::malloc(
-            sizeof(CVolumeCatalogEntry) * nEntriesPerSegment);
+                sizeof(CVolumeCatalogEntry) * nEntriesPerSegment);
         memset(pSegment->catalogentries, 0,
-            sizeof(CVolumeCatalogEntry) * nEntriesPerSegment);
+               sizeof(CVolumeCatalogEntry) * nEntriesPerSegment);
 
         CVolumeCatalogEntry* pEntry = pSegment->catalogentries;
         WORD* pCatalog = pCatalogSector + 5;  // Начало описаний файлов
@@ -495,7 +495,7 @@ void CDiskImage::PrintCatalogDirectory()
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
         if (pSegment->catalogentries == NULL) continue;
-        
+
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
         {
             CVolumeCatalogEntry* pEntry = pSegment->catalogentries + entryno;
@@ -531,7 +531,7 @@ void CDiskImage::SaveEntryToExternalFile(LPCTSTR sFileName)
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
         if (pSegment->catalogentries == NULL) continue;
-        
+
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
         {
             CVolumeCatalogEntry* pEntry = pSegment->catalogentries + entryno;
@@ -704,7 +704,7 @@ void CDiskImage::AddFileToImage(LPCTSTR sFileName)
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
         if (pSegment->catalogentries == NULL) continue;
-        
+
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
         {
             CVolumeCatalogEntry* pEntry = pSegment->catalogentries + entryno;
@@ -782,7 +782,7 @@ void CDiskImage::AddFileToImage(LPCTSTR sFileName)
         memcpy(pData, pFileBlockData, RT11_BLOCK_SIZE);
         // Сообщаем что блок был изменен
         MarkBlockChanged(nBlock);
-        
+
         nBlock++;
     }
     free(pFileData);
@@ -874,7 +874,7 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
             if (pEntry->status != RT11_STATUS_EMPTY) continue;
 
             pEntry->Print();
-            
+
             unusedno++;
             TCHAR filename[20];
             _stprintf_s(filename, 20, _T("UNUSED%02d"), unusedno);
