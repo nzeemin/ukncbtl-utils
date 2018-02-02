@@ -6,3 +6,6 @@
 /ipch
 *.sdf
 *.opensdf
+/*.prn
+/*.log
+/*.pdf

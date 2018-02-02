@@ -194,12 +194,12 @@ bool EscInterpreter::InterpretEscape()
         while (GetNextByte() != 0);
         break;
     case 'Q': //Set right margin - игнорировать ???
-    {
-        int n = (int)GetNextByte();
-        if (n > 0 && m_shiftx * n <= 720 * 8)  // Не меньше одного символа и не больше полезной ширины формата (8 дюймов)
-            m_limitright = m_shiftx * n;
-        break;
-    }
+        {
+            int n = (int)GetNextByte();
+            if (n > 0 && m_shiftx * n <= 720 * 8)  // Не меньше одного символа и не больше полезной ширины формата (8 дюймов)
+                m_limitright = m_shiftx * n;
+            break;
+        }
 
     case 'K': /* 8-bit single density graphics */
         printGR9(12);  // 72 / 1.2 = 60

@@ -6,3 +6,5 @@
 /ipch
 *.sdf
 *.opensdf
+*.BIN
+*.SAV
