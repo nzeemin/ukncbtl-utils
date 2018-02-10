@@ -201,8 +201,7 @@ void CDiskImage::PostAttach()
     // Allocate memory for the cache
     m_nCacheBlocks = 1024;  //NOTE: For up to 1024 blocks, for 512K of data
     if (m_nCacheBlocks > m_nTotalBlocks) m_nCacheBlocks = m_nTotalBlocks;
-    m_pCache = (CCachedBlock*) ::malloc(m_nCacheBlocks * sizeof(CCachedBlock));
-    ::memset(m_pCache, 0, m_nCacheBlocks * sizeof(CCachedBlock));
+    m_pCache = (CCachedBlock*) ::calloc(m_nCacheBlocks, sizeof(CCachedBlock));
 
     // Initial read: fill half of the cache
     int nBlocks = 10;
@@ -323,13 +322,12 @@ void* CDiskImage::GetBlock(int nBlock)
 
     m_pCache[iEmpty].nBlock = nBlock;
     m_pCache[iEmpty].bChanged = false;
-    m_pCache[iEmpty].pData = ::malloc(RT11_BLOCK_SIZE);
+    m_pCache[iEmpty].pData = ::calloc(1, RT11_BLOCK_SIZE);
     if (m_pCache[iEmpty].pData == NULL)
     {
         wprintf(_T("Failed to allocate memory for block number %d.\n"), nBlock);
         _exit(-1);
     }
-    ::memset(m_pCache[iEmpty].pData, 0, RT11_BLOCK_SIZE);
     m_pCache[iEmpty].cLastUsage = ::clock();
 
     // Load the block data
@@ -401,10 +399,8 @@ void CDiskImage::DecodeImageCatalog()
     }
 
     // Получаем память под список сегментов
-    m_volumeinfo.catalogsegments = (CVolumeCatalogSegment*) ::malloc(
-            sizeof(CVolumeCatalogSegment) * m_volumeinfo.catalogsegmentcount);
-    memset(m_volumeinfo.catalogsegments, 0,
-           sizeof(CVolumeCatalogSegment) * m_volumeinfo.catalogsegmentcount);
+    m_volumeinfo.catalogsegments = (CVolumeCatalogSegment*) ::calloc(
+            m_volumeinfo.catalogsegmentcount, sizeof(CVolumeCatalogSegment));
 
     //TODO: Для заголовка самого первого сегмента каталога существует правило:
     //      если удвоить содержимое слова 1 и к результату прибавить начальный блок каталога (обычно 6),
@@ -426,10 +422,8 @@ void CDiskImage::DecodeImageCatalog()
         //wprintf(_T("Next segment:           %d\n"), pSegment->nextsegment);
 
         // Выделяем память под записи сегмента
-        pSegment->catalogentries = (CVolumeCatalogEntry*) ::malloc(
-                sizeof(CVolumeCatalogEntry) * nEntriesPerSegment);
-        memset(pSegment->catalogentries, 0,
-               sizeof(CVolumeCatalogEntry) * nEntriesPerSegment);
+        pSegment->catalogentries = (CVolumeCatalogEntry*) ::calloc(
+                nEntriesPerSegment, sizeof(CVolumeCatalogEntry));
 
         CVolumeCatalogEntry* pEntry = pSegment->catalogentries;
         WORD* pCatalog = pCatalogSector + 5;  // Начало описаний файлов
@@ -683,8 +677,7 @@ void CDiskImage::AddFileToImage(LPCTSTR sFileName)
     //TODO: Проверка, не слишком ли длинный файл для этого тома
 
     // Выделяем память и считываем данные файла
-    void* pFileData = ::malloc(dwFileSize);
-    memset(pFileData, 0, dwFileSize);
+    void* pFileData = ::calloc(dwFileSize, 1);
     ::fseek(fpFile, 0, SEEK_SET);
     size_t lBytesRead = ::fread(pFileData, 1, lFileLength, fpFile);
     if (lBytesRead != lFileLength)

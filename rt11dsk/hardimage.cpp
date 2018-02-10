@@ -138,8 +138,7 @@ bool CHardImage::Attach(LPCTSTR sImageFileName)
     m_nPartitions = count;
     if (m_nPartitions > 0)
     {
-        m_pPartitionInfos = (CPartitionInfo*) ::malloc(sizeof(CPartitionInfo) * m_nPartitions);
-        ::memset(m_pPartitionInfos, 0, sizeof(CPartitionInfo) * m_nPartitions);
+        m_pPartitionInfos = (CPartitionInfo*) ::calloc(m_nPartitions, sizeof(CPartitionInfo));
 
         // Prepare m_pPartitionInfos
         long offset = 512;
