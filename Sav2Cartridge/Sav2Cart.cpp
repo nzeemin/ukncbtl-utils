@@ -10,8 +10,6 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 // Sav2Cart.cpp
 
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -302,6 +300,7 @@ BYTE* pCartImage = NULL;
 WORD wStartAddr;
 WORD wStackAddr;
 WORD wTopAddr;
+errno_t err;
 
 int main(int argc, char* argv[])
 {
@@ -311,15 +310,15 @@ int main(int argc, char* argv[])
         return 255;
     }
 
-    strcpy(inputfilename, argv[1]);
-    strcpy(outputfilename, argv[2]);
+    strcpy_s(inputfilename, argv[1]);
+    strcpy_s(outputfilename, argv[2]);
 
     printf("Input file: %s\n", inputfilename);
 
-    inputfile = fopen(inputfilename, "rb");
-    if (inputfile == NULL)
+    err = fopen_s(&inputfile, inputfilename, "rb");
+    if (err != 0)
     {
-        printf("Failed to open the input file.");
+        printf("Failed to open the input file (%d).", err);
         return 255;
     }
     ::fseek(inputfile, 0, SEEK_END);
@@ -346,8 +345,12 @@ int main(int argc, char* argv[])
     size_t savImageSize = ((size_t)wTopAddr + 2 - 01000);
     printf("SAV Image Size\t%06o  %04x  %5d\n", savImageSize, savImageSize, savImageSize);
 
-    pCartImage = (BYTE*) ::malloc(24576);
-    ::memset(pCartImage, 0, 24576);
+    pCartImage = (BYTE*) ::calloc(24576, 1);
+    if (pCartImage == NULL)
+    {
+        printf("Failed to allocate memory.");
+        return 255;
+    }
 
     if (inputfileSize <= 24576)  // Copy SAV image as is, add loader
     {
@@ -370,8 +373,12 @@ int main(int argc, char* argv[])
         }
 
         // Trying to decode to make sure encoder works fine
-        BYTE* pTempBuffer = (BYTE*) ::malloc(savImageSize);
-        ::memset(pTempBuffer, 0, 24576);
+        BYTE* pTempBuffer = (BYTE*) ::calloc(savImageSize, 1);
+        if (pCartImage == NULL)
+        {
+            printf("Failed to allocate memory.");
+            return 255;
+        }
         size_t decodedSize = DecodeRLE(pCartImage + 512, 24576 - 512, pTempBuffer, savImageSize);
         for (size_t offset = 0; offset < savImageSize; offset++)
         {
@@ -409,10 +416,10 @@ int main(int argc, char* argv[])
     ::free(pFileImage);
 
     printf("Output file: %s\n", outputfilename);
-    outputfile = fopen(outputfilename, "w+b");
-    if (outputfile == NULL)
+    err = fopen_s(&outputfile, outputfilename, "rb");
+    if (err != 0)
     {
-        printf("Failed to open output file.");
+        printf("Failed to open output file (%d).", err);
         return 255;
     }
 
@@ -426,6 +433,6 @@ int main(int argc, char* argv[])
 
     ::free(pCartImage);
 
-    printf("Done.\n", outputfilename);
+    printf("Done.\n");
     return 0;
 }
