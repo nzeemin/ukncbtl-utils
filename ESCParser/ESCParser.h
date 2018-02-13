@@ -36,6 +36,7 @@ protected:
 
 public:
     OutputDriver(std::ostream& output) : m_output(output) { }
+    virtual ~OutputDriver() { }
 
 public:
     // Write beginning of the document
@@ -104,7 +105,7 @@ public:
 class OutputDriverPdf : public OutputDriver
 {
 public:
-    OutputDriverPdf(std::ostream& output) : OutputDriver(output) { };
+    OutputDriverPdf(std::ostream& output) : OutputDriver(output) { strikesize = 0.1f; };
 
 public:
     virtual void WriteBeginning(int pagestotal);

@@ -19,6 +19,10 @@ EscInterpreter::EscInterpreter(std::istream& input, OutputDriver& output) :
 {
     m_marginleft = 96;
     m_margintop = 160;
+    m_endofpage = false;
+    m_fontsp = m_fontdo = m_fontfe = m_fontks = m_fontel = m_fontun = false;
+    m_superscript = m_subscript = false;
+    m_charset = 0;
 
     PrinterReset();
 }
@@ -433,7 +437,7 @@ void EscInterpreter::printGR24(int dx)
 
 void EscInterpreter::PrintCharacter(unsigned char ch)
 {
-    if (ch < 32 || ch > 255) return;
+    if (ch < 32) return;
     if (ch < 160 && ch > 126) return;
 
     // Вычисляем символ знакогенератора по текущему набору символов
