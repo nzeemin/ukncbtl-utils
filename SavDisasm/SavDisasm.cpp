@@ -203,8 +203,13 @@ int main(int argc, char* argv[])
         return 255;
     }
 
-    uint16_t* pImage = (uint16_t*) ::malloc(65536);
-    ::memset(pImage, 0, 65536);
+    uint16_t* pImage = (uint16_t*) ::calloc(65536, 1);
+    if (pImage == NULL)
+    {
+        ::fclose(fpFile);
+        printf(("Failed to allocate memory.\n"));
+        return 255;
+    }
 
     ::fseek(fpFile, 0, SEEK_END);
     long lFileSize = ::ftell(fpFile);
@@ -246,7 +251,7 @@ int main(int argc, char* argv[])
 
     long lOutFileSize = ::ftell(fpOutFile);
     ::fclose(fpOutFile);
-    printf("Output file size:             %7ld bytes\n", lOutFileSize, lOutFileSize, lOutFileSize);
+    printf("Output file size:             %7ld bytes\n", lOutFileSize);
 
     ::free(pImage);
 
