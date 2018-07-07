@@ -670,7 +670,7 @@ void CDiskImage::AddFileToImage(LPCTSTR sFileName)
     ::fseek(fpFile, 0, SEEK_END);
     long lFileLength = ::ftell(fpFile);  // Точная длина файла
     WORD nFileSizeBlocks =  // Требуемая ширина свободного места в блоках
-        (WORD) (lFileLength + RT11_BLOCK_SIZE - 1) / RT11_BLOCK_SIZE;
+        (WORD) ((lFileLength + RT11_BLOCK_SIZE - 1) / RT11_BLOCK_SIZE);
     DWORD dwFileSize =  // Длина файла с учетом округления до полного блока
         ((DWORD) nFileSizeBlocks) * RT11_BLOCK_SIZE;
     //TODO: Проверка на файл нулевой длины
