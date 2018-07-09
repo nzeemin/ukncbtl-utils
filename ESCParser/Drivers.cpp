@@ -141,7 +141,7 @@ void OutputDriverPdf::WritePageBeginning(int pageno)
     int objnopage = pageno * 2 + 2;  // 4, 6, 8, etc.
     int objnostream = pageno * 2 + 3;  // 5, 7, 9, etc.
     m_output << objnopage << " 0 obj<</Type /Page /Parent 3 0 R ";
-    m_output << "/MediaBox [0 0 595 842] ";  // Page bounds
+    m_output << "/MediaBox [0 0 " << PdfPageSizeX << " " << PdfPageSizeY << "] ";  // Page bounds
     m_output << "/Contents " << objnostream << " 0 R ";
     m_output << "/Resources<< >> >>" << std::endl;  // Resources is required key
     m_output << "endobj" << std::endl;

@@ -134,6 +134,7 @@ private:  // Current state
     int  m_x, m_y;      // Current position
     int  m_marginleft, m_margintop;
     int  m_limitright;
+    int  m_limitbottom;
     int  m_shiftx, m_shifty;  // Shift for text printout
     bool m_printmode;   // false - DRAFT, true - LQ
     bool m_endofpage;
@@ -162,6 +163,10 @@ protected:
     unsigned char GetNextByte();
     // Update m_shiftx according to current font settings
     void UpdateShiftX();
+    // Increment m_y by shifty; proceed to the next page if needed
+    void ShiftY(int shifty);
+    // End the current page
+    void NextPage();
     // Reset the printer settings
     void PrinterReset();
     // Print graphics

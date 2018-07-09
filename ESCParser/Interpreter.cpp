@@ -45,6 +45,7 @@ void EscInterpreter::PrinterReset()
     m_shifty = 720 / 6;  // 6 lines/inch
     UpdateShiftX();
     m_limitright = m_shiftx * 80;
+    m_limitbottom = 720 * 11;  // 11 inches = 66 lines
 
     m_superscript = m_subscript = false;
     m_charset = 0;
@@ -63,10 +64,26 @@ void EscInterpreter::UpdateShiftX()
         m_shiftx *= 2;
 }
 
+void EscInterpreter::ShiftY(int shifty)
+{
+    m_y += shifty;
+
+    if (m_y >= m_limitbottom)  // Proceed to the next page if needed
+        NextPage();
+}
+
+void EscInterpreter::NextPage()
+{
+    m_endofpage = true;
+    m_x = m_y = 0;
+}
+
 // Интерпретировать следующий токен
 bool EscInterpreter::InterpretNext()
 {
     if (IsEndOfFile()) return false;
+    m_endofpage = false;
+
     unsigned char ch = GetNextByte();
     if (IsEndOfFile()) return false;
 
@@ -75,8 +92,7 @@ bool EscInterpreter::InterpretNext()
     case 0/*NUL*/: case 7/*BEL*/: case 17/*DC1*/: case 19/*DC3*/: case 127/*DEL*/:
         break; // Игнорируемые коды
     case 24/*CAN*/:
-        m_endofpage = true;
-        m_x = m_y = 0;
+        NextPage();
         return false; //Конец страницы
     case 8/*BS*/: // Backspace - сдвиг на 1 символ назад
         m_x -= m_shiftx;  if (m_x < 0) m_x = 0;
@@ -87,15 +103,14 @@ bool EscInterpreter::InterpretNext()
         m_x = (m_x / (m_shiftx * 8)) * (m_shiftx * 8);
         break;
     case 10/*LF*/: // Line Feed - сдвиг к следующей строке
-        m_y += m_shifty;
-        return true;
+        ShiftY(m_shifty);
+        return !m_endofpage;
     case 11/*VT*/: //Вертикальная табуляция - в частном случае удовлетворяет описанию.
         //NOTE: Переустановка позиций табуляции игнорируется
-        m_x = 0;  m_y += m_shifty;
-        return true;
+        m_x = 0;  ShiftY(m_shifty);
+        return !m_endofpage;
     case 12/*FF*/: // Form Feed - !!! доделать
-        m_endofpage = true;
-        m_x = m_y = 0;
+        NextPage();
         return false;
     case 13/*CR*/: // Carriage Return - возврат каретки
         m_x = 0;
@@ -116,22 +131,23 @@ bool EscInterpreter::InterpretNext()
         m_fontsp = false;
         UpdateShiftX();
         break;
-    case 27/*ESC*/:  //Expanded Function Codes
+    case 27/*ESC*/:  // Expanded Function Codes
         return InterpretEscape();
 
         /* иначе "напечатать" символ */
     default:
-        if (m_x >= m_limitright)  // При превышении длины строки -- автоматический переход на следующую
-        {
-            m_x = 0;
-            m_y += m_shifty;
-        }
         PrintCharacter(ch);
         m_x += m_shiftx;
         break;
     }
 
-    return true;
+    if (m_x >= m_limitright)  // При превышении длины строки -- автоматический переход на следующую
+    {
+        m_x = 0;
+        ShiftY(m_shifty);  // Proceed to the next line; probably also to the next page
+    }
+
+    return !m_endofpage;
 }
 
 // Интерпретировать Escape-последовательность
@@ -177,8 +193,8 @@ bool EscInterpreter::InterpretEscape()
         m_shifty = (720 * (int)GetNextByte() / 180);
         break;
     case 'J': /* variable line spacing */
-        m_y += (int)GetNextByte() * 720 / 180;
-        return true;
+        ShiftY((int)GetNextByte() * 720 / 180);
+        return !m_endofpage;
 
     case 'C': //PageLength - игнорировать
         if (GetNextByte() == 0)
@@ -376,7 +392,7 @@ bool EscInterpreter::InterpretEscape()
         break;
     }
 
-    return true;
+    return !m_endofpage;
 }
 
 void EscInterpreter::printGR9(int dx, bool dblspeed)
