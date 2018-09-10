@@ -577,7 +577,11 @@ void CDiskImage::SaveEntryToExternalFile(LPCTSTR sFileName)
     {
         BYTE* pData = (BYTE*) GetBlock(filestart + blockpos);
         size_t nBytesWritten = fwrite(pData, sizeof(BYTE), RT11_BLOCK_SIZE, foutput);
-        //TODO: Check if nBytesWritten < RT11_BLOCK_SIZE
+        if (nBytesWritten < RT11_BLOCK_SIZE)
+        {
+            wprintf(_T("Failed to write output file\n"));  //TODO: Show error number
+            return;
+        }
     }
 
     fclose(foutput);
@@ -630,7 +634,11 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
             {
                 BYTE* pData = (BYTE*)GetBlock(filestart + blockpos);
                 size_t nBytesWritten = fwrite(pData, sizeof(BYTE), RT11_BLOCK_SIZE, foutput);
-                //TODO: Check if nBytesWritten < RT11_BLOCK_SIZE
+                if (nBytesWritten < RT11_BLOCK_SIZE)
+                {
+                    wprintf(_T("Failed to write output file\n"));  //TODO: Show error number
+                    return;
+                }
             }
 
             fclose(foutput);
@@ -825,7 +833,7 @@ void CDiskImage::DeleteFileFromImage(LPCTSTR sFileName)
             }
         }
     }
-    if (pFileEntry == NULL)
+    if (pFileEntry == NULL || pFileSegment == NULL)
     {
         wprintf(_T("Filename not found: %s\n"), sFileName);
         return;
@@ -911,7 +919,14 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
 
 CVolumeInformation::CVolumeInformation()
 {
+    memset(volumeid, 0, sizeof(volumeid));
+    memset(ownername, 0, sizeof(ownername));
+    memset(systemid, 0, sizeof(systemid));
+    firstcatalogblock = systemversion = 0;
+    catalogextrawords = catalogentrylength = catalogentriespersegment = catalogsegmentcount = 0;
+    lastopenedsegment = 0;
     catalogsegments = NULL;
+    catalogentriescount = 0;
 }
 
 CVolumeInformation::~CVolumeInformation()
@@ -930,7 +945,7 @@ CVolumeCatalogEntry::CVolumeCatalogEntry()
     status = 0;
     memset(name, 0, sizeof(name));
     memset(ext, 0, sizeof(ext));
-    start = length = 0;
+    start = length = datepac = 0;
 }
 
 void CVolumeCatalogEntry::Unpack(WORD const * pCatalog, WORD filestartblock)

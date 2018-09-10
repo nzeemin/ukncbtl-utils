@@ -58,13 +58,11 @@ and the output string str[] */
 
 void r50asc(int cnt, WORD* r50, TCHAR str[])
 {
-    unsigned int v, ch, ord, word = 0;
-    int i;
-
-
     /* sorry I think in decimal, 39 = Octal 47, decimal, 40 = Octal 50 */
+    int i;
     for (i = 0; i < cnt; i++)
     {
+        unsigned int v, ch, ord, word = 0;
 
         /* get 3 chars from each word */
         word = i / 3;

@@ -59,11 +59,13 @@ static BYTE g_hardbuffer[512];
 
 CHardImage::CHardImage()
 {
-    m_okReadOnly = false;
+    m_okReadOnly = m_okInverted = false;
     m_fpFile = NULL;
+    m_lFileSize = 0;
     m_drivertype = HDD_DRIVER_UNKNOWN;
     m_nSectorsPerTrack = m_nSidesPerTrack = m_nPartitions = 0;
     m_pPartitionInfos = NULL;
+    m_okChecksum = false;
 }
 
 CHardImage::~CHardImage()
@@ -111,7 +113,7 @@ bool CHardImage::Attach(LPCTSTR sImageFileName)
     //wprintf(_T("Home block checksum is 0x%08lx.\n"), checksum);
     m_okChecksum = checksum == 0;
     if (checksum != 0)
-        wprintf(_T("Home block checksum is incorrect!\n"), checksum);
+        wprintf(_T("Home block checksum is incorrect!\n"));
 
     m_nSectorsPerTrack = g_hardbuffer[0];
     m_nSidesPerTrack = g_hardbuffer[1];
@@ -192,7 +194,7 @@ void CHardImage::PrintPartitionTable()
 
     wprintf(_T("---  ------  ---------  ----------\n"));
 
-    wprintf(_T("     %6d\n"), blocks);
+    wprintf(_T("     %6ld\n"), blocks);
 }
 
 void CHardImage::SavePartitionToFile(int partition, LPCTSTR filename)
@@ -310,7 +312,7 @@ void CHardImage::UpdatePartitionFromFile(int partition, LPCTSTR filename)
 void CHardImage::InvertImage()
 {
     long blocks = m_lFileSize / RT11_BLOCK_SIZE;
-    wprintf(_T("Inverting %d blocks, %ld bytes.\n"), blocks, blocks * RT11_BLOCK_SIZE);
+    wprintf(_T("Inverting %ld blocks, %ld bytes.\n"), blocks, blocks * RT11_BLOCK_SIZE);
 
     for (long i = 0; i < blocks; i++)
     {
