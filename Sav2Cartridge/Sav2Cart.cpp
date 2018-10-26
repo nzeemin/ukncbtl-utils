@@ -245,7 +245,7 @@ size_t EncodeRLE(const BYTE * source, size_t sourceLength, BYTE * buffer, size_t
     }
 
     //printf("RLE Source size: %d  Coded size: %d  Dest offset: %d\n", sourceLength, codedSizeTotal, destOffset);
-    printf("Source size: %d. RLE encoded size: %d.\n", sourceLength, codedSizeTotal);
+    printf("Source size: %lu. RLE encoded size: %lu.\n", sourceLength, codedSizeTotal);
     return codedSizeTotal;
 }
 
@@ -334,7 +334,7 @@ int main(int argc, char* argv[])
         return 255;
     }
     ::fclose(inputfile);
-    printf("Input file size %d. bytes.\n", inputfileSize);
+    printf("Input file size %u. bytes.\n", inputfileSize);
 
     wStartAddr = *((WORD*)(pFileImage + 040));
     wStackAddr = *((WORD*)(pFileImage + 042));
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
     printf("SAV Stack\t%06o  %04x  %5d\n", wStackAddr, wStackAddr, wStackAddr);
     printf("SAV Top  \t%06o  %04x  %5d\n", wTopAddr, wTopAddr, wTopAddr);
     size_t savImageSize = ((size_t)wTopAddr + 2 - 01000);
-    printf("SAV Image Size\t%06o  %04x  %5d\n", savImageSize, savImageSize, savImageSize);
+    printf("SAV Image Size\t%06o  %04lx  %5lu\n", savImageSize, savImageSize, savImageSize);
 
     pCartImage = (BYTE*) ::calloc(24576, 1);
     if (pCartImage == NULL)
@@ -363,18 +363,18 @@ int main(int argc, char* argv[])
     }
     else  // Use RLE for cartridge image
     {
-        printf("Input file is too big for cartridge (%d. bytes, max 24576. bytes)\n", inputfileSize);
+        printf("Input file is too big for cartridge (%u. bytes, max 24576. bytes)\n", inputfileSize);
 
         size_t rleCodedSize = EncodeRLE(pFileImage + 512, savImageSize, pCartImage + 512, 24576 - 512);
         if (rleCodedSize > 24576 - 512)
         {
-            printf("RLE encoded size too big (%d. bytes, max %d. bytes)\n", rleCodedSize, 24576 - 512);
+            printf("RLE encoded size too big (%lu. bytes, max %d. bytes)\n", rleCodedSize, 24576 - 512);
             return 255;
         }
 
         // Trying to decode to make sure encoder works fine
         BYTE* pTempBuffer = (BYTE*) ::calloc(savImageSize, 1);
-        if (pCartImage == NULL)
+        if (pTempBuffer == NULL)
         {
             printf("Failed to allocate memory.");
             return 255;
@@ -389,7 +389,7 @@ int main(int argc, char* argv[])
             return 255;
         }
         ::free(pTempBuffer);
-        printf("RLE decode check done, decoded size %d. bytes.\n", decodedSize);
+        printf("RLE decode check done, decoded size %lu. bytes.\n", decodedSize);
 
         ::memcpy(pCartImage, pFileImage, 512);
 
@@ -416,7 +416,7 @@ int main(int argc, char* argv[])
     ::free(pFileImage);
 
     printf("Output file: %s\n", outputfilename);
-    err = fopen_s(&outputfile, outputfilename, "rb");
+    err = fopen_s(&outputfile, outputfilename, "wb");
     if (err != 0)
     {
         printf("Failed to open output file (%d).", err);

@@ -239,11 +239,8 @@ static const char* base85 =
 
 void ascii85_encode_tuple(const unsigned char* src, char* dst)
 {
-    uint32_t value;
-    uint32_t value2;
-
     // unpack big-endian frame
-    value = (src[0] << 24) | (src[1] << 16) | (src[2] << 8) | src[3];
+    uint32_t value = (src[0] << 24) | (src[1] << 16) | (src[2] << 8) | src[3];
 
     if (value == 0)  // Special case for zero
     {
@@ -252,6 +249,7 @@ void ascii85_encode_tuple(const unsigned char* src, char* dst)
     }
     else
     {
+        uint32_t value2;
         value2 = DIV85(value); dst[4] = base85[value - value2 * 85]; value = value2;
         value2 = DIV85(value); dst[3] = base85[value - value2 * 85]; value = value2;
         value2 = DIV85(value); dst[2] = base85[value - value2 * 85]; value = value2;

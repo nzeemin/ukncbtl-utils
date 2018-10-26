@@ -471,10 +471,10 @@ void EscInterpreter::PrintCharacter(unsigned char ch)
     if (m_subscript) y += 4 * 12;
 
     // Цикл печати символа по строкам
-    unsigned short data = 0, prevdata = 0;
+    unsigned short prevdata = 0;
     for (int line = 0; line < 9; line++)
     {
-        data = pchardata[line];
+        unsigned short data = pchardata[line];
 
         // Особая обработка для над- и под-строчных символов
         if ((m_superscript || m_subscript))
