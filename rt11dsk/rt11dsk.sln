@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rt11dsk", "rt11dsk.vcproj", "{0C247C07-FC00-46AE-8B4E-5D86C7D46AF7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rt11dsk", "rt11dsk-VS2013.vcproj", "{0C247C07-FC00-46AE-8B4E-5D86C7D46AF7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
