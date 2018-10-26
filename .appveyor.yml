@@ -1,0 +1,25 @@
+image: Visual Studio 2015
+
+init:
+  - git config --global core.autocrlf input
+
+clone_folder: C:\projects\ukncbtl-utils
+shallow_clone: true
+
+matrix:
+  fast_finish: false
+
+platform:
+  - Win32
+
+configuration:
+  - Debug
+  - Release
+
+environment:
+  matrix:
+    - toolchain: msvc13
+
+build:
+  project: UkncbtlUtils-VS2013.sln
+
