@@ -30,77 +30,77 @@ static FILE* outputfile;
 
 void Convert()
 {
-	inputfile = fopen(inputfilename, "rb");
-	if (inputfile == NULL)
-	{
-		printf("Failed to open input file.");
-		return;
-	}
+    inputfile = fopen(inputfilename, "rb");
+    if (inputfile == NULL)
+    {
+        printf("Failed to open input file.");
+        return;
+    }
 
-	outputfile = fopen(outputfilename, "w+b");
-	if (outputfile == NULL)
-	{
-		printf("Failed to open output file.");
-		return;
-	}
+    outputfile = fopen(outputfilename, "w+b");
+    if (outputfile == NULL)
+    {
+        printf("Failed to open output file.");
+        return;
+    }
 
-	void * pHeader = calloc(512, 1);
+    void * pHeader = calloc(512, 1);
 
-	size_t bytesread = fread(pHeader, 1, 512, inputfile);
-	if (bytesread != 512)
-	{
-		printf("Failed to read the header.");
-		return;
-	}
+    size_t bytesread = fread(pHeader, 1, 512, inputfile);
+    if (bytesread != 512)
+    {
+        printf("Failed to read the header.");
+        return;
+    }
 
-	WORD baseAddress = *(((WORD*)pHeader) + 040 / 2);
-	WORD lastAddress = *(((WORD*)pHeader) + 050 / 2);
-	WORD dataSize = lastAddress + 2 - 01000;
+    WORD baseAddress = *(((WORD*)pHeader) + 040 / 2);
+    WORD lastAddress = *(((WORD*)pHeader) + 050 / 2);
+    WORD dataSize = lastAddress + 2 - 01000;
 
-	free(pHeader);
+    free(pHeader);
 
-	void * pData = calloc(dataSize, 1);
+    void * pData = calloc(dataSize, 1);
 
-	bytesread = fread(pData, 1, dataSize, inputfile);
-	if (bytesread != dataSize)
-	{
-		printf("Failed to read the data.");
-		return;
-	}
+    bytesread = fread(pData, 1, dataSize, inputfile);
+    if (bytesread != dataSize)
+    {
+        printf("Failed to read the data.");
+        return;
+    }
 
-	dataSize += 24 * 2;  // for auto-start header
+    dataSize += 24 * 2;  // for auto-start header
 
-	WORD autoStartBaseAddress = 000720;
-	fwrite(&autoStartBaseAddress, 1, 2, outputfile);
-	fwrite(&dataSize, 1, 2, outputfile);
+    WORD autoStartBaseAddress = 000720;
+    fwrite(&autoStartBaseAddress, 1, 2, outputfile);
+    fwrite(&dataSize, 1, 2, outputfile);
 
-	for (int i = 0; i < 24; i++)  // write auto-start header
-	{
-		fwrite(&baseAddress, 1, 2, outputfile);
-	}
+    for (int i = 0; i < 24; i++)  // write auto-start header
+    {
+        fwrite(&baseAddress, 1, 2, outputfile);
+    }
 
-	fwrite(pData, 1, dataSize, outputfile);
+    fwrite(pData, 1, dataSize, outputfile);
 
-	free(pData);
+    free(pData);
 
-	fclose(inputfile);
+    fclose(inputfile);
 }
 
 int main(int argc, char* argv[])
 {
-	if (argc < 3)
-	{
-		printf("Usage: sav2bkbin <inputfile.SAV> <outputfile.BIN>");
-		return 255;
-	}
+    if (argc < 3)
+    {
+        printf("Usage: sav2bkbin <inputfile.SAV> <outputfile.BIN>");
+        return 255;
+    }
 
-	strcpy(inputfilename, argv[1]);
-	strcpy(outputfilename, argv[2]);
+    strcpy(inputfilename, argv[1]);
+    strcpy(outputfilename, argv[2]);
 
-	printf("Input:\t\t%s\n", inputfilename);
-	printf("Output:\t\t%s\n", outputfilename);
+    printf("Input:\t\t%s\n", inputfilename);
+    printf("Output:\t\t%s\n", outputfilename);
 
-	Convert();
+    Convert();
 
-	return 0;
+    return 0;
 }
