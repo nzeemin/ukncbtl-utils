@@ -18,5 +18,8 @@
     <ClCompile Include="Sav2Cart.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LZSS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
