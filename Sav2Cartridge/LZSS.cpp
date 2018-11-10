@@ -34,7 +34,7 @@ size_t outputsize, outputpos, flagpos;
 
 void error(void)
 {
-    printf("LZSS output error; inputpos %ld., outputpos %ld.\n", inputpos, outputpos);
+    printf("LZSS output error; inputpos %lu., outputpos %lu.\n", inputpos, outputpos);
     exit(1);
 }
 
@@ -91,7 +91,7 @@ unsigned long encode(void)
     flagpos = 0;  bit_buffer = 0;  bit_mask = 1;
     outputpos = 0;
 
-    int i, j, f1, x, y, r, s, bufferend, c;
+    int i, j, r, s, bufferend, c;
 
     for (i = 0; i < N - F; i++) buffer[i] = ' ';
     for (i = N - F; i < N * 2; i++)
@@ -103,8 +103,8 @@ unsigned long encode(void)
     bufferend = i;  r = N - F;  s = 0;
     while (r < bufferend)
     {
-        f1 = (F <= bufferend - r) ? F : bufferend - r;
-        x = 0;  y = 1;  c = buffer[r];
+        int f1 = (F <= bufferend - r) ? F : bufferend - r;
+        int x = 0;  int y = 1;  c = buffer[r];
         for (i = r - 1; i >= s; i--)
             if (buffer[i] == c)
             {
@@ -137,8 +137,8 @@ unsigned long encode(void)
     flush_bit_buffer();
 
     //printf("LZSS inputpos %ld., outputpos %ld.\n", inputpos, outputpos);
-    printf("LZSS input size %ld. bytes\n", textcount);
-    printf("LZSS output size %ld. bytes (%1.2f %%)\n", codecount, codecount * 100.0 / textcount);
+    printf("LZSS input size %lu. bytes\n", textcount);
+    printf("LZSS output size %lu. bytes (%1.2f %%)\n", codecount, codecount * 100.0 / textcount);
 
     return codecount;
 }

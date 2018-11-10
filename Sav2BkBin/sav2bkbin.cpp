@@ -30,12 +30,16 @@ static FILE* outputfile;
 
 void Convert()
 {
+    printf("Input file: %s\n", inputfilename);
+
     inputfile = fopen(inputfilename, "rb");
     if (inputfile == NULL)
     {
         printf("Failed to open input file.");
         return;
     }
+
+    printf("Output file: %s\n", outputfilename);
 
     outputfile = fopen(outputfilename, "w+b");
     if (outputfile == NULL)
@@ -50,12 +54,17 @@ void Convert()
     if (bytesread != 512)
     {
         printf("Failed to read the header.");
+        free(pHeader);
         return;
     }
 
     WORD baseAddress = *(((WORD*)pHeader) + 040 / 2);
     WORD lastAddress = *(((WORD*)pHeader) + 050 / 2);
     WORD dataSize = lastAddress + 2 - 01000;
+
+    printf("SAV Start\t%06o  %04x  %5d\n", baseAddress, baseAddress, baseAddress);
+    printf("SAV Top  \t%06o  %04x  %5d\n", lastAddress, lastAddress, lastAddress);
+    printf("SAV image size\t%06o  %04x  %5u\n", dataSize, dataSize, dataSize);
 
     free(pHeader);
 
@@ -65,20 +74,24 @@ void Convert()
     if (bytesread != dataSize)
     {
         printf("Failed to read the data.");
+        free(pData);
         return;
     }
 
     dataSize += 24 * 2;  // for auto-start header
 
     WORD autoStartBaseAddress = 000720;
+    printf("Saving BK header:  %06o %06o\n", autoStartBaseAddress, dataSize);
     fwrite(&autoStartBaseAddress, 1, 2, outputfile);
     fwrite(&dataSize, 1, 2, outputfile);
 
+    printf("Saving auto-start header, 24. words %06o\n", baseAddress);
     for (int i = 0; i < 24; i++)  // write auto-start header
     {
         fwrite(&baseAddress, 1, 2, outputfile);
     }
 
+    printf("Saving image, %u. bytes\n", (unsigned int)dataSize);
     fwrite(pData, 1, dataSize, outputfile);
 
     free(pData);
@@ -94,13 +107,11 @@ int main(int argc, char* argv[])
         return 255;
     }
 
-    strcpy(inputfilename, argv[1]);
-    strcpy(outputfilename, argv[2]);
-
-    printf("Input:\t\t%s\n", inputfilename);
-    printf("Output:\t\t%s\n", outputfilename);
+    strcpy_s(inputfilename, argv[1]);
+    strcpy_s(outputfilename, argv[2]);
 
     Convert();
 
+    printf("Done.\n");
     return 0;
 }

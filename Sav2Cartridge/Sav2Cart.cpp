@@ -28,11 +28,7 @@ size_t lzss_decode(unsigned char *inbuffer, size_t insize, unsigned char *outbuf
 //////////////////////////////////////////////////////////////////////
 
 
-#define BYTE uint8_t
-#define WORD uint16_t
-
-
-static WORD const loader[] =
+static uint16_t const loader[] =
 {
     0000240,  // 000000  000240  NOP
     0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
@@ -80,7 +76,7 @@ static WORD const loader[] =
     0177777,  // 000120
 };
 
-static WORD const loaderRLE[] =
+static uint16_t const loaderRLE[] =
 {
     0000240,  // 000000  000240  NOP
     0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
@@ -162,7 +158,7 @@ static WORD const loaderRLE[] =
     0000743,  // 000222  000743      BR   $1
 };
 
-static WORD const loaderLZSS[] =
+static uint16_t const loaderLZSS[] =
 {
     0000240,  // 000000  000240  NOP
     0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
@@ -219,11 +215,11 @@ static WORD const loaderLZSS[] =
     0000010,  // 000140  000010
     0006001,  // 000142  006001  M402:   ROR	R1
     0103402,  // 000144  103402          BCS	403$			;1?
-    0112022,  // 000146  112022          MOVB	(R0)+,(R2)+		;MOV BYTE
+    0112022,  // 000146  112022          MOVB	(R0)+,(R2)+		;MOV uint8_t
     0000417,  // 000150  000417          BR     405$
-    0152003,  // 000152  152003  403$:   BISB   (R0)+,R3		;GET LOW BYTE
+    0152003,  // 000152  152003  403$:   BISB   (R0)+,R3		;GET LOW uint8_t
     0000303,  // 000154  000303          SWAB   R3
-    0152003,  // 000156  152003          BISB	(R0)+,R3		;GET HIGH BYTE
+    0152003,  // 000156  152003          BISB	(R0)+,R3		;GET HIGH uint8_t
     0010305,  // 000160  010305          MOV    R3,R5
     0042705,  // 000162  042705          BIC	#170000,R5		;OFFSET FROM CURRENT POSITION
     0170000,  // 000164  170000
@@ -248,20 +244,20 @@ static WORD const loaderLZSS[] =
 //////////////////////////////////////////////////////////////////////
 
 
-size_t EncodeRLE(const BYTE * source, size_t sourceLength, BYTE * buffer, size_t bufferLength)
+size_t EncodeRLE(const uint8_t * source, size_t sourceLength, uint8_t * buffer, size_t bufferLength)
 {
     size_t destOffset = 0;
     size_t seqBlockOffset = 0;
     size_t seqBlockSize = 1;
     size_t varBlockOffset = 0;
     size_t varBlockSize = 1;
-    BYTE prevByte = source[0];
+    uint8_t prevByte = source[0];
     size_t currOffset = 0;
     size_t codedSizeTotal = 0;
     while (currOffset < sourceLength)
     {
         currOffset++;
-        BYTE currByte = (currOffset < sourceLength) ? source[currOffset] : ~prevByte;
+        uint8_t currByte = (currOffset < sourceLength) ? source[currOffset] : ~prevByte;
 
         if ((currOffset == sourceLength) ||
             (currByte != prevByte && seqBlockSize > 31) ||
@@ -279,18 +275,18 @@ size_t EncodeRLE(const BYTE * source, size_t sourceLength, BYTE * buffer, size_t
                 codedSizeTotal += codedSize;
                 if (destOffset + codedSize < bufferLength)
                 {
-                    BYTE flagByte = 0x40;
+                    uint8_t flagByte = 0x40;
                     if (varSize < 256 / 8)
                     {
-                        //printf("%02x ", (BYTE)(flagByte | varSize));
-                        buffer[destOffset++] = (BYTE)(flagByte | varSize);
+                        //printf("%02x ", (uint8_t)(flagByte | varSize));
+                        buffer[destOffset++] = (uint8_t)(flagByte | varSize);
                     }
                     else
                     {
-                        //printf("%02x ", (BYTE)(0x80 | flagByte | ((varSize & 0x1f00) >> 8)));
-                        buffer[destOffset++] = (BYTE)(0x80 | flagByte | ((varSize & 0x1f00) >> 8));
-                        //printf("%02x ", (BYTE)(varSize & 0xff));
-                        buffer[destOffset++] = (BYTE)(varSize & 0xff);
+                        //printf("%02x ", (uint8_t)(0x80 | flagByte | ((varSize & 0x1f00) >> 8)));
+                        buffer[destOffset++] = (uint8_t)(0x80 | flagByte | ((varSize & 0x1f00) >> 8));
+                        //printf("%02x ", (uint8_t)(varSize & 0xff));
+                        buffer[destOffset++] = (uint8_t)(varSize & 0xff);
                     }
                     for (size_t offset = varBlockOffset; offset < varBlockOffset + varSize; offset++)
                     {
@@ -308,13 +304,13 @@ size_t EncodeRLE(const BYTE * source, size_t sourceLength, BYTE * buffer, size_t
                 codedSizeTotal += codedSize;
                 if (destOffset + codedSize < bufferLength)
                 {
-                    BYTE flagByte = ((prevByte == 0) ? 0 : ((prevByte == 255) ? 0x60 : 0x20));
+                    uint8_t flagByte = ((prevByte == 0) ? 0 : ((prevByte == 255) ? 0x60 : 0x20));
                     if (seqBlockSize < 256 / 8)
-                        buffer[destOffset++] = (BYTE)(flagByte | seqBlockSize);
+                        buffer[destOffset++] = (uint8_t)(flagByte | seqBlockSize);
                     else
                     {
-                        buffer[destOffset++] = (BYTE)(0x80 | flagByte | ((seqBlockSize & 0x1f00) >> 8));
-                        buffer[destOffset++] = (BYTE)(seqBlockSize & 0xff);
+                        buffer[destOffset++] = (uint8_t)(0x80 | flagByte | ((seqBlockSize & 0x1f00) >> 8));
+                        buffer[destOffset++] = (uint8_t)(seqBlockSize & 0xff);
                     }
                     if (prevByte != 0 && prevByte != 255)
                         buffer[destOffset++] = prevByte;
@@ -347,14 +343,14 @@ size_t EncodeRLE(const BYTE * source, size_t sourceLength, BYTE * buffer, size_t
     return codedSizeTotal;
 }
 
-size_t DecodeRLE(const BYTE * source, size_t sourceLength, BYTE * buffer, size_t bufferLength)
+size_t DecodeRLE(const uint8_t * source, size_t sourceLength, uint8_t * buffer, size_t bufferLength)
 {
     size_t currOffset = 0;
     size_t destOffset = 0;
-    BYTE filler = 0;
+    uint8_t filler = 0;
     while (currOffset < sourceLength)
     {
-        BYTE first = source[currOffset++];
+        uint8_t first = source[currOffset++];
         if (first == 0)
             break;
         size_t count = 0;
@@ -393,11 +389,11 @@ char inputfilename[256];
 char outputfilename[256];
 FILE* inputfile;
 FILE* outputfile;
-BYTE* pFileImage = NULL;
-BYTE* pCartImage = NULL;
-WORD wStartAddr;
-WORD wStackAddr;
-WORD wTopAddr;
+uint8_t* pFileImage = NULL;
+uint8_t* pCartImage = NULL;
+uint16_t wStartAddr;
+uint16_t wStackAddr;
+uint16_t wTopAddr;
 errno_t err;
 
 int main(int argc, char* argv[])
@@ -422,7 +418,7 @@ int main(int argc, char* argv[])
     ::fseek(inputfile, 0, SEEK_END);
     uint32_t inputfileSize = ::ftell(inputfile);
 
-    pFileImage = (BYTE*) ::malloc(inputfileSize);
+    pFileImage = (uint8_t*) ::malloc(inputfileSize);
 
     ::fseek(inputfile, 0, SEEK_SET);
     size_t bytesRead = ::fread(pFileImage, 1, inputfileSize, inputfile);
@@ -434,16 +430,16 @@ int main(int argc, char* argv[])
     ::fclose(inputfile);
     printf("Input file size %u. bytes\n", inputfileSize);
 
-    wStartAddr = *((WORD*)(pFileImage + 040));
-    wStackAddr = *((WORD*)(pFileImage + 042));
-    wTopAddr = *((WORD*)(pFileImage + 050));
+    wStartAddr = *((uint16_t*)(pFileImage + 040));
+    wStackAddr = *((uint16_t*)(pFileImage + 042));
+    wTopAddr = *((uint16_t*)(pFileImage + 050));
     printf("SAV Start\t%06o  %04x  %5d\n", wStartAddr, wStartAddr, wStartAddr);
     printf("SAV Stack\t%06o  %04x  %5d\n", wStackAddr, wStackAddr, wStackAddr);
     printf("SAV Top  \t%06o  %04x  %5d\n", wTopAddr, wTopAddr, wTopAddr);
     size_t savImageSize = ((size_t)wTopAddr + 2 - 01000);
     printf("SAV image size\t%06o  %04lx  %5lu\n", savImageSize, savImageSize, savImageSize);
 
-    pCartImage = (BYTE*) ::calloc(65536, 1);
+    pCartImage = (uint8_t*) ::calloc(65536, 1);
     if (pCartImage == NULL)
     {
         printf("Failed to allocate memory.");
@@ -463,8 +459,8 @@ int main(int argc, char* argv[])
 
             // Prepare the loader
             memcpy(pCartImage, loader, sizeof(loader));
-            *((WORD*)(pCartImage + 0074)) = wStackAddr;
-            *((WORD*)(pCartImage + 0100)) = wStartAddr;
+            *((uint16_t*)(pCartImage + 0074)) = wStackAddr;
+            *((uint16_t*)(pCartImage + 0100)) = wStartAddr;
 
             break;  // Finished encoding with plain copy
         }
@@ -479,7 +475,7 @@ int main(int argc, char* argv[])
         else  // Use RLE compression
         {
             // Trying to decode to make sure encoder works fine
-            BYTE* pTempBuffer = (BYTE*) ::calloc(savImageSize, 1);
+            uint8_t* pTempBuffer = (uint8_t*) ::calloc(savImageSize, 1);
             if (pTempBuffer == NULL)
             {
                 printf("Failed to allocate memory.");
@@ -501,8 +497,8 @@ int main(int argc, char* argv[])
 
             // Prepare the loader
             memcpy(pCartImage, loaderRLE, sizeof(loaderRLE));
-            *((WORD*)(pCartImage + 0076)) = wStackAddr;
-            *((WORD*)(pCartImage + 0102)) = wStartAddr;
+            *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
+            *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
 
             break;  // Finished encoding with RLE
         }
@@ -517,7 +513,7 @@ int main(int argc, char* argv[])
         else
         {
             // Trying to decode to make sure encoder works fine
-            BYTE* pTempBuffer = (BYTE*) ::calloc(65536, 1);
+            uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
             if (pTempBuffer == NULL)
             {
                 printf("Failed to allocate memory.");
@@ -539,9 +535,9 @@ int main(int argc, char* argv[])
 
             // Prepare the loader
             memcpy(pCartImage, loaderLZSS, sizeof(loaderLZSS));
-            *((WORD*)(pCartImage + 0076)) = wStackAddr;
-            *((WORD*)(pCartImage + 0102)) = wStartAddr;
-            *((WORD*)(pCartImage + 0212)) = 01000 + savImageSize;  // CTOP
+            *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
+            *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
+            *((uint16_t*)(pCartImage + 0212)) = 01000 + savImageSize;  // CTOP
             //printf("LZSS CTOP = %06o\n", 01000 + savImageSize);
 
             break;  // Finished encoding with LZSS
@@ -551,18 +547,18 @@ int main(int argc, char* argv[])
     }
 
     // Calculate checksum
-    WORD* pData = ((WORD*)(pCartImage + 01000));
-    WORD wChecksum = 0;
+    uint16_t* pData = ((uint16_t*)(pCartImage + 01000));
+    uint16_t wChecksum = 0;
     for (int i = 0; i < 027400; i++)
     {
-        WORD src = wChecksum;
-        WORD src2 = *pData;
+        uint16_t src = wChecksum;
+        uint16_t src2 = *pData;
         wChecksum += src2;
         if (((src & src2) | ((src ^ src2) & ~wChecksum)) & 0100000)  // if Carry
             wChecksum++;
         pData++;
     }
-    *((WORD*)(pCartImage + 0066)) = wChecksum;
+    *((uint16_t*)(pCartImage + 0066)) = wChecksum;
 
     ::free(pFileImage);
 
