@@ -199,7 +199,7 @@ bool CDiskImage::Attach(FILE* fpfile, long offset, int blocks, bool readonly)
 void CDiskImage::PostAttach()
 {
     // Allocate memory for the cache
-    m_nCacheBlocks = 1024;  //NOTE: For up to 1024 blocks, for 512K of data
+    m_nCacheBlocks = 1600;  //NOTE: For up to 1600 blocks, for 800K of data
     if (m_nCacheBlocks > m_nTotalBlocks) m_nCacheBlocks = m_nTotalBlocks;
     m_pCache = (CCachedBlock*) ::calloc(m_nCacheBlocks, sizeof(CCachedBlock));
 
