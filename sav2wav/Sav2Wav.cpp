@@ -11,7 +11,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 // Sav2Wav.cpp
 //
 // Originally written by Alexander Alexandrow aka BYTEMAN
-// mailto: sash-a@nm.ru
+// mailto: zxbyteman@gmail.com
 //
 // Converted from Delphi 7 to C++ by Nikita Zimin
 //
@@ -139,7 +139,7 @@ BYTE load[512];
 char name1[16];
 
 
-void PauseWrite(int n)  // Запись паузы
+void PauseWrite(int n)  // Р—Р°РїРёСЃСЊ РїР°СѓР·С‹
 {
     const BYTE wr = 0x7f;
     for (int i = 1; i < n + 1; ++i)
@@ -154,7 +154,7 @@ void ByteWrite(BYTE n)
 
     for (k = 0; k < 8; ++k)
     {
-        // Побитово раскладываем
+        // РџРѕР±РёС‚РѕРІРѕ СЂР°СЃРєР»Р°РґС‹РІР°РµРј
         if ((n & 1) == 0)
             fwrite(bit0, 1, sizeof(bit0), outputfile);
         else
@@ -182,7 +182,7 @@ void PrepareLoader()
     memcpy(load, loader, 512);
 
     // YELLOW color
-    // Записываем адреса в загрузчик
+    // Р—Р°РїРёСЃС‹РІР°РµРј Р°РґСЂРµСЃР° РІ Р·Р°РіСЂСѓР·С‡РёРє
     fseek(inputfile, 32, SEEK_SET);
     fread(&t1, 1, 1, inputfile);
     load[ 32 ] = t1;
@@ -227,7 +227,7 @@ void PrepareLoader()
     load[ 212 ] = (BYTE)( datalength - ( ( datalength / 256 ) * 256 ) );
 }
 
-void DefWaveFormat()  // Пишем заголовок WAV
+void DefWaveFormat()  // РџРёС€РµРј Р·Р°РіРѕР»РѕРІРѕРє WAV
 {
     unsigned long length1, length2;
 
@@ -269,45 +269,45 @@ void Convert()
 
     PrepareLoader();
 
-    fwrite(chunk1, 1, sizeof(chunk1), outputfile);  // Пишем заголовок WAV-файла
+    fwrite(chunk1, 1, sizeof(chunk1), outputfile);  // РџРёС€РµРј Р·Р°РіРѕР»РѕРІРѕРє WAV-С„Р°Р№Р»Р°
 
-    fwrite(pilot, 1, sizeof(pilot), outputfile);  // Пишем заготовку для пилот-тона
+    fwrite(pilot, 1, sizeof(pilot), outputfile);  // РџРёС€РµРј Р·Р°РіРѕС‚РѕРІРєСѓ РґР»СЏ РїРёР»РѕС‚-С‚РѕРЅР°
 
-    // Пишем заголовок загрузчика
-    for ( i = 0; i < 8000; ++i )  // Пилот-тон перед заголовком длительностью 8000 битов "1"
+    // РџРёС€РµРј Р·Р°РіРѕР»РѕРІРѕРє Р·Р°РіСЂСѓР·С‡РёРєР°
+    for ( i = 0; i < 8000; ++i )  // РџРёР»РѕС‚-С‚РѕРЅ РїРµСЂРµРґ Р·Р°РіРѕР»РѕРІРєРѕРј РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊСЋ 8000 Р±РёС‚РѕРІ "1"
         fwrite(bit1, 1, sizeof(bit1), outputfile);
-    for ( i = 0; i < 16; ++i )  // 16 байт имени файла
+    for ( i = 0; i < 16; ++i )  // 16 Р±Р°Р№С‚ РёРјРµРЅРё С„Р°Р№Р»Р°
         ByteWrite( 0 );
-    WordWrite( 256 );       // 1 слово длины данных в словах
-    WordWrite( 0 );         // 1 слово адреса загрузки данных
-    for ( i = 0; i < 2000; ++i )  // Пилот-тон перед данными длительностью 2000 битов "1"
+    WordWrite( 256 );       // 1 СЃР»РѕРІРѕ РґР»РёРЅС‹ РґР°РЅРЅС‹С… РІ СЃР»РѕРІР°С…
+    WordWrite( 0 );         // 1 СЃР»РѕРІРѕ Р°РґСЂРµСЃР° Р·Р°РіСЂСѓР·РєРё РґР°РЅРЅС‹С…
+    for ( i = 0; i < 2000; ++i )  // РџРёР»РѕС‚-С‚РѕРЅ РїРµСЂРµРґ РґР°РЅРЅС‹РјРё РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊСЋ 2000 Р±РёС‚РѕРІ "1"
         fwrite(bit1, 1, sizeof(bit1), outputfile);
 
-    // Пишем данные загрузчика
+    // РџРёС€РµРј РґР°РЅРЅС‹Рµ Р·Р°РіСЂСѓР·С‡РёРєР°
     checksum = 0;
     for (i = 0; i < 256; ++i)
     {
-        ByteWrite( ( load[ i * 2 ] ) );  // Пишем loader...
+        ByteWrite( ( load[ i * 2 ] ) );  // РџРёС€РµРј loader...
         ByteWrite( ( load[ i * 2 + 1 ] ) );
         checksum = checksum + (WORD)( load[ i * 2 ] ) + ((WORD)( load[ i * 2 + 1 ] )) * 256;
         checksum = checksum - checksum / 65536 * 65536 + checksum / 65536;
     }
-    WordWrite( (WORD)checksum );  // Пишем КС
+    WordWrite( (WORD)checksum );  // РџРёС€РµРј РљРЎ
 
-    // Пауза между блоками
+    // РџР°СѓР·Р° РјРµР¶РґСѓ Р±Р»РѕРєР°РјРё
     PauseWrite( 11000 );
-    // Импульс раскачки
+    // РРјРїСѓР»СЊСЃ СЂР°СЃРєР°С‡РєРё
     fwrite(pilot, 1, sizeof(pilot), outputfile);
 
-    for ( i = 1; i < 8001; ++i )  // Пилот-тон перед заголовком длительностью 8000 битов "1"
+    for ( i = 1; i < 8001; ++i )  // РџРёР»РѕС‚-С‚РѕРЅ РїРµСЂРµРґ Р·Р°РіРѕР»РѕРІРєРѕРј РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊСЋ 8000 Р±РёС‚РѕРІ "1"
         fwrite(bit1, 1, sizeof(bit1), outputfile);
 
-    for ( i = 0; i < 16; ++i )  // 16 байт имени файла
+    for ( i = 0; i < 16; ++i )  // 16 Р±Р°Р№С‚ РёРјРµРЅРё С„Р°Р№Р»Р°
         ByteWrite( ( name1[ i ] ) );
-    WordWrite( (WORD)datalength );    // 1 слово длины данных в словах
-    WordWrite( 512 );           // 1 слово адреса загрузки данных
+    WordWrite( (WORD)datalength );    // 1 СЃР»РѕРІРѕ РґР»РёРЅС‹ РґР°РЅРЅС‹С… РІ СЃР»РѕРІР°С…
+    WordWrite( 512 );           // 1 СЃР»РѕРІРѕ Р°РґСЂРµСЃР° Р·Р°РіСЂСѓР·РєРё РґР°РЅРЅС‹С…
 
-    for ( i = 0; i < 2000; ++i )  // Пилот-тон перед данными длительностью 2000 битов "1"
+    for ( i = 0; i < 2000; ++i )  // РџРёР»РѕС‚-С‚РѕРЅ РїРµСЂРµРґ РґР°РЅРЅС‹РјРё РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊСЋ 2000 Р±РёС‚РѕРІ "1"
         fwrite(bit1, 1, sizeof(bit1), outputfile);
 
     fseek(inputfile, 512, SEEK_SET);  //inputstream.Position = 512;
@@ -327,7 +327,7 @@ void Convert()
 
     fclose(inputfile);
 
-    DefWaveFormat();  // Формируем длину в заголовке WAV-файла
+    DefWaveFormat();  // Р¤РѕСЂРјРёСЂСѓРµРј РґР»РёРЅСѓ РІ Р·Р°РіРѕР»РѕРІРєРµ WAV-С„Р°Р№Р»Р°
 
     fseek(outputfile, 0, SEEK_END);
     long streamsize = ftell(outputfile);
