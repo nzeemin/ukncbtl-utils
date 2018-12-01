@@ -139,7 +139,7 @@ BYTE load[512];
 char name1[16];
 
 
-void PauseWrite(int n)  // Çàïèñü ïàóçû
+void PauseWrite(int n)  // Запись паузы
 {
     const BYTE wr = 0x7f;
     for (int i = 1; i < n + 1; ++i)
@@ -154,7 +154,7 @@ void ByteWrite(BYTE n)
 
     for (k = 0; k < 8; ++k)
     {
-        // Ïîáèòîâî ðàñêëàäûâàåì
+        // Побитово раскладываем
         if ((n & 1) == 0)
             fwrite(bit0, 1, sizeof(bit0), outputfile);
         else
@@ -182,7 +182,7 @@ void PrepareLoader()
     memcpy(load, loader, 512);
 
     // YELLOW color
-    // Çàïèñûâàåì àäðåñà â çàãðóç÷èê
+    // Записываем адреса в загрузчик
     fseek(inputfile, 32, SEEK_SET);
     fread(&t1, 1, 1, inputfile);
     load[ 32 ] = t1;
@@ -227,7 +227,7 @@ void PrepareLoader()
     load[ 212 ] = (BYTE)( datalength - ( ( datalength / 256 ) * 256 ) );
 }
 
-void DefWaveFormat()  // Ïèøåì çàãîëîâîê WAV
+void DefWaveFormat()  // Пишем заголовок WAV
 {
     unsigned long length1, length2;
 
@@ -269,45 +269,45 @@ void Convert()
 
     PrepareLoader();
 
-    fwrite(chunk1, 1, sizeof(chunk1), outputfile);  // Ïèøåì çàãîëîâîê WAV-ôàéëà
+    fwrite(chunk1, 1, sizeof(chunk1), outputfile);  // Пишем заголовок WAV-файла
 
-    fwrite(pilot, 1, sizeof(pilot), outputfile);  // Ïèøåì çàãîòîâêó äëÿ ïèëîò-òîíà
+    fwrite(pilot, 1, sizeof(pilot), outputfile);  // Пишем заготовку для пилот-тона
 
-    // Ïèøåì çàãîëîâîê çàãðóç÷èêà
-    for ( i = 0; i < 8000; ++i )  // Ïèëîò-òîí ïåðåä çàãîëîâêîì äëèòåëüíîñòüþ 8000 áèòîâ "1"
+    // Пишем заголовок загрузчика
+    for ( i = 0; i < 8000; ++i )  // Пилот-тон перед заголовком длительностью 8000 битов "1"
         fwrite(bit1, 1, sizeof(bit1), outputfile);
-    for ( i = 0; i < 16; ++i )  // 16 áàéò èìåíè ôàéëà
+    for ( i = 0; i < 16; ++i )  // 16 байт имени файла
         ByteWrite( 0 );
-    WordWrite( 256 );       // 1 ñëîâî äëèíû äàííûõ â ñëîâàõ
-    WordWrite( 0 );         // 1 ñëîâî àäðåñà çàãðóçêè äàííûõ
-    for ( i = 0; i < 2000; ++i )  // Ïèëîò-òîí ïåðåä äàííûìè äëèòåëüíîñòüþ 2000 áèòîâ "1"
+    WordWrite( 256 );       // 1 слово длины данных в словах
+    WordWrite( 0 );         // 1 слово адреса загрузки данных
+    for ( i = 0; i < 2000; ++i )  // Пилот-тон перед данными длительностью 2000 битов "1"
         fwrite(bit1, 1, sizeof(bit1), outputfile);
 
-    // Ïèøåì äàííûå çàãðóç÷èêà
+    // Пишем данные загрузчика
     checksum = 0;
     for (i = 0; i < 256; ++i)
     {
-        ByteWrite( ( load[ i * 2 ] ) );  // Ïèøåì loader...
+        ByteWrite( ( load[ i * 2 ] ) );  // Пишем loader...
         ByteWrite( ( load[ i * 2 + 1 ] ) );
         checksum = checksum + (WORD)( load[ i * 2 ] ) + ((WORD)( load[ i * 2 + 1 ] )) * 256;
         checksum = checksum - checksum / 65536 * 65536 + checksum / 65536;
     }
-    WordWrite( (WORD)checksum );  // Ïèøåì ÊÑ
+    WordWrite( (WORD)checksum );  // Пишем КС
 
-    // Ïàóçà ìåæäó áëîêàìè
+    // Пауза между блоками
     PauseWrite( 11000 );
-    // Èìïóëüñ ðàñêà÷êè
+    // Импульс раскачки
     fwrite(pilot, 1, sizeof(pilot), outputfile);
 
-    for ( i = 1; i < 8001; ++i )  // Ïèëîò-òîí ïåðåä çàãîëîâêîì äëèòåëüíîñòüþ 8000 áèòîâ "1"
+    for ( i = 1; i < 8001; ++i )  // Пилот-тон перед заголовком длительностью 8000 битов "1"
         fwrite(bit1, 1, sizeof(bit1), outputfile);
 
-    for ( i = 0; i < 16; ++i )  // 16 áàéò èìåíè ôàéëà
+    for ( i = 0; i < 16; ++i )  // 16 байт имени файла
         ByteWrite( ( name1[ i ] ) );
-    WordWrite( (WORD)datalength );    // 1 ñëîâî äëèíû äàííûõ â ñëîâàõ
-    WordWrite( 512 );           // 1 ñëîâî àäðåñà çàãðóçêè äàííûõ
+    WordWrite( (WORD)datalength );    // 1 слово длины данных в словах
+    WordWrite( 512 );           // 1 слово адреса загрузки данных
 
-    for ( i = 0; i < 2000; ++i )  // Ïèëîò-òîí ïåðåä äàííûìè äëèòåëüíîñòüþ 2000 áèòîâ "1"
+    for ( i = 0; i < 2000; ++i )  // Пилот-тон перед данными длительностью 2000 битов "1"
         fwrite(bit1, 1, sizeof(bit1), outputfile);
 
     fseek(inputfile, 512, SEEK_SET);  //inputstream.Position = 512;
@@ -327,7 +327,7 @@ void Convert()
 
     fclose(inputfile);
 
-    DefWaveFormat();  // Ôîðìèðóåì äëèíó â çàãîëîâêå WAV-ôàéëà
+    DefWaveFormat();  // Формируем длину в заголовке WAV-файла
 
     fseek(outputfile, 0, SEEK_END);
     long streamsize = ftell(outputfile);
