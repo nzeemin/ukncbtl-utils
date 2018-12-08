@@ -14,6 +14,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 # define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -436,11 +437,11 @@ int main(int argc, char* argv[])
     wStartAddr = *((uint16_t*)(pFileImage + 040));
     wStackAddr = *((uint16_t*)(pFileImage + 042));
     wTopAddr = *((uint16_t*)(pFileImage + 050));
-    printf("SAV Start\t%06o  %04x  %5d\n", wStartAddr, wStartAddr, wStartAddr);
-    printf("SAV Stack\t%06o  %04x  %5d\n", wStackAddr, wStackAddr, wStackAddr);
-    printf("SAV Top  \t%06o  %04x  %5d\n", wTopAddr, wTopAddr, wTopAddr);
+    printf("SAV Start\t%06ho  %04x  %5d\n", wStartAddr, wStartAddr, wStartAddr);
+    printf("SAV Stack\t%06ho  %04x  %5d\n", wStackAddr, wStackAddr, wStackAddr);
+    printf("SAV Top  \t%06ho  %04x  %5d\n", wTopAddr, wTopAddr, wTopAddr);
     size_t savImageSize = ((size_t)wTopAddr + 2 - 01000);
-    printf("SAV image size\t%06o  %04lx  %5lu\n", savImageSize, savImageSize, savImageSize);
+    printf("SAV image size\t%06ho  %04lx  %5lu\n", (uint16_t)savImageSize, savImageSize, savImageSize);
 
     pCartImage = (uint8_t*) ::calloc(65536, 1);
     if (pCartImage == NULL)
@@ -490,7 +491,7 @@ int main(int argc, char* argv[])
                 if (pTempBuffer[offset] == pFileImage[512 + offset])
                     continue;
 
-                printf("RLE decode failed at offset %06o (%02x != %02x)\n", 512 + offset, pTempBuffer[offset], pFileImage[512 + offset]);
+                printf("RLE decode failed at offset %06ho (%02x != %02x)\n", (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
                 return 255;
             }
             ::free(pTempBuffer);
@@ -528,7 +529,7 @@ int main(int argc, char* argv[])
                 if (pTempBuffer[offset] == pFileImage[512 + offset])
                     continue;
 
-                printf("LZSS decode failed at offset %06o 0x%04x (%02x != %02x)\n", 512 + offset, 512 + offset, pTempBuffer[offset], pFileImage[512 + offset]);
+                printf("LZSS decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset), (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
                 return 255;
             }
             ::free(pTempBuffer);
