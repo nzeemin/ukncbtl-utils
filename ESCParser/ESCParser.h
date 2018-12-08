@@ -14,6 +14,12 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include <iostream>
 #include <vector>
 
+#ifndef WIN32
+#include <string.h>
+#define sprintf_s snprintf
+#define _stricmp  strcasecmp
+#endif
+
 extern unsigned short RobotronFont[];
 
 

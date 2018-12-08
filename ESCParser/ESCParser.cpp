@@ -73,14 +73,14 @@ void PrintUsage()
             << "\t-pdf\tPDF output with multipage support" << std::endl;
 }
 
-void main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     std::cerr << "ESCParser utility  by Nikita Zimin  " << __DATE__ << " " << __TIME__ << std::endl;
 
     if (!ParseCommandLine(argc, argv))
     {
         PrintUsage();
-        return;
+        return 1;
     }
 
     // Choose a proper output driver
@@ -97,7 +97,7 @@ void main(int argc, char* argv[])
         break;
     default:
         std::cerr << "Output driver type is not defined." << std::endl;
-        return;
+        return 1;
     }
 
     // First run: calculate total page count
@@ -108,7 +108,7 @@ void main(int argc, char* argv[])
         if (input.fail())
         {
             std::cerr << "Failed to open the input file." << std::endl;
-            return;
+            return 1;
         }
 
         // Prepare stub driver
@@ -137,7 +137,7 @@ void main(int argc, char* argv[])
         if (input.fail())
         {
             std::cerr << "Failed to open the input file." << std::endl;
-            return;
+            return 1;
         }
 
         // Prepare the output driver
@@ -174,6 +174,8 @@ void main(int argc, char* argv[])
     // Cleanup
     delete g_pOutputDriver;
     g_pOutputDriver = 0;
+
+    return 0;
 }
 
 
