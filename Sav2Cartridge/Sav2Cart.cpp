@@ -10,6 +10,10 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 // Sav2Cart.cpp
 
+#ifdef _MSC_VER
+# define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -394,7 +398,6 @@ uint8_t* pCartImage = NULL;
 uint16_t wStartAddr;
 uint16_t wStackAddr;
 uint16_t wTopAddr;
-int err;
 
 int main(int argc, char* argv[])
 {
@@ -404,15 +407,15 @@ int main(int argc, char* argv[])
         return 255;
     }
 
-    strcpy_s(inputfilename, argv[1]);
-    strcpy_s(outputfilename, argv[2]);
+    strcpy(inputfilename, argv[1]);
+    strcpy(outputfilename, argv[2]);
 
     printf("Input file: %s\n", inputfilename);
 
-    err = fopen_s(&inputfile, inputfilename, "rb");
-    if (err != 0)
+    inputfile = fopen(inputfilename, "rb");
+    if (inputfile == nullptr)
     {
-        printf("Failed to open the input file (%d).", err);
+        printf("Failed to open the input file (%d).", errno);
         return 255;
     }
     ::fseek(inputfile, 0, SEEK_END);
@@ -563,10 +566,10 @@ int main(int argc, char* argv[])
     ::free(pFileImage);
 
     printf("Output file: %s\n", outputfilename);
-    err = fopen_s(&outputfile, outputfilename, "wb");
-    if (err != 0)
+    outputfile = fopen(outputfilename, "wb");
+    if (outputfile == nullptr)
     {
-        printf("Failed to open output file (%d).", err);
+        printf("Failed to open output file (%d).", errno);
         return 255;
     }
 

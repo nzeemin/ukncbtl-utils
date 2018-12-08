@@ -1,14 +1,14 @@
 CXX = g++
 CXXFLAGS = -O3 -Wall
 
-SOURCES = Sav2Cart.cpp
+SOURCES = LZSS.cpp Sav2Cart.cpp
 
-OBJECTS = Sav2Cart.o
+OBJECTS = LZSS.o Sav2Cart.o
 
 all: sav2cart
 
 sav2cart: $(OBJECTS)
-        $(CXX) $(CXXFLAGS) -o ESCParser $(OBJECTS)
+        $(CXX) $(CXXFLAGS) -o sav2cart $(OBJECTS)
 
 .PHONY: clean
 
