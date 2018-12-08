@@ -1,4 +1,4 @@
-/*  This file is part of UKNCBTL.
+﻿/*  This file is part of UKNCBTL.
     UKNCBTL is free software: you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software Foundation,
 either version 3 of the License, or (at your option) any later version.
@@ -33,7 +33,7 @@ protected:
     long            m_lFileSize;
     HDDDriverType   m_drivertype;
     int             m_nSectorsPerTrack;
-    BYTE            m_nSidesPerTrack;
+    uint8_t         m_nSidesPerTrack;
     int             m_nPartitions;
     CPartitionInfo* m_pPartitionInfos;
     bool            m_okChecksum;
@@ -43,7 +43,7 @@ public:
     ~CHardImage();
 
 public:
-    bool Attach(LPCTSTR sFileName);
+    bool Attach(const char * sFileName);
     void Detach();
     bool PrepareDiskImage(int partition, CDiskImage* pdiskimage);
 
@@ -55,8 +55,8 @@ public:
 public:
     void PrintImageInfo();
     void PrintPartitionTable();
-    void SavePartitionToFile(int partition, LPCTSTR filename);
-    void UpdatePartitionFromFile(int partition, LPCTSTR filename);
+    void SavePartitionToFile(int partition, const char * filename);
+    void UpdatePartitionFromFile(int partition, const char * filename);
     void InvertImage();
 };
 

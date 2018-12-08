@@ -1,5 +1,14 @@
+﻿/*  This file is part of UKNCBTL.
+    UKNCBTL is free software: you can redistribute it and/or modify it under the terms
+of the GNU Lesser General Public License as published by the Free Software Foundation,
+either version 3 of the License, or (at your option) any later version.
+    UKNCBTL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU Lesser General Public License for more details.
+    You should have received a copy of the GNU Lesser General Public License along with
+UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "stdafx.h"
+#include "rt11dsk.h"
 
 /*
 The question of how to convert rad50 to ascii seems to
@@ -56,7 +65,7 @@ test_rad()
 Passed the number of characters to unpack, the array of words to convert back to char,
 and the output string str[] */
 
-void r50asc(int cnt, WORD* r50, TCHAR str[])
+void r50asc(int cnt, uint16_t* r50, char str[])
 {
     /* sorry I think in decimal, 39 = Octal 47, decimal, 40 = Octal 50 */
     int i;
@@ -75,12 +84,12 @@ void r50asc(int cnt, WORD* r50, TCHAR str[])
         }
 
         v %= 40; /* mask all but bits of interest */
-        if (v == 0)                      ch = _T(' ');      /* space */
-        else if (v >= 1 && v <= 26)    ch = v - 1 + _T('A');    /* printable */
-        else if (v == 27)              ch = _T('$');
-        else if (v == 28)              ch = _T('.');
+        if (v == 0)                      ch = ' ';      /* space */
+        else if (v >= 1 && v <= 26)    ch = v - 1 + 'A';    /* printable */
+        else if (v == 27)              ch = '$';
+        else if (v == 28)              ch = '.';
         else if (v == 29)              ch = 255;        /* unused ! */
-        else if (v >= 30 && v <= 39)   ch = v - 30 + _T('0');   /* digit */
+        else if (v >= 30 && v <= 39)   ch = v - 30 + '0';   /* digit */
         /* end of valid RAD50 range, display table values */
 
         str[i] = ch;
@@ -89,7 +98,7 @@ void r50asc(int cnt, WORD* r50, TCHAR str[])
 }
 
 /* number of chars to pack */ /* input string */ /* array of words to fill from char */
-void irad50( int cnt, TCHAR str[], WORD r50[] )
+void irad50( int cnt, char str[], uint16_t r50[] )
 {
     unsigned int v = 0;
     int i;
@@ -98,14 +107,13 @@ void irad50( int cnt, TCHAR str[], WORD r50[] )
     */
     for (i = 0; i < cnt; i++)
     {
-
-        if (str[i] == _T(' '))                       v = 0; /* space */
-        else if (str[i] >= _T('A') &&
-                str[i] <= _T('Z'))  v = str[i] - _T('A') + 1; /* printable */
-        else if ( str[i] == _T('$'))   v = 27;
-        else if ( str[i] == _T('.'))   v = 28;
-        else if (str[i] >= _T('0') &&
-                str[i] <= _T('9'))  v = str[i] - _T('0') + 30; /* digit */
+        if (str[i] == ' ')                       v = 0; /* space */
+        else if (str[i] >= 'A' &&
+                str[i] <= 'Z')  v = str[i] - 'A' + 1; /* printable */
+        else if (str[i] == '$') v = 27;
+        else if (str[i] == '.') v = 28;
+        else if (str[i] >= '0' &&
+                str[i] <= '9')  v = str[i] - '0' + 30; /* digit */
         /* end of valid RAD50 range, display table values */
 
         if ((i % 3) == 0)
@@ -122,7 +130,7 @@ void irad50( int cnt, TCHAR str[], WORD r50[] )
 
 /* */
 
-void rtDateStr(WORD date, TCHAR* str)
+void rtDateStr(uint16_t date, char* str)
 {
     const char* months[] =
     { "???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
@@ -132,8 +140,7 @@ void rtDateStr(WORD date, TCHAR* str)
     int month = (date >> 10) & 0x1F;
 
     if (month < 1 || month > 12)
-        wcscpy_s(str, 10, _T("  -BAD-  "));
+        strcpy_s(str, 10, "  -BAD-  ");
     else
-        swprintf(str, 10, _T("%02d-%3S-%02d"), day, months[month], year );
+        sprintf_s(str, 10, "%02d-%3S-%02d", day, months[month], year );
 }
-

@@ -1,4 +1,4 @@
-/*  This file is part of UKNCBTL.
+п»ї/*  This file is part of UKNCBTL.
     UKNCBTL is free software: you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software Foundation,
 either version 3 of the License, or (at your option) any later version.
@@ -10,10 +10,10 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 // diskimage.cpp : Disk image utilities
 
-#include "stdafx.h"
+#include "rt11dsk.h"
 #include <time.h>
 #include "diskimage.h"
-#include "rad50.h"
+
 
 //////////////////////////////////////////////////////////////////////
 
@@ -27,7 +27,7 @@ struct CCachedBlock
 
 
 //////////////////////////////////////////////////////////////////////
-// Структуры данных, представляющие информацию о томе RT-11
+// РЎС‚СЂСѓРєС‚СѓСЂС‹ РґР°РЅРЅС‹С…, РїСЂРµРґСЃС‚Р°РІР»СЏСЋС‰РёРµ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРјРµ RT-11
 
 /* Types for rtFileEntry 'status' */
 #define RT11_STATUS_TENTATIVE   256     /* Temporary file */
@@ -35,53 +35,53 @@ struct CCachedBlock
 #define RT11_STATUS_PERM        1024    /* A "real" file */
 #define RT11_STATUS_ENDMARK     2048    /* Marks the end of file entries */
 
-// Структура для хранения разобранной строки каталога
+// РЎС‚СЂСѓРєС‚СѓСЂР° РґР»СЏ С…СЂР°РЅРµРЅРёСЏ СЂР°Р·РѕР±СЂР°РЅРЅРѕР№ СЃС‚СЂРѕРєРё РєР°С‚Р°Р»РѕРіР°
 struct CVolumeCatalogEntry
 {
-public:  // Упакованные поля записи
-    WORD status;    // See RT11_STATUS_xxx constants
-    WORD datepac;   // Упакованное поле даты
-    WORD start;     // File start block number
-    WORD length;    // File length in 512-byte blocks
-public:  // Распакованные поля записи
-    TCHAR name[7];  // File name - 6 characters
-    TCHAR ext[4];   // File extension - 3 characters
+public:  // РЈРїР°РєРѕРІР°РЅРЅС‹Рµ РїРѕР»СЏ Р·Р°РїРёСЃРё
+    uint16_t status;    // See RT11_STATUS_xxx constants
+    uint16_t datepac;   // РЈРїР°РєРѕРІР°РЅРЅРѕРµ РїРѕР»Рµ РґР°С‚С‹
+    uint16_t start;     // File start block number
+    uint16_t length;    // File length in 512-byte blocks
+public:  // Р Р°СЃРїР°РєРѕРІР°РЅРЅС‹Рµ РїРѕР»СЏ Р·Р°РїРёСЃРё
+    char name[7];  // File name - 6 characters
+    char ext[4];   // File extension - 3 characters
 
 public:
     CVolumeCatalogEntry();
-    void Unpack(WORD const * pSrc, WORD filestartblock);  // Распаковка записи из каталога
-    void Pack(WORD* pDest);   // Упаковка записи в каталог
-    void Print();  // Печать строки каталога на консоль
+    void Unpack(uint16_t const * pSrc, uint16_t filestartblock);  // Р Р°СЃРїР°РєРѕРІРєР° Р·Р°РїРёСЃРё РёР· РєР°С‚Р°Р»РѕРіР°
+    void Pack(uint16_t* pDest);   // РЈРїР°РєРѕРІРєР° Р·Р°РїРёСЃРё РІ РєР°С‚Р°Р»РѕРі
+    void Print();  // РџРµС‡Р°С‚СЊ СЃС‚СЂРѕРєРё РєР°С‚Р°Р»РѕРіР° РЅР° РєРѕРЅСЃРѕР»СЊ
 };
 
-// Структура данных для сегмента каталога
+// РЎС‚СЂСѓРєС‚СѓСЂР° РґР°РЅРЅС‹С… РґР»СЏ СЃРµРіРјРµРЅС‚Р° РєР°С‚Р°Р»РѕРіР°
 struct CVolumeCatalogSegment
 {
 public:
-    WORD segmentblock;  // Блок на диске, в котором расположен этот сегмент каталога
-    WORD entriesused;   // Количество использованых записей каталога
+    uint16_t segmentblock;  // Р‘Р»РѕРє РЅР° РґРёСЃРєРµ, РІ РєРѕС‚РѕСЂРѕРј СЂР°СЃРїРѕР»РѕР¶РµРЅ СЌС‚РѕС‚ СЃРµРіРјРµРЅС‚ РєР°С‚Р°Р»РѕРіР°
+    uint16_t entriesused;   // РљРѕР»РёС‡РµСЃС‚РІРѕ РёСЃРїРѕР»СЊР·РѕРІР°РЅС‹С… Р·Р°РїРёСЃРµР№ РєР°С‚Р°Р»РѕРіР°
 public:
-    WORD nextsegment;   // Номер следующего сегмента
-    WORD start;         // Номер блока, с которого начинаются файлы этого сегмента
-    // Массив записей каталога, размером в максимально возможное кол-во записей для этого сегмента
+    uint16_t nextsegment;   // РќРѕРјРµСЂ СЃР»РµРґСѓСЋС‰РµРіРѕ СЃРµРіРјРµРЅС‚Р°
+    uint16_t start;         // РќРѕРјРµСЂ Р±Р»РѕРєР°, СЃ РєРѕС‚РѕСЂРѕРіРѕ РЅР°С‡РёРЅР°СЋС‚СЃСЏ С„Р°Р№Р»С‹ СЌС‚РѕРіРѕ СЃРµРіРјРµРЅС‚Р°
+    // РњР°СЃСЃРёРІ Р·Р°РїРёСЃРµР№ РєР°С‚Р°Р»РѕРіР°, СЂР°Р·РјРµСЂРѕРј РІ РјР°РєСЃРёРјР°Р»СЊРЅРѕ РІРѕР·РјРѕР¶РЅРѕРµ РєРѕР»-РІРѕ Р·Р°РїРёСЃРµР№ РґР»СЏ СЌС‚РѕРіРѕ СЃРµРіРјРµРЅС‚Р°
     CVolumeCatalogEntry* catalogentries;
 };
 
 
 //////////////////////////////////////////////////////////////////////
 
-static WORD g_segmentBuffer[512];
+static uint16_t g_segmentBuffer[512];
 
 
 void CDiskImage::UpdateCatalogSegment(CVolumeCatalogSegment* pSegment)
 {
-    BYTE* pBlock1 = (BYTE*) GetBlock(pSegment->segmentblock);
+    uint8_t* pBlock1 = (uint8_t*) GetBlock(pSegment->segmentblock);
     memcpy(g_segmentBuffer, pBlock1, 512);
-    BYTE* pBlock2 = (BYTE*) GetBlock(pSegment->segmentblock + 1);
+    uint8_t* pBlock2 = (uint8_t*) GetBlock(pSegment->segmentblock + 1);
     memcpy(g_segmentBuffer + 256, pBlock2, 512);
-    WORD* pData = g_segmentBuffer;
+    uint16_t* pData = g_segmentBuffer;
 
-    pData += 5;  // Пропускаем заголовок сегмента
+    pData += 5;  // РџСЂРѕРїСѓСЃРєР°РµРј Р·Р°РіРѕР»РѕРІРѕРє СЃРµРіРјРµРЅС‚Р°
     for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
     {
         CVolumeCatalogEntry* pEntry = pSegment->catalogentries + entryno;
@@ -98,34 +98,34 @@ void CDiskImage::UpdateCatalogSegment(CVolumeCatalogSegment* pSegment)
 }
 
 // Parse sFileName as RT11 file name, 6.3 format
-static void ParseFileName63(LPCTSTR sFileName, TCHAR * filename, TCHAR * fileext)
+static void ParseFileName63(const char * sFileName, char * filename, char * fileext)
 {
-    LPCTSTR sFilenameExt = wcsrchr(sFileName, _T('.'));
+    const char * sFilenameExt = strrchr(sFileName, '.');
     if (sFilenameExt == NULL)
     {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
+        printf("Wrong filename format: %s\n", sFileName);
         return;
     }
     size_t nFilenameLength = sFilenameExt - sFileName;
     if (nFilenameLength == 0 || nFilenameLength > 6)
     {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
+        printf("Wrong filename format: %s\n", sFileName);
         return;
     }
-    size_t nFileextLength = wcslen(sFileName) - nFilenameLength - 1;
+    size_t nFileextLength = strlen(sFileName) - nFilenameLength - 1;
     if (nFileextLength == 0 || nFileextLength > 3)
     {
-        wprintf(_T("Wrong filename format: %s\n"), sFileName);
+        printf("Wrong filename format: %s\n", sFileName);
         return;
     }
-    for (int i = 0; i < 6; i++) filename[i] = _T(' ');
-    for (WORD i = 0; i < nFilenameLength; i++) filename[i] = sFileName[i];
+    for (int i = 0; i < 6; i++) filename[i] = ' ';
+    for (uint16_t i = 0; i < nFilenameLength; i++) filename[i] = sFileName[i];
     filename[6] = 0;
-    _wcsupr_s(filename, 7);
-    for (int i = 0; i < 3; i++) fileext[i] = _T(' ');
-    for (WORD i = 0; i < nFileextLength; i++) fileext[i] = sFilenameExt[i + 1];
+    _strupr_s(filename, 7);
+    for (int i = 0; i < 3; i++) fileext[i] = ' ';
+    for (uint16_t i = 0; i < nFileextLength; i++) fileext[i] = sFilenameExt[i + 1];
     fileext[3] = 0;
-    _wcsupr_s(fileext, 4);
+    _strupr_s(fileext, 4);
 }
 
 
@@ -147,26 +147,26 @@ CDiskImage::~CDiskImage()
 }
 
 // Open the specified disk image file
-bool CDiskImage::Attach(LPCTSTR sImageFileName, long offset)
+bool CDiskImage::Attach(const char * sImageFileName, long offset)
 {
     m_lStartOffset = offset;
     if (m_lStartOffset <= 0)
     {
         m_lStartOffset = 0;
-        // Определяем, это .dsk-образ или .rtd-образ - по расширению файла
-        LPCTSTR sImageFilenameExt = wcsrchr(sImageFileName, _T('.'));
-        if (sImageFilenameExt != NULL && _wcsicmp(sImageFilenameExt, _T(".rtd")) == 0)
+        // РћРїСЂРµРґРµР»СЏРµРј, СЌС‚Рѕ .dsk-РѕР±СЂР°Р· РёР»Рё .rtd-РѕР±СЂР°Р· - РїРѕ СЂР°СЃС€РёСЂРµРЅРёСЋ С„Р°Р№Р»Р°
+        const char * sImageFilenameExt = strrchr(sImageFileName, '.');
+        if (sImageFilenameExt != NULL && _stricmp(sImageFilenameExt, ".rtd") == 0)
             m_lStartOffset = NETRT11_IMAGE_HEADER_SIZE;
-        //NOTE: Можно также определять по длине файла: кратна 512 -- .dsk, длина минус 256 кратна 512 -- .rtd
+        //NOTE: РњРѕР¶РЅРѕ С‚Р°РєР¶Рµ РѕРїСЂРµРґРµР»СЏС‚СЊ РїРѕ РґР»РёРЅРµ С„Р°Р№Р»Р°: РєСЂР°С‚РЅР° 512 -- .dsk, РґР»РёРЅР° РјРёРЅСѓСЃ 256 РєСЂР°С‚РЅР° 512 -- .rtd
     }
 
     // Try to open as Normal first, then as ReadOnly
     m_okReadOnly = false;
-    m_fpFile = ::_wfopen(sImageFileName, _T("r+b"));
+    m_fpFile = ::fopen(sImageFileName, "r+b");
     if (m_fpFile == NULL)
     {
         m_okReadOnly = true;
-        m_fpFile = ::_wfopen(sImageFileName, _T("rb"));
+        m_fpFile = ::fopen(sImageFileName, "rb");
         if (m_fpFile == NULL)
             return false;
     }
@@ -246,15 +246,15 @@ void CDiskImage::FlushChanges()
     {
         if (!m_pCache[i].bChanged) continue;
 
-        // Вычисляем смещение в файле образа
+        // Р’С‹С‡РёСЃР»СЏРµРј СЃРјРµС‰РµРЅРёРµ РІ С„Р°Р№Р»Рµ РѕР±СЂР°Р·Р°
         long foffset = GetBlockOffset(m_pCache[i].nBlock);
         ::fseek(m_fpFile, foffset, SEEK_SET);
 
-        // Записываем блок
+        // Р—Р°РїРёСЃС‹РІР°РµРј Р±Р»РѕРє
         size_t lBytesWritten = ::fwrite(m_pCache[i].pData, 1, RT11_BLOCK_SIZE, m_fpFile);
         if (lBytesWritten != RT11_BLOCK_SIZE)
         {
-            wprintf(_T("Failed to write block number %d.\n"), m_pCache[i].nBlock);
+            printf("Failed to write block number %d.\n", m_pCache[i].nBlock);
             _exit(-1);
         }
 
@@ -262,7 +262,7 @@ void CDiskImage::FlushChanges()
     }
 }
 
-// Каждый блок - 256 слов, 512 байт
+// РљР°Р¶РґС‹Р№ Р±Р»РѕРє - 256 СЃР»РѕРІ, 512 Р±Р°Р№С‚
 // nBlock = 1..???
 void* CDiskImage::GetBlock(int nBlock)
 {
@@ -292,12 +292,12 @@ void* CDiskImage::GetBlock(int nBlock)
     {
         // Find a non-changed cached block with oldest usage time
         int iCand = -1;
-        DWORD maxdiff = 0;
+        uint32_t maxdiff = 0;
         for (int i = 0; i < m_nCacheBlocks; i++)
         {
             if (!m_pCache[i].bChanged)
             {
-                DWORD diff = ::clock() - m_pCache[i].cLastUsage;
+                uint32_t diff = ::clock() - m_pCache[i].cLastUsage;
                 if (diff > maxdiff)
                 {
                     maxdiff = diff;
@@ -316,7 +316,7 @@ void* CDiskImage::GetBlock(int nBlock)
 
     if (iEmpty == -1)
     {
-        wprintf(_T("Cache is full.\n"));
+        printf("Cache is full.\n");
         _exit(-1);
     }
 
@@ -325,7 +325,7 @@ void* CDiskImage::GetBlock(int nBlock)
     m_pCache[iEmpty].pData = ::calloc(1, RT11_BLOCK_SIZE);
     if (m_pCache[iEmpty].pData == NULL)
     {
-        wprintf(_T("Failed to allocate memory for block number %d.\n"), nBlock);
+        printf("Failed to allocate memory for block number %d.\n", nBlock);
         _exit(-1);
     }
     m_pCache[iEmpty].cLastUsage = ::clock();
@@ -336,7 +336,7 @@ void* CDiskImage::GetBlock(int nBlock)
     size_t lBytesRead = ::fread(m_pCache[iEmpty].pData, 1, RT11_BLOCK_SIZE, m_fpFile);
     if (lBytesRead != RT11_BLOCK_SIZE)
     {
-        wprintf(_T("Failed to read block number %d.\n"), nBlock);
+        printf("Failed to read block number %d.\n", nBlock);
         _exit(-1);
     }
 
@@ -359,12 +359,12 @@ void CDiskImage::DecodeImageCatalog()
 {
     memset(&m_volumeinfo, 0, sizeof(m_volumeinfo));
 
-    // Разбор Home Block
-    BYTE* pHomeSector = (BYTE*) GetBlock(1);
-    WORD nFirstCatalogBlock = pHomeSector[0724];  // Это должен быть блок номер 6
+    // Р Р°Р·Р±РѕСЂ Home Block
+    uint8_t* pHomeSector = (uint8_t*) GetBlock(1);
+    uint16_t nFirstCatalogBlock = pHomeSector[0724];  // Р­С‚Рѕ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ Р±Р»РѕРє РЅРѕРјРµСЂ 6
     if (nFirstCatalogBlock > 10)
     {
-        wprintf(_T("First catalog block is %d, out of range.\n"), nFirstCatalogBlock);
+        printf("First catalog block is %d, out of range.\n", nFirstCatalogBlock);
         _exit(-1);
     }
     if (nFirstCatalogBlock == 0) nFirstCatalogBlock = 6;
@@ -377,59 +377,59 @@ void CDiskImage::DecodeImageCatalog()
     const char* sSystemId = (const char*) pHomeSector + 0760;
     strncpy_s(m_volumeinfo.systemid, 13, sSystemId, 12);
 
-    // Разбор первого блока каталога
-    BYTE* pBlock1 = (BYTE*) GetBlock(nFirstCatalogBlock);
+    // Р Р°Р·Р±РѕСЂ РїРµСЂРІРѕРіРѕ Р±Р»РѕРєР° РєР°С‚Р°Р»РѕРіР°
+    uint8_t* pBlock1 = (uint8_t*) GetBlock(nFirstCatalogBlock);
     memcpy(g_segmentBuffer, pBlock1, 512);
-    BYTE* pBlock2 = (BYTE*) GetBlock(nFirstCatalogBlock + 1);
+    uint8_t* pBlock2 = (uint8_t*) GetBlock(nFirstCatalogBlock + 1);
     memcpy(g_segmentBuffer + 256, pBlock2, 512);
-    WORD* pCatalogSector = g_segmentBuffer;
+    uint16_t* pCatalogSector = g_segmentBuffer;
     m_volumeinfo.catalogsegmentcount = pCatalogSector[0];
     m_volumeinfo.lastopenedsegment = pCatalogSector[2];
-    WORD nExtraBytesLength = pCatalogSector[3];
-    WORD nExtraWordsLength = (nExtraBytesLength + 1) / 2;
+    uint16_t nExtraBytesLength = pCatalogSector[3];
+    uint16_t nExtraWordsLength = (nExtraBytesLength + 1) / 2;
     m_volumeinfo.catalogextrawords = nExtraWordsLength;
-    WORD nEntryLength = 7 + nExtraWordsLength;  // Total catalog entry length, in words
+    uint16_t nEntryLength = 7 + nExtraWordsLength;  // Total catalog entry length, in words
     m_volumeinfo.catalogentrylength = nEntryLength;
-    WORD nEntriesPerSegment = (512 - 5) / nEntryLength;
+    uint16_t nEntriesPerSegment = (512 - 5) / nEntryLength;
     m_volumeinfo.catalogentriespersegment = nEntriesPerSegment;
     if (m_volumeinfo.catalogsegmentcount == 0 || m_volumeinfo.catalogsegmentcount > 31)
     {
-        wprintf(_T("Catalog segment count is %d, out of range (1..31).\n"), m_volumeinfo.catalogsegmentcount);
+        printf("Catalog segment count is %d, out of range (1..31).\n", m_volumeinfo.catalogsegmentcount);
         _exit(-1);
     }
 
-    // Получаем память под список сегментов
+    // РџРѕР»СѓС‡Р°РµРј РїР°РјСЏС‚СЊ РїРѕРґ СЃРїРёСЃРѕРє СЃРµРіРјРµРЅС‚РѕРІ
     m_volumeinfo.catalogsegments = (CVolumeCatalogSegment*) ::calloc(
             m_volumeinfo.catalogsegmentcount, sizeof(CVolumeCatalogSegment));
 
-    //TODO: Для заголовка самого первого сегмента каталога существует правило:
-    //      если удвоить содержимое слова 1 и к результату прибавить начальный блок каталога (обычно 6),
-    //      то получиться содержимое слова 5. Таким образом RT-11 отличает свой каталог от чужого.
+    //TODO: Р”Р»СЏ Р·Р°РіРѕР»РѕРІРєР° СЃР°РјРѕРіРѕ РїРµСЂРІРѕРіРѕ СЃРµРіРјРµРЅС‚Р° РєР°С‚Р°Р»РѕРіР° СЃСѓС‰РµСЃС‚РІСѓРµС‚ РїСЂР°РІРёР»Рѕ:
+    //      РµСЃР»Рё СѓРґРІРѕРёС‚СЊ СЃРѕРґРµСЂР¶РёРјРѕРµ СЃР»РѕРІР° 1 Рё Рє СЂРµР·СѓР»СЊС‚Р°С‚Сѓ РїСЂРёР±Р°РІРёС‚СЊ РЅР°С‡Р°Р»СЊРЅС‹Р№ Р±Р»РѕРє РєР°С‚Р°Р»РѕРіР° (РѕР±С‹С‡РЅРѕ 6),
+    //      С‚Рѕ РїРѕР»СѓС‡РёС‚СЊСЃСЏ СЃРѕРґРµСЂР¶РёРјРѕРµ СЃР»РѕРІР° 5. РўР°РєРёРј РѕР±СЂР°Р·РѕРј RT-11 РѕС‚Р»РёС‡Р°РµС‚ СЃРІРѕР№ РєР°С‚Р°Р»РѕРі РѕС‚ С‡СѓР¶РѕРіРѕ.
 
-    WORD nCatalogEntriesCount = 0;
-    WORD nCatalogSegmentNumber = 1;
+    uint16_t nCatalogEntriesCount = 0;
+    uint16_t nCatalogSegmentNumber = 1;
     CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments;
 
-    WORD nCatalogBlock = nFirstCatalogBlock;
+    uint16_t nCatalogBlock = nFirstCatalogBlock;
     for (;;)
     {
         pSegment->segmentblock = nCatalogBlock;
 
-        WORD nStartBlock = pCatalogSector[4];  // Номер блока, с которого начинаются файлы этого сегмента
+        uint16_t nStartBlock = pCatalogSector[4];  // РќРѕРјРµСЂ Р±Р»РѕРєР°, СЃ РєРѕС‚РѕСЂРѕРіРѕ РЅР°С‡РёРЅР°СЋС‚СЃСЏ С„Р°Р№Р»С‹ СЌС‚РѕРіРѕ СЃРµРіРјРµРЅС‚Р°
         pSegment->start = pCatalogSector[4];
-        //wprintf(_T("Segment %d start block: %d\n"), nCatalogSegmentNumber, nStartBlock);
+        //printf("Segment %d start block: %d\n", nCatalogSegmentNumber, nStartBlock);
         pSegment->nextsegment = pCatalogSector[1];
-        //wprintf(_T("Next segment:           %d\n"), pSegment->nextsegment);
+        //printf("Next segment:           %d\n", pSegment->nextsegment);
 
-        // Выделяем память под записи сегмента
+        // Р’С‹РґРµР»СЏРµРј РїР°РјСЏС‚СЊ РїРѕРґ Р·Р°РїРёСЃРё СЃРµРіРјРµРЅС‚Р°
         pSegment->catalogentries = (CVolumeCatalogEntry*) ::calloc(
                 nEntriesPerSegment, sizeof(CVolumeCatalogEntry));
 
         CVolumeCatalogEntry* pEntry = pSegment->catalogentries;
-        WORD* pCatalog = pCatalogSector + 5;  // Начало описаний файлов
-        WORD nFileStartBlock = nStartBlock;
-        WORD entriesused = 0;
-        for (;;)  // Цикл по записям данного сегмента каталога
+        uint16_t* pCatalog = pCatalogSector + 5;  // РќР°С‡Р°Р»Рѕ РѕРїРёСЃР°РЅРёР№ С„Р°Р№Р»РѕРІ
+        uint16_t nFileStartBlock = nStartBlock;
+        uint16_t entriesused = 0;
+        for (;;)  // Р¦РёРєР» РїРѕ Р·Р°РїРёСЃСЏРј РґР°РЅРЅРѕРіРѕ СЃРµРіРјРµРЅС‚Р° РєР°С‚Р°Р»РѕРіР°
         {
             nCatalogEntriesCount++;
 
@@ -441,18 +441,18 @@ void CDiskImage::DecodeImageCatalog()
             nFileStartBlock += pEntry->length;
             pEntry++;
             pCatalog += nEntryLength;
-            if (pCatalog - pCatalogSector > 256 * 2 - nEntryLength)  // Сегмент закончился
+            if (pCatalog - pCatalogSector > 256 * 2 - nEntryLength)  // РЎРµРіРјРµРЅС‚ Р·Р°РєРѕРЅС‡РёР»СЃСЏ
                 break;
         }
         pSegment->entriesused = entriesused;
 
-        if (pSegment->nextsegment == 0) break;  // Конец цепочки сегментов
+        if (pSegment->nextsegment == 0) break;  // РљРѕРЅРµС† С†РµРїРѕС‡РєРё СЃРµРіРјРµРЅС‚РѕРІ
 
-        // Переходим к следующему сегменту каталога
+        // РџРµСЂРµС…РѕРґРёРј Рє СЃР»РµРґСѓСЋС‰РµРјСѓ СЃРµРіРјРµРЅС‚Сѓ РєР°С‚Р°Р»РѕРіР°
         nCatalogBlock = nFirstCatalogBlock + (pSegment->nextsegment - 1) * 2;
-        pBlock1 = (BYTE*) GetBlock(nCatalogBlock);
+        pBlock1 = (uint8_t*) GetBlock(nCatalogBlock);
         memcpy(g_segmentBuffer, pBlock1, 512);
-        pBlock2 = (BYTE*) GetBlock(nCatalogBlock + 1);
+        pBlock2 = (uint8_t*) GetBlock(nCatalogBlock + 1);
         memcpy(g_segmentBuffer + 256, pBlock2, 512);
         pCatalogSector = g_segmentBuffer;
         nCatalogSegmentNumber = pSegment->nextsegment;
@@ -464,27 +464,27 @@ void CDiskImage::DecodeImageCatalog()
 
 void CDiskImage::PrintTableHeader()
 {
-    wprintf(_T(" Filename  Blocks  Date      Start    Bytes\n"));
-    wprintf(_T("---------- ------  --------- ----- --------\n"));
+    printf(" Filename  Blocks  Date      Start    Bytes\n"
+           "---------- ------  --------- ----- --------\n");
 }
 void CDiskImage::PrintTableFooter()
 {
-    wprintf(_T("---------- ------  --------- ----- --------\n"));
+    printf("---------- ------  --------- ----- --------\n");
 }
 
 void CDiskImage::PrintCatalogDirectory()
 {
-    wprintf(_T(" Volume: %S\n"), m_volumeinfo.volumeid);
-    wprintf(_T(" Owner:  %S\n"), m_volumeinfo.ownername);
-    wprintf(_T(" System: %S\n"), m_volumeinfo.systemid);
-    wprintf(_T("\n"));
-    wprintf(_T(" %d available segments, last opened segment: %d\n"), m_volumeinfo.catalogsegmentcount, m_volumeinfo.lastopenedsegment);
-    wprintf(_T("\n"));
+    printf(" Volume: %S\n", m_volumeinfo.volumeid);
+    printf(" Owner:  %S\n", m_volumeinfo.ownername);
+    printf(" System: %S\n", m_volumeinfo.systemid);
+    printf("\n");
+    printf(" %d available segments, last opened segment: %d\n", m_volumeinfo.catalogsegmentcount, m_volumeinfo.lastopenedsegment);
+    printf("\n");
     PrintTableHeader();
 
-    WORD nFilesCount = 0;
-    WORD nBlocksCount = 0;
-    WORD nFreeBlocksCount = 0;
+    uint16_t nFilesCount = 0;
+    uint16_t nBlocksCount = 0;
+    uint16_t nFreeBlocksCount = 0;
     for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
@@ -508,15 +508,15 @@ void CDiskImage::PrintCatalogDirectory()
     }
 
     PrintTableFooter();
-    wprintf(_T(" %d files, %d blocks\n"), nFilesCount, nBlocksCount);
-    wprintf(_T(" %d free blocks\n\n"), nFreeBlocksCount);
+    printf(" %d files, %d blocks\n", nFilesCount, nBlocksCount);
+    printf(" %d free blocks\n\n", nFreeBlocksCount);
 }
 
-void CDiskImage::SaveEntryToExternalFile(LPCTSTR sFileName)
+void CDiskImage::SaveEntryToExternalFile(const char * sFileName)
 {
     // Parse sFileName
-    TCHAR filename[7];
-    TCHAR fileext[4];
+    char filename[7];
+    char fileext[4];
     ParseFileName63(sFileName, filename, fileext);
 
     // Search for the filename/fileext
@@ -534,8 +534,8 @@ void CDiskImage::SaveEntryToExternalFile(LPCTSTR sFileName)
             if (pEntry->status == 0) continue;
             if (pEntry->status == RT11_STATUS_EMPTY) continue;
 
-            if (_wcsnicmp(filename, pEntry->name, 6) == 0 &&
-                _wcsnicmp(fileext, pEntry->ext, 3) == 0)
+            if (_strnicmp(filename, pEntry->name, 6) == 0 &&
+                _strnicmp(fileext, pEntry->ext, 3) == 0)
             {
                 pFileEntry = pEntry;
                 break;
@@ -544,54 +544,54 @@ void CDiskImage::SaveEntryToExternalFile(LPCTSTR sFileName)
     }
     if (pFileEntry == NULL)
     {
-        wprintf(_T("Filename not found: %s\n"), sFileName);
+        printf("Filename not found: %s\n", sFileName);
         return;
     }
-    wprintf(_T("Extracting file:\n\n"));
+    printf("Extracting file:\n\n");
     PrintTableHeader();
     pFileEntry->Print();
     PrintTableFooter();
 
     // Collect file name + ext without trailing spaces
-    TCHAR sfilename[11];
-    wcscpy(sfilename, pFileEntry->name);
-    TCHAR * p = sfilename + 5;
-    while (p > sfilename && *p == _T(' ')) p--;
+    char sfilename[11];
+    strcpy(sfilename, pFileEntry->name);
+    char * p = sfilename + 5;
+    while (p > sfilename && *p == ' ') p--;
     p++;
-    *p = _T('.');
+    *p = '.';
     p++;
-    wcscpy(p, pFileEntry->ext);
+    strcpy(p, pFileEntry->ext);
 
-    WORD filestart = pFileEntry->start;
-    WORD filelength = pFileEntry->length;
+    uint16_t filestart = pFileEntry->start;
+    uint16_t filelength = pFileEntry->length;
 
     FILE* foutput = NULL;
-    errno_t err = _wfopen_s(&foutput, sfilename, _T("wb"));
+    errno_t err = fopen_s(&foutput, sfilename, "wb");
     if (err != 0)
     {
-        wprintf(_T("Failed to open output file %s: error %d\n"), sFileName, err);
+        printf("Failed to open output file %s: error %d\n", sFileName, err);
         return;
     }
 
-    for (WORD blockpos = 0; blockpos < filelength; blockpos++)
+    for (uint16_t blockpos = 0; blockpos < filelength; blockpos++)
     {
-        BYTE* pData = (BYTE*) GetBlock(filestart + blockpos);
-        size_t nBytesWritten = fwrite(pData, sizeof(BYTE), RT11_BLOCK_SIZE, foutput);
+        uint8_t* pData = (uint8_t*) GetBlock(filestart + blockpos);
+        size_t nBytesWritten = fwrite(pData, sizeof(uint8_t), RT11_BLOCK_SIZE, foutput);
         if (nBytesWritten < RT11_BLOCK_SIZE)
         {
-            wprintf(_T("Failed to write output file\n"));  //TODO: Show error number
+            printf("Failed to write output file\n");  //TODO: Show error number
             return;
         }
     }
 
     fclose(foutput);
 
-    wprintf(_T("\nDone.\n"));
+    printf("\nDone.\n");
 }
 
 void CDiskImage::SaveAllEntriesToExternalFiles()
 {
-    wprintf(_T("Extracting files:\n\n"));
+    printf("Extracting files:\n\n");
     PrintTableHeader();
 
     for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
@@ -610,33 +610,33 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
             pEntry->Print();
 
             // Collect file name + ext without trailing spaces
-            TCHAR filename[11];
-            wcscpy(filename, pEntry->name);
-            TCHAR * p = filename + 5;
-            while (p > filename && *p == _T(' ')) p--;
+            char filename[11];
+            strcpy(filename, pEntry->name);
+            char * p = filename + 5;
+            while (p > filename && *p == ' ') p--;
             p++;
-            *p = _T('.');
+            *p = '.';
             p++;
-            wcscpy(p, pEntry->ext);
+            strcpy(p, pEntry->ext);
 
-            WORD filestart = pEntry->start;
-            WORD filelength = pEntry->length;
+            uint16_t filestart = pEntry->start;
+            uint16_t filelength = pEntry->length;
 
             FILE* foutput = NULL;
-            errno_t err = _wfopen_s(&foutput, filename, _T("wb"));
+            errno_t err = fopen_s(&foutput, filename, "wb");
             if (err != 0)
             {
-                wprintf(_T("Failed to open output file %s: error %d\n"), filename, err);
+                printf("Failed to open output file %s: error %d\n", filename, err);
                 return;
             }
 
-            for (WORD blockpos = 0; blockpos < filelength; blockpos++)
+            for (uint16_t blockpos = 0; blockpos < filelength; blockpos++)
             {
-                BYTE* pData = (BYTE*)GetBlock(filestart + blockpos);
-                size_t nBytesWritten = fwrite(pData, sizeof(BYTE), RT11_BLOCK_SIZE, foutput);
+                uint8_t* pData = (uint8_t*)GetBlock(filestart + blockpos);
+                size_t nBytesWritten = fwrite(pData, sizeof(uint8_t), RT11_BLOCK_SIZE, foutput);
                 if (nBytesWritten < RT11_BLOCK_SIZE)
                 {
-                    wprintf(_T("Failed to write output file\n"));  //TODO: Show error number
+                    printf("Failed to write output file\n");  //TODO: Show error number
                     return;
                 }
             }
@@ -646,59 +646,59 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
     }
     PrintTableFooter();
 
-    wprintf(_T("\nDone.\n"));
+    printf("\nDone.\n");
 }
 
-// Помещение файла в образ.
-// Алгоритм:
-//   Помещаемый файл считывается в память
-//   Перебираются все записи каталога, пока не будет найдена пустая запись большей или равной длины
-//   Если нужно, в конце каталога создается новая пустая запись
-//   В файл образа прописывается измененная запись каталога
-//   Если нужно, в файл образа прописывается новая пустая запись каталога
-//   В файл образа прописываются блоки нового файла
-//NOTE: Пока НЕ обрабатываем ситуацию открытия нового блока каталога - выходим по ошибке
-//NOTE: Пока НЕ проверяем что файл с таким именем уже есть, и НЕ выдаем ошибки
-void CDiskImage::AddFileToImage(LPCTSTR sFileName)
+// РџРѕРјРµС‰РµРЅРёРµ С„Р°Р№Р»Р° РІ РѕР±СЂР°Р·.
+// РђР»РіРѕСЂРёС‚Рј:
+//   РџРѕРјРµС‰Р°РµРјС‹Р№ С„Р°Р№Р» СЃС‡РёС‚С‹РІР°РµС‚СЃСЏ РІ РїР°РјСЏС‚СЊ
+//   РџРµСЂРµР±РёСЂР°СЋС‚СЃСЏ РІСЃРµ Р·Р°РїРёСЃРё РєР°С‚Р°Р»РѕРіР°, РїРѕРєР° РЅРµ Р±СѓРґРµС‚ РЅР°Р№РґРµРЅР° РїСѓСЃС‚Р°СЏ Р·Р°РїРёСЃСЊ Р±РѕР»СЊС€РµР№ РёР»Рё СЂР°РІРЅРѕР№ РґР»РёРЅС‹
+//   Р•СЃР»Рё РЅСѓР¶РЅРѕ, РІ РєРѕРЅС†Рµ РєР°С‚Р°Р»РѕРіР° СЃРѕР·РґР°РµС‚СЃСЏ РЅРѕРІР°СЏ РїСѓСЃС‚Р°СЏ Р·Р°РїРёСЃСЊ
+//   Р’ С„Р°Р№Р» РѕР±СЂР°Р·Р° РїСЂРѕРїРёСЃС‹РІР°РµС‚СЃСЏ РёР·РјРµРЅРµРЅРЅР°СЏ Р·Р°РїРёСЃСЊ РєР°С‚Р°Р»РѕРіР°
+//   Р•СЃР»Рё РЅСѓР¶РЅРѕ, РІ С„Р°Р№Р» РѕР±СЂР°Р·Р° РїСЂРѕРїРёСЃС‹РІР°РµС‚СЃСЏ РЅРѕРІР°СЏ РїСѓСЃС‚Р°СЏ Р·Р°РїРёСЃСЊ РєР°С‚Р°Р»РѕРіР°
+//   Р’ С„Р°Р№Р» РѕР±СЂР°Р·Р° РїСЂРѕРїРёСЃС‹РІР°СЋС‚СЃСЏ Р±Р»РѕРєРё РЅРѕРІРѕРіРѕ С„Р°Р№Р»Р°
+//NOTE: РџРѕРєР° РќР• РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј СЃРёС‚СѓР°С†РёСЋ РѕС‚РєСЂС‹С‚РёСЏ РЅРѕРІРѕРіРѕ Р±Р»РѕРєР° РєР°С‚Р°Р»РѕРіР° - РІС‹С…РѕРґРёРј РїРѕ РѕС€РёР±РєРµ
+//NOTE: РџРѕРєР° РќР• РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ С„Р°Р№Р» СЃ С‚Р°РєРёРј РёРјРµРЅРµРј СѓР¶Рµ РµСЃС‚СЊ, Рё РќР• РІС‹РґР°РµРј РѕС€РёР±РєРё
+void CDiskImage::AddFileToImage(const char * sFileName)
 {
     // Parse sFileName
-    TCHAR filename[7];
-    TCHAR fileext[4];
+    char filename[7];
+    char fileext[4];
     ParseFileName63(sFileName, filename, fileext);
 
-    // Открываем помещаемый файл на чтение
-    FILE* fpFile = ::_wfopen(sFileName, _T("rb"));
+    // РћС‚РєСЂС‹РІР°РµРј РїРѕРјРµС‰Р°РµРјС‹Р№ С„Р°Р№Р» РЅР° С‡С‚РµРЅРёРµ
+    FILE* fpFile = ::fopen(sFileName, "rb");
     if (fpFile == NULL)
     {
-        wprintf(_T("Failed to open the file."));
+        printf("Failed to open the file.");
         return;
     }
 
-    // Определяем длину файла, с учетом округления до полного блока
+    // РћРїСЂРµРґРµР»СЏРµРј РґР»РёРЅСѓ С„Р°Р№Р»Р°, СЃ СѓС‡РµС‚РѕРј РѕРєСЂСѓРіР»РµРЅРёСЏ РґРѕ РїРѕР»РЅРѕРіРѕ Р±Р»РѕРєР°
     ::fseek(fpFile, 0, SEEK_END);
-    long lFileLength = ::ftell(fpFile);  // Точная длина файла
-    WORD nFileSizeBlocks =  // Требуемая ширина свободного места в блоках
-        (WORD) ((lFileLength + RT11_BLOCK_SIZE - 1) / RT11_BLOCK_SIZE);
-    DWORD dwFileSize =  // Длина файла с учетом округления до полного блока
-        ((DWORD) nFileSizeBlocks) * RT11_BLOCK_SIZE;
-    //TODO: Проверка на файл нулевой длины
-    //TODO: Проверка, не слишком ли длинный файл для этого тома
+    long lFileLength = ::ftell(fpFile);  // РўРѕС‡РЅР°СЏ РґР»РёРЅР° С„Р°Р№Р»Р°
+    uint16_t nFileSizeBlocks =  // РўСЂРµР±СѓРµРјР°СЏ С€РёСЂРёРЅР° СЃРІРѕР±РѕРґРЅРѕРіРѕ РјРµСЃС‚Р° РІ Р±Р»РѕРєР°С…
+        (uint16_t) ((lFileLength + RT11_BLOCK_SIZE - 1) / RT11_BLOCK_SIZE);
+    uint32_t dwFileSize =  // Р”Р»РёРЅР° С„Р°Р№Р»Р° СЃ СѓС‡РµС‚РѕРј РѕРєСЂСѓРіР»РµРЅРёСЏ РґРѕ РїРѕР»РЅРѕРіРѕ Р±Р»РѕРєР°
+        ((uint32_t) nFileSizeBlocks) * RT11_BLOCK_SIZE;
+    //TODO: РџСЂРѕРІРµСЂРєР° РЅР° С„Р°Р№Р» РЅСѓР»РµРІРѕР№ РґР»РёРЅС‹
+    //TODO: РџСЂРѕРІРµСЂРєР°, РЅРµ СЃР»РёС€РєРѕРј Р»Рё РґР»РёРЅРЅС‹Р№ С„Р°Р№Р» РґР»СЏ СЌС‚РѕРіРѕ С‚РѕРјР°
 
-    // Выделяем память и считываем данные файла
+    // Р’С‹РґРµР»СЏРµРј РїР°РјСЏС‚СЊ Рё СЃС‡РёС‚С‹РІР°РµРј РґР°РЅРЅС‹Рµ С„Р°Р№Р»Р°
     void* pFileData = ::calloc(dwFileSize, 1);
     ::fseek(fpFile, 0, SEEK_SET);
     size_t lBytesRead = ::fread(pFileData, 1, lFileLength, fpFile);
     if (lBytesRead != lFileLength)
     {
-        wprintf(_T("Failed to read the file.\n"));
+        printf("Failed to read the file.\n");
         _exit(-1);
     }
     ::fclose(fpFile);
 
-    wprintf(_T("File size is %ld bytes or %d blocks\n"), lFileLength, nFileSizeBlocks);
+    printf("File size is %ld bytes or %d blocks\n", lFileLength, nFileSizeBlocks);
 
-    // Перебираются все записи каталога, пока не будет найдена пустая запись длины >= dwFileLength
-    //TODO: Выделить в отдельную функцию и искать наиболее подходящую запись, с минимальной разницей по длине
+    // РџРµСЂРµР±РёСЂР°СЋС‚СЃСЏ РІСЃРµ Р·Р°РїРёСЃРё РєР°С‚Р°Р»РѕРіР°, РїРѕРєР° РЅРµ Р±СѓРґРµС‚ РЅР°Р№РґРµРЅР° РїСѓСЃС‚Р°СЏ Р·Р°РїРёСЃСЊ РґР»РёРЅС‹ >= dwFileLength
+    //TODO: Р’С‹РґРµР»РёС‚СЊ РІ РѕС‚РґРµР»СЊРЅСѓСЋ С„СѓРЅРєС†РёСЋ Рё РёСЃРєР°С‚СЊ РЅР°РёР±РѕР»РµРµ РїРѕРґС…РѕРґСЏС‰СѓСЋ Р·Р°РїРёСЃСЊ, СЃ РјРёРЅРёРјР°Р»СЊРЅРѕР№ СЂР°Р·РЅРёС†РµР№ РїРѕ РґР»РёРЅРµ
     CVolumeCatalogEntry* pFileEntry = NULL;
     CVolumeCatalogSegment* pFileSegment = NULL;
     for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
@@ -723,89 +723,89 @@ void CDiskImage::AddFileToImage(LPCTSTR sFileName)
     }
     if (pFileEntry == NULL)
     {
-        wprintf(_T("Empty catalog entry with %d or more blocks not found\n"), nFileSizeBlocks);
+        printf("Empty catalog entry with %d or more blocks not found\n", nFileSizeBlocks);
         free(pFileData);
         return;
     }
-    wprintf(_T("Found empty catalog entry with %d blocks:\n\n"), pFileEntry->length);
+    printf("Found empty catalog entry with %d blocks:\n\n", pFileEntry->length);
     PrintTableHeader();
     pFileEntry->Print();
     PrintTableFooter();
 
-    // Определяем, нужна ли новая запись каталога
+    // РћРїСЂРµРґРµР»СЏРµРј, РЅСѓР¶РЅР° Р»Рё РЅРѕРІР°СЏ Р·Р°РїРёСЃСЊ РєР°С‚Р°Р»РѕРіР°
     bool okNeedNewCatalogEntry = (pFileEntry->length != nFileSizeBlocks);
     CVolumeCatalogEntry* pEmptyEntry = NULL;
     if (okNeedNewCatalogEntry)
     {
-        // Проверяем, нужно ли для новой записи каталога открывать новый сегмент каталога
+        // РџСЂРѕРІРµСЂСЏРµРј, РЅСѓР¶РЅРѕ Р»Рё РґР»СЏ РЅРѕРІРѕР№ Р·Р°РїРёСЃРё РєР°С‚Р°Р»РѕРіР° РѕС‚РєСЂС‹РІР°С‚СЊ РЅРѕРІС‹Р№ СЃРµРіРјРµРЅС‚ РєР°С‚Р°Р»РѕРіР°
         if (pFileSegment->entriesused == m_volumeinfo.catalogentriespersegment)
         {
-            wprintf(_T("New catalog segment needed - not implemented now, sorry.\n"));
+            printf("New catalog segment needed - not implemented now, sorry.\n");
             free(pFileData);
             return;
         }
 
-        // Сдвигаем записи сегмента начиная с пустой на одну вправо - освобождаем место под новую запись
+        // РЎРґРІРёРіР°РµРј Р·Р°РїРёСЃРё СЃРµРіРјРµРЅС‚Р° РЅР°С‡РёРЅР°СЏ СЃ РїСѓСЃС‚РѕР№ РЅР° РѕРґРЅСѓ РІРїСЂР°РІРѕ - РѕСЃРІРѕР±РѕР¶РґР°РµРј РјРµСЃС‚Рѕ РїРѕРґ РЅРѕРІСѓСЋ Р·Р°РїРёСЃСЊ
         int fileentryindex = (int) (pFileEntry - pFileSegment->catalogentries);
         int totalentries = m_volumeinfo.catalogentriespersegment;
         memmove(pFileEntry + 1, pFileEntry, (totalentries - fileentryindex - 1) * sizeof(CVolumeCatalogEntry));
 
-        // Новая пустая запись каталога
+        // РќРѕРІР°СЏ РїСѓСЃС‚Р°СЏ Р·Р°РїРёСЃСЊ РєР°С‚Р°Р»РѕРіР°
         pEmptyEntry = pFileEntry + 1;
-        // Заполнить данные новой записи каталога
+        // Р—Р°РїРѕР»РЅРёС‚СЊ РґР°РЅРЅС‹Рµ РЅРѕРІРѕР№ Р·Р°РїРёСЃРё РєР°С‚Р°Р»РѕРіР°
         pEmptyEntry->status = RT11_STATUS_EMPTY;
         pEmptyEntry->start = pFileEntry->start + nFileSizeBlocks;
         pEmptyEntry->length = pFileEntry->length - nFileSizeBlocks;
         pEmptyEntry->datepac = pFileEntry->datepac;
     }
 
-    // Изменяем существующую запись каталога
+    // РР·РјРµРЅСЏРµРј СЃСѓС‰РµСЃС‚РІСѓСЋС‰СѓСЋ Р·Р°РїРёСЃСЊ РєР°С‚Р°Р»РѕРіР°
     pFileEntry->length = nFileSizeBlocks;
-    wcscpy_s(pFileEntry->name, 7, filename);
-    wcscpy_s(pFileEntry->ext, 4, fileext);
+    strcpy_s(pFileEntry->name, 7, filename);
+    strcpy_s(pFileEntry->ext, 4, fileext);
     pFileEntry->datepac = 0;
     pFileEntry->status = RT11_STATUS_PERM;
 
-    wprintf(_T("\nCatalog entries to update:\n\n"));
+    printf("\nCatalog entries to update:\n\n");
     PrintTableHeader();
     pFileEntry->Print();
     if (pEmptyEntry != NULL) pEmptyEntry->Print();
     PrintTableFooter();
 
-    // Сохраняем новый файл поблочно
-    wprintf(_T("\nWriting file data...\n"));
-    WORD nFileStartBlock = pFileEntry->start;  // Начиная с какого блока размещается новый файл
-    WORD nBlock = nFileStartBlock;
+    // РЎРѕС…СЂР°РЅСЏРµРј РЅРѕРІС‹Р№ С„Р°Р№Р» РїРѕР±Р»РѕС‡РЅРѕ
+    printf("\nWriting file data...\n");
+    uint16_t nFileStartBlock = pFileEntry->start;  // РќР°С‡РёРЅР°СЏ СЃ РєР°РєРѕРіРѕ Р±Р»РѕРєР° СЂР°Р·РјРµС‰Р°РµС‚СЃСЏ РЅРѕРІС‹Р№ С„Р°Р№Р»
+    uint16_t nBlock = nFileStartBlock;
     for (int block = 0; block < nFileSizeBlocks; block++)
     {
-        BYTE* pFileBlockData = ((BYTE*) pFileData) + block * RT11_BLOCK_SIZE;
-        BYTE* pData = (BYTE*) GetBlock(nBlock);
+        uint8_t* pFileBlockData = ((uint8_t*) pFileData) + block * RT11_BLOCK_SIZE;
+        uint8_t* pData = (uint8_t*) GetBlock(nBlock);
         memcpy(pData, pFileBlockData, RT11_BLOCK_SIZE);
-        // Сообщаем что блок был изменен
+        // РЎРѕРѕР±С‰Р°РµРј С‡С‚Рѕ Р±Р»РѕРє Р±С‹Р» РёР·РјРµРЅРµРЅ
         MarkBlockChanged(nBlock);
 
         nBlock++;
     }
     free(pFileData);
 
-    // Сохраняем сегмент каталога на диск
-    wprintf(_T("Updating catalog segment...\n"));
+    // РЎРѕС…СЂР°РЅСЏРµРј СЃРµРіРјРµРЅС‚ РєР°С‚Р°Р»РѕРіР° РЅР° РґРёСЃРє
+    printf("Updating catalog segment...\n");
     UpdateCatalogSegment(pFileSegment);
 
     FlushChanges();
 
-    wprintf(_T("\nDone.\n"));
+    printf("\nDone.\n");
 }
 
-// Удаление файла
-// Алгоритм:
-//   Перебираются все записи каталога, пока не будет найдена запись данного файла
-//   Запись каталога помечается как удалённая
-void CDiskImage::DeleteFileFromImage(LPCTSTR sFileName)
+// РЈРґР°Р»РµРЅРёРµ С„Р°Р№Р»Р°
+// РђР»РіРѕСЂРёС‚Рј:
+//   РџРµСЂРµР±РёСЂР°СЋС‚СЃСЏ РІСЃРµ Р·Р°РїРёСЃРё РєР°С‚Р°Р»РѕРіР°, РїРѕРєР° РЅРµ Р±СѓРґРµС‚ РЅР°Р№РґРµРЅР° Р·Р°РїРёСЃСЊ РґР°РЅРЅРѕРіРѕ С„Р°Р№Р»Р°
+//   Р—Р°РїРёСЃСЊ РєР°С‚Р°Р»РѕРіР° РїРѕРјРµС‡Р°РµС‚СЃСЏ РєР°Рє СѓРґР°Р»С‘РЅРЅР°СЏ
+void CDiskImage::DeleteFileFromImage(const char * sFileName)
 {
     // Parse sFileName
-    TCHAR filename[7];
-    TCHAR fileext[4];
+    char filename[7];
+    char fileext[4];
     ParseFileName63(sFileName, filename, fileext);
 
     // Search for the filename/fileext
@@ -824,8 +824,8 @@ void CDiskImage::DeleteFileFromImage(LPCTSTR sFileName)
             if (pEntry->status == 0) continue;
             if (pEntry->status == RT11_STATUS_EMPTY) continue;
 
-            if (_wcsnicmp(filename, pEntry->name, 6) == 0 &&
-                _wcsnicmp(fileext, pEntry->ext, 3) == 0)
+            if (_strnicmp(filename, pEntry->name, 6) == 0 &&
+                _strnicmp(fileext, pEntry->ext, 3) == 0)
             {
                 pFileEntry = pEntry;
                 pFileSegment = pSegment;
@@ -835,29 +835,29 @@ void CDiskImage::DeleteFileFromImage(LPCTSTR sFileName)
     }
     if (pFileEntry == NULL || pFileSegment == NULL)
     {
-        wprintf(_T("Filename not found: %s\n"), sFileName);
+        printf("Filename not found: %s\n", sFileName);
         return;
     }
-    wprintf(_T("Deleting file:\n\n"));
+    printf("Deleting file:\n\n");
     PrintTableHeader();
     pFileEntry->Print();
     PrintTableFooter();
 
-    // Изменяем существующую запись каталога
+    // РР·РјРµРЅСЏРµРј СЃСѓС‰РµСЃС‚РІСѓСЋС‰СѓСЋ Р·Р°РїРёСЃСЊ РєР°С‚Р°Р»РѕРіР°
     pFileEntry->status = RT11_STATUS_EMPTY;
 
-    // Сохраняем сегмент каталога на диск
-    wprintf(_T("Updating catalog segment...\n"));
+    // РЎРѕС…СЂР°РЅСЏРµРј СЃРµРіРјРµРЅС‚ РєР°С‚Р°Р»РѕРіР° РЅР° РґРёСЃРє
+    printf("Updating catalog segment...\n");
     UpdateCatalogSegment(pFileSegment);
 
     FlushChanges();
 
-    wprintf(_T("\nDone.\n"));
+    printf("\nDone.\n");
 }
 
 void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
 {
-    wprintf(_T("Extracting files:\n\n"));
+    printf("Extracting files:\n\n");
     PrintTableHeader();
 
     int unusedno = 0;
@@ -877,30 +877,30 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
             pEntry->Print();
 
             unusedno++;
-            TCHAR filename[20];
-            _stprintf_s(filename, 20, _T("UNUSED%02d"), unusedno);
+            char filename[20];
+            printf_s(filename, 20, "UNUSED%02d", unusedno);
 
-            WORD filestart = pEntry->start;
-            WORD filelength = pEntry->length;
+            uint16_t filestart = pEntry->start;
+            uint16_t filelength = pEntry->length;
 
             FILE* foutput = NULL;
-            errno_t err = _wfopen_s(&foutput, filename, _T("wb"));
+            errno_t err = fopen_s(&foutput, filename, "wb");
             if (err != 0)
             {
-                wprintf(_T("Failed to open output file %s: error %d\n"), filename, err);
+                printf("Failed to open output file %s: error %d\n", filename, err);
                 return;
             }
 
-            for (WORD blockpos = 0; blockpos < filelength; blockpos++)
+            for (uint16_t blockpos = 0; blockpos < filelength; blockpos++)
             {
                 int blockno = filestart + blockpos;
                 if (blockno >= m_nTotalBlocks)
                 {
-                    wprintf(_T("WARNING: For file %s block %d is beyond the end of the image file.\n"), filename, blockno);
+                    printf("WARNING: For file %s block %d is beyond the end of the image file.\n", filename, blockno);
                     break;
                 }
-                BYTE* pData = (BYTE*)GetBlock(blockno);
-                size_t nBytesWritten = fwrite(pData, sizeof(BYTE), RT11_BLOCK_SIZE, foutput);
+                uint8_t* pData = (uint8_t*)GetBlock(blockno);
+                size_t nBytesWritten = fwrite(pData, sizeof(uint8_t), RT11_BLOCK_SIZE, foutput);
                 //TODO: Check if nBytesWritten < RT11_BLOCK_SIZE
             }
 
@@ -912,7 +912,7 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
 
     FlushChanges();
 
-    wprintf(_T("\nDone.\n"));
+    printf("\nDone.\n");
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -948,11 +948,11 @@ CVolumeCatalogEntry::CVolumeCatalogEntry()
     start = length = datepac = 0;
 }
 
-void CVolumeCatalogEntry::Unpack(WORD const * pCatalog, WORD filestartblock)
+void CVolumeCatalogEntry::Unpack(uint16_t const * pCatalog, uint16_t filestartblock)
 {
     start = filestartblock;
     status = pCatalog[0];
-    WORD namerad50[3];
+    uint16_t namerad50[3];
     namerad50[0] = pCatalog[1];
     namerad50[1] = pCatalog[2];
     namerad50[2] = pCatalog[3];
@@ -968,16 +968,16 @@ void CVolumeCatalogEntry::Unpack(WORD const * pCatalog, WORD filestartblock)
     }
 }
 
-void CVolumeCatalogEntry::Pack(WORD* pCatalog)
+void CVolumeCatalogEntry::Pack(uint16_t* pCatalog)
 {
     pCatalog[0] = status;
     if (status == RT11_STATUS_EMPTY || status == RT11_STATUS_ENDMARK)
     {
-        memset(pCatalog + 1, 0, sizeof(WORD) * 3);
+        memset(pCatalog + 1, 0, sizeof(uint16_t) * 3);
     }
     else
     {
-        WORD namerad50[3];
+        uint16_t namerad50[3];
         irad50(6, name, namerad50);
         irad50(3, ext,  namerad50 + 2);
         memcpy(pCatalog + 1, namerad50, sizeof(namerad50));
@@ -990,14 +990,14 @@ void CVolumeCatalogEntry::Pack(WORD* pCatalog)
 void CVolumeCatalogEntry::Print()
 {
     if (status == RT11_STATUS_EMPTY)
-        wprintf(_T("< UNUSED >  %5d            %5d %8d\n"),
-                length, start, length * RT11_BLOCK_SIZE);
+        printf("< UNUSED >  %5d            %5d %8d\n",
+               length, start, length * RT11_BLOCK_SIZE);
     else
     {
-        TCHAR datestr[10];
+        char datestr[10];
         rtDateStr(datepac, datestr);
-        wprintf(_T("%s.%s  %5d  %s %5d %8d\n"),
-                name, ext, length, datestr, start, length * RT11_BLOCK_SIZE);
+        printf("%s.%s  %5d  %s %5d %8d\n",
+               name, ext, length, datestr, start, length * RT11_BLOCK_SIZE);
     }
 }
 

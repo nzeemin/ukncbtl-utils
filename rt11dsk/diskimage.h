@@ -1,4 +1,4 @@
-/*  This file is part of UKNCBTL.
+п»ї/*  This file is part of UKNCBTL.
     UKNCBTL is free software: you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software Foundation,
 either version 3 of the License, or (at your option) any later version.
@@ -23,22 +23,22 @@ struct CVolumeCatalogSegment;
 
 
 //////////////////////////////////////////////////////////////////////
-// Структура для хранения информации о томе
+// РЎС‚СЂСѓРєС‚СѓСЂР° РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РёРЅС„РѕСЂРјР°С†РёРё Рѕ С‚РѕРјРµ
 struct CVolumeInformation
 {
     char volumeid[13];
     char ownername[13];
     char systemid[13];
-    WORD firstcatalogblock;
-    WORD systemversion;
-    WORD catalogextrawords;
-    WORD catalogentrylength;
-    WORD catalogentriespersegment;
-    WORD catalogsegmentcount;
-    WORD lastopenedsegment;
-    // Массив сегментов
+    uint16_t firstcatalogblock;
+    uint16_t systemversion;
+    uint16_t catalogextrawords;
+    uint16_t catalogentrylength;
+    uint16_t catalogentriespersegment;
+    uint16_t catalogsegmentcount;
+    uint16_t lastopenedsegment;
+    // РњР°СЃСЃРёРІ СЃРµРіРјРµРЅС‚РѕРІ
     CVolumeCatalogSegment* catalogsegments;
-    WORD catalogentriescount;  // Количество валидных записей каталога, включая завершающую ENDMARK
+    uint16_t catalogentriescount;  // РљРѕР»РёС‡РµСЃС‚РІРѕ РІР°Р»РёРґРЅС‹С… Р·Р°РїРёСЃРµР№ РєР°С‚Р°Р»РѕРіР°, РІРєР»СЋС‡Р°СЏ Р·Р°РІРµСЂС€Р°СЋС‰СѓСЋ ENDMARK
 
 public:
     CVolumeInformation();
@@ -47,7 +47,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////
-// Образ диска в формате .dsk либо .rtd
+// РћР±СЂР°Р· РґРёСЃРєР° РІ С„РѕСЂРјР°С‚Рµ .dsk Р»РёР±Рѕ .rtd
 
 class CDiskImage
 {
@@ -66,7 +66,7 @@ public:
     ~CDiskImage();
 
 public:
-    bool Attach(LPCTSTR sFileName, long offset = 0);
+    bool Attach(const char * sFileName, long offset = 0);
     bool Attach(FILE* fpfile, long offset, int blocks, bool readonly);
     void Detach();
 
@@ -83,10 +83,10 @@ public:
     void FlushChanges();
     void DecodeImageCatalog();
     void UpdateCatalogSegment(CVolumeCatalogSegment* pSegment);
-    void SaveEntryToExternalFile(LPCTSTR sFileName);
+    void SaveEntryToExternalFile(const char * sFileName);
     void SaveAllEntriesToExternalFiles();
-    void AddFileToImage(LPCTSTR sFileName);
-    void DeleteFileFromImage(LPCTSTR sFileName);
+    void AddFileToImage(const char * sFileName);
+    void DeleteFileFromImage(const char * sFileName);
     void SaveAllUnusedEntriesToExternalFiles();
 
 private:
