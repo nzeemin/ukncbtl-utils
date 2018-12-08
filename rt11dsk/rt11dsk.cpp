@@ -21,7 +21,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 void PrintWelcome();
 void PrintUsage();
-bool ParseCommandLine(int argc, char* argv[]);
+bool ParseCommandLine(int argc, char * argv[]);
 
 void DoDiskList();
 void DoDiskExtractFile();
@@ -41,11 +41,11 @@ void DoHardPartitionAddFile();
 //////////////////////////////////////////////////////////////////////
 // Globals
 
-const char * g_sCommand = NULL;
-const char * g_sImageFileName = NULL;
-const char * g_sFileName = NULL;
+const char * g_sCommand = nullptr;
+const char * g_sImageFileName = nullptr;
+const char * g_sFileName = nullptr;
 bool    g_okHardCommand = false;
-const char * g_sPartition = NULL;
+const char * g_sPartition = nullptr;
 int     g_nPartition = -1;
 long    g_lStartOffset = 0;
 
@@ -82,7 +82,7 @@ static g_CommandInfos[] =
 
 CDiskImage      g_diskimage;
 CHardImage      g_hardimage;
-CommandInfo*    g_pCommand = NULL;
+CommandInfo*    g_pCommand = nullptr;
 
 
 //////////////////////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ void PrintWelcome()
 void PrintUsage()
 {
     printf("\nUsage:\n"
-           "  Disk image commands:\n"
+           "  Floppy disk image commands:\n"
            "    rt11dsk l <ImageFile>  - list image contents\n"
            "    rt11dsk e <ImageFile> <FileName>  - extract file\n"
            "    rt11dsk x <ImageFile>  - extract all files\n"
@@ -120,7 +120,7 @@ void PrintUsage()
            "    -oXXXXX  Set start offset to XXXXX; 0 by default\n");
 }
 
-bool ParseCommandLine(int argc, char* argv[])
+bool ParseCommandLine(int argc, char * argv[])
 {
     for (int argn = 1; argn < argc; argn++)
     {
@@ -143,13 +143,13 @@ bool ParseCommandLine(int argc, char* argv[])
         }
         else
         {
-            if (g_sCommand == NULL)
+            if (g_sCommand == nullptr)
                 g_sCommand = arg;
-            else if (g_sImageFileName == NULL)
+            else if (g_sImageFileName == nullptr)
                 g_sImageFileName = arg;
-            else if (g_sCommand[0] == 'h' && g_sPartition == NULL)
+            else if (g_sCommand[0] == 'h' && g_sPartition == nullptr)
                 g_sPartition = arg;
-            else if (g_sFileName == NULL)
+            else if (g_sFileName == nullptr)
                 g_sFileName = arg;
             else
             {
@@ -160,12 +160,12 @@ bool ParseCommandLine(int argc, char* argv[])
     }
 
     // Parsed options validation
-    if (g_sCommand == NULL)
+    if (g_sCommand == nullptr)
     {
         printf("Command not specified.\n");
         return false;
     }
-    CommandInfo* pcinfo = NULL;
+    CommandInfo* pcinfo = nullptr;
     for (int i = 0; i < sizeof(g_CommandInfos) / sizeof(CommandInfo); i++)
     {
         if (strcmp(g_sCommand, g_CommandInfos[i].command) == 0)
@@ -174,21 +174,21 @@ bool ParseCommandLine(int argc, char* argv[])
             break;
         }
     }
-    if (pcinfo == NULL)
+    if (pcinfo == nullptr)
     {
-        printf("Unknown command: %s.\n", g_sCommand);
+        printf("Unknown command: %s\n", g_sCommand);
         return false;
     }
     g_pCommand = pcinfo;
 
     g_okHardCommand = pcinfo->okHard;
-    if (pcinfo->okHard && g_sPartition != NULL)
+    if (pcinfo->okHard && g_sPartition != nullptr)
     {
         g_nPartition = atoi(g_sPartition);
     }
 
     // More pre-checks based on command requirements
-    if (g_sImageFileName == NULL)
+    if (g_sImageFileName == nullptr)
     {
         printf("Image file not specified.\n");
         return false;
@@ -198,7 +198,7 @@ bool ParseCommandLine(int argc, char* argv[])
         printf("Partition number expected.\n");
         return false;
     }
-    if ((pcinfo->requirements & CMDR_PARAM_FILENAME) != 0 && g_sFileName == NULL)
+    if ((pcinfo->requirements & CMDR_PARAM_FILENAME) != 0 && g_sFileName == nullptr)
     {
         printf("File name expected.\n");
         return false;

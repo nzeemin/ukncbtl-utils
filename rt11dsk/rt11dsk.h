@@ -10,10 +10,13 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #pragma once
 
-#define _CRT_SECURE_NO_WARNINGS
+#ifdef _MSC_VER
+# define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <stdint.h>
 #include <malloc.h>
 #include <memory.h>

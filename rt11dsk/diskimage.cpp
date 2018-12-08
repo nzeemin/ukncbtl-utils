@@ -101,7 +101,7 @@ void CDiskImage::UpdateCatalogSegment(CVolumeCatalogSegment* pSegment)
 static void ParseFileName63(const char * sFileName, char * filename, char * fileext)
 {
     const char * sFilenameExt = strrchr(sFileName, '.');
-    if (sFilenameExt == NULL)
+    if (sFilenameExt == nullptr)
     {
         printf("Wrong filename format: %s\n", sFileName);
         return;
@@ -134,11 +134,11 @@ static void ParseFileName63(const char * sFileName, char * filename, char * file
 CDiskImage::CDiskImage()
 {
     m_okReadOnly = false;
-    m_fpFile = NULL;
+    m_fpFile = nullptr;
     m_okCloseFile = true;
     m_lStartOffset = 0;
     m_nTotalBlocks = m_nCacheBlocks = 0;
-    m_pCache = NULL;
+    m_pCache = nullptr;
 }
 
 CDiskImage::~CDiskImage()
@@ -155,7 +155,7 @@ bool CDiskImage::Attach(const char * sImageFileName, long offset)
         m_lStartOffset = 0;
         // Определяем, это .dsk-образ или .rtd-образ - по расширению файла
         const char * sImageFilenameExt = strrchr(sImageFileName, '.');
-        if (sImageFilenameExt != NULL && _stricmp(sImageFilenameExt, ".rtd") == 0)
+        if (sImageFilenameExt != nullptr && _stricmp(sImageFilenameExt, ".rtd") == 0)
             m_lStartOffset = NETRT11_IMAGE_HEADER_SIZE;
         //NOTE: Можно также определять по длине файла: кратна 512 -- .dsk, длина минус 256 кратна 512 -- .rtd
     }
@@ -163,11 +163,11 @@ bool CDiskImage::Attach(const char * sImageFileName, long offset)
     // Try to open as Normal first, then as ReadOnly
     m_okReadOnly = false;
     m_fpFile = ::fopen(sImageFileName, "r+b");
-    if (m_fpFile == NULL)
+    if (m_fpFile == nullptr)
     {
         m_okReadOnly = true;
         m_fpFile = ::fopen(sImageFileName, "rb");
-        if (m_fpFile == NULL)
+        if (m_fpFile == nullptr)
             return false;
     }
 
@@ -214,18 +214,18 @@ void CDiskImage::PostAttach()
 
 void CDiskImage::Detach()
 {
-    if (m_fpFile != NULL)
+    if (m_fpFile != nullptr)
     {
         FlushChanges();
 
         if (m_okCloseFile)
             ::fclose(m_fpFile);
-        m_fpFile = NULL;
+        m_fpFile = nullptr;
 
         // Free cached blocks data
         for (int i = 0; i < m_nCacheBlocks; i++)
         {
-            if (m_pCache[i].pData != NULL)
+            if (m_pCache[i].pData != nullptr)
                 ::free(m_pCache[i].pData);
         }
 
@@ -308,7 +308,7 @@ void* CDiskImage::GetBlock(int nBlock)
         if (iCand != -1)  // Found
         {
             ::free(m_pCache[iEmpty].pData);
-            m_pCache[iEmpty].pData = NULL;
+            m_pCache[iEmpty].pData = nullptr;
             m_pCache[iEmpty].nBlock = 0;
             m_pCache[iEmpty].bChanged = false;
         }
@@ -323,7 +323,7 @@ void* CDiskImage::GetBlock(int nBlock)
     m_pCache[iEmpty].nBlock = nBlock;
     m_pCache[iEmpty].bChanged = false;
     m_pCache[iEmpty].pData = ::calloc(1, RT11_BLOCK_SIZE);
-    if (m_pCache[iEmpty].pData == NULL)
+    if (m_pCache[iEmpty].pData == nullptr)
     {
         printf("Failed to allocate memory for block number %d.\n", nBlock);
         _exit(-1);
@@ -488,7 +488,7 @@ void CDiskImage::PrintCatalogDirectory()
     for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
-        if (pSegment->catalogentries == NULL) continue;
+        if (pSegment->catalogentries == nullptr) continue;
 
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
         {
@@ -520,11 +520,11 @@ void CDiskImage::SaveEntryToExternalFile(const char * sFileName)
     ParseFileName63(sFileName, filename, fileext);
 
     // Search for the filename/fileext
-    CVolumeCatalogEntry* pFileEntry = NULL;
+    CVolumeCatalogEntry* pFileEntry = nullptr;
     for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
-        if (pSegment->catalogentries == NULL) continue;
+        if (pSegment->catalogentries == nullptr) continue;
 
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
         {
@@ -542,7 +542,7 @@ void CDiskImage::SaveEntryToExternalFile(const char * sFileName)
             }
         }
     }
-    if (pFileEntry == NULL)
+    if (pFileEntry == nullptr)
     {
         printf("Filename not found: %s\n", sFileName);
         return;
@@ -565,11 +565,11 @@ void CDiskImage::SaveEntryToExternalFile(const char * sFileName)
     uint16_t filestart = pFileEntry->start;
     uint16_t filelength = pFileEntry->length;
 
-    FILE* foutput = NULL;
-    errno_t err = fopen_s(&foutput, sfilename, "wb");
-    if (err != 0)
+    FILE* foutput = nullptr;
+    foutput = fopen(sfilename, "wb");
+    if (foutput == nullptr)
     {
-        printf("Failed to open output file %s: error %d\n", sFileName, err);
+        printf("Failed to open output file %s: error %d\n", sFileName, errno);
         return;
     }
 
@@ -597,7 +597,7 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
     for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
-        if (pSegment->catalogentries == NULL) continue;
+        if (pSegment->catalogentries == nullptr) continue;
 
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
         {
@@ -622,11 +622,10 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
             uint16_t filestart = pEntry->start;
             uint16_t filelength = pEntry->length;
 
-            FILE* foutput = NULL;
-            errno_t err = fopen_s(&foutput, filename, "wb");
-            if (err != 0)
+            FILE* foutput = fopen(filename, "wb");
+            if (foutput == nullptr)
             {
-                printf("Failed to open output file %s: error %d\n", filename, err);
+                printf("Failed to open output file %s: error %d\n", filename, errno);
                 return;
             }
 
@@ -668,7 +667,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
 
     // Открываем помещаемый файл на чтение
     FILE* fpFile = ::fopen(sFileName, "rb");
-    if (fpFile == NULL)
+    if (fpFile == nullptr)
     {
         printf("Failed to open the file.");
         return;
@@ -699,12 +698,12 @@ void CDiskImage::AddFileToImage(const char * sFileName)
 
     // Перебираются все записи каталога, пока не будет найдена пустая запись длины >= dwFileLength
     //TODO: Выделить в отдельную функцию и искать наиболее подходящую запись, с минимальной разницей по длине
-    CVolumeCatalogEntry* pFileEntry = NULL;
-    CVolumeCatalogSegment* pFileSegment = NULL;
+    CVolumeCatalogEntry* pFileEntry = nullptr;
+    CVolumeCatalogSegment* pFileSegment = nullptr;
     for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
-        if (pSegment->catalogentries == NULL) continue;
+        if (pSegment->catalogentries == nullptr) continue;
 
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
         {
@@ -721,7 +720,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
             }
         }
     }
-    if (pFileEntry == NULL)
+    if (pFileEntry == nullptr)
     {
         printf("Empty catalog entry with %d or more blocks not found\n", nFileSizeBlocks);
         free(pFileData);
@@ -734,7 +733,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
 
     // Определяем, нужна ли новая запись каталога
     bool okNeedNewCatalogEntry = (pFileEntry->length != nFileSizeBlocks);
-    CVolumeCatalogEntry* pEmptyEntry = NULL;
+    CVolumeCatalogEntry* pEmptyEntry = nullptr;
     if (okNeedNewCatalogEntry)
     {
         // Проверяем, нужно ли для новой записи каталога открывать новый сегмент каталога
@@ -769,7 +768,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
     printf("\nCatalog entries to update:\n\n");
     PrintTableHeader();
     pFileEntry->Print();
-    if (pEmptyEntry != NULL) pEmptyEntry->Print();
+    if (pEmptyEntry != nullptr) pEmptyEntry->Print();
     PrintTableFooter();
 
     // Сохраняем новый файл поблочно
@@ -809,12 +808,12 @@ void CDiskImage::DeleteFileFromImage(const char * sFileName)
     ParseFileName63(sFileName, filename, fileext);
 
     // Search for the filename/fileext
-    CVolumeCatalogEntry* pFileEntry = NULL;
-    CVolumeCatalogSegment* pFileSegment = NULL;
+    CVolumeCatalogEntry* pFileEntry = nullptr;
+    CVolumeCatalogSegment* pFileSegment = nullptr;
     for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
-        if (pSegment->catalogentries == NULL) continue;
+        if (pSegment->catalogentries == nullptr) continue;
 
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
         {
@@ -833,7 +832,7 @@ void CDiskImage::DeleteFileFromImage(const char * sFileName)
             }
         }
     }
-    if (pFileEntry == NULL || pFileSegment == NULL)
+    if (pFileEntry == nullptr || pFileSegment == nullptr)
     {
         printf("Filename not found: %s\n", sFileName);
         return;
@@ -864,7 +863,7 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
     for (int segmno = 0; segmno < m_volumeinfo.catalogsegmentcount; segmno++)
     {
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
-        if (pSegment->catalogentries == NULL) continue;
+        if (pSegment->catalogentries == nullptr) continue;
 
         bool okSegmentChanged = false;
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
@@ -883,11 +882,10 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
             uint16_t filestart = pEntry->start;
             uint16_t filelength = pEntry->length;
 
-            FILE* foutput = NULL;
-            errno_t err = fopen_s(&foutput, filename, "wb");
-            if (err != 0)
+            FILE* foutput = fopen(filename, "wb");
+            if (foutput == nullptr)
             {
-                printf("Failed to open output file %s: error %d\n", filename, err);
+                printf("Failed to open output file %s: error %d\n", filename, errno);
                 return;
             }
 
@@ -925,13 +923,13 @@ CVolumeInformation::CVolumeInformation()
     firstcatalogblock = systemversion = 0;
     catalogextrawords = catalogentrylength = catalogentriespersegment = catalogsegmentcount = 0;
     lastopenedsegment = 0;
-    catalogsegments = NULL;
+    catalogsegments = nullptr;
     catalogentriescount = 0;
 }
 
 CVolumeInformation::~CVolumeInformation()
 {
-    if (catalogsegments != NULL)
+    if (catalogsegments != nullptr)
     {
         ::free(catalogsegments);
     }
@@ -990,8 +988,10 @@ void CVolumeCatalogEntry::Pack(uint16_t* pCatalog)
 void CVolumeCatalogEntry::Print()
 {
     if (status == RT11_STATUS_EMPTY)
+    {
         printf("< UNUSED >  %5d            %5d %8d\n",
                length, start, length * RT11_BLOCK_SIZE);
+    }
     else
     {
         char datestr[10];

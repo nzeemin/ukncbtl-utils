@@ -14,6 +14,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "hardimage.h"
 #include "diskimage.h"
 
+
 //////////////////////////////////////////////////////////////////////
 
 struct CPartitionInfo
@@ -60,11 +61,11 @@ static uint8_t g_hardbuffer[512];
 CHardImage::CHardImage()
 {
     m_okReadOnly = m_okInverted = false;
-    m_fpFile = NULL;
+    m_fpFile = nullptr;
     m_lFileSize = 0;
     m_drivertype = HDD_DRIVER_UNKNOWN;
     m_nSectorsPerTrack = m_nSidesPerTrack = m_nPartitions = 0;
-    m_pPartitionInfos = NULL;
+    m_pPartitionInfos = nullptr;
     m_okChecksum = false;
 }
 
@@ -78,11 +79,11 @@ bool CHardImage::Attach(const char * sImageFileName)
     // Try to open as Normal first, then as ReadOnly
     m_okReadOnly = false;
     m_fpFile = ::fopen(sImageFileName, "r+b");
-    if (m_fpFile == NULL)
+    if (m_fpFile == nullptr)
     {
         m_okReadOnly = true;
         m_fpFile = ::fopen(sImageFileName, "rb");
-        if (m_fpFile == NULL)
+        if (m_fpFile == nullptr)
             return false;
     }
 
@@ -158,10 +159,10 @@ bool CHardImage::Attach(const char * sImageFileName)
 
 void CHardImage::Detach()
 {
-    if (m_fpFile != NULL)
+    if (m_fpFile != nullptr)
     {
         ::fclose(m_fpFile);
-        m_fpFile = NULL;
+        m_fpFile = nullptr;
     }
 }
 
@@ -206,11 +207,10 @@ void CHardImage::SavePartitionToFile(int partition, const char * filename)
     }
 
     // Open output file
-    FILE* foutput = NULL;
-    errno_t err = fopen_s(&foutput, filename, "wb");
-    if (err != 0)
+    FILE* foutput = fopen(filename, "wb");
+    if (foutput == nullptr)
     {
-        printf("Failed to open output file %s: error %d\n", filename, err);
+        printf("Failed to open output file %s: error %d\n", filename, errno);
         return;
     }
 
@@ -257,11 +257,10 @@ void CHardImage::UpdatePartitionFromFile(int partition, const char * filename)
     //TODO: Check if m_okReadOnly
 
     // Open input file
-    FILE* finput = NULL;
-    errno_t err = fopen_s(&finput, filename, "rb");
-    if (err != 0)
+    FILE* finput = fopen(filename, "rb");
+    if (finput == nullptr)
     {
-        printf("Failed to open input file %s: error %d\n", filename, err);
+        printf("Failed to open input file %s: error %d\n", filename, errno);
         return;
     }
 
