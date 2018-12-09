@@ -21,6 +21,10 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include <memory.h>
 #include <string.h>
 
+#ifdef __GNUC__
+#define _stricmp    strcasecmp
+#endif
+
 
 //////////////////////////////////////////////////////////////////////
 // RADIX50 convertion rotines headers, see rad50.cpp

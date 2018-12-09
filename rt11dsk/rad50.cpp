@@ -140,7 +140,7 @@ void rtDateStr(uint16_t date, char* str)
     int month = (date >> 10) & 0x1F;
 
     if (month < 1 || month > 12)
-        strcpy_s(str, 10, "  -BAD-  ");
+        strcpy(str, "  -BAD-  ");
     else
-        sprintf_s(str, 10, "%02d-%3S-%02d", day, months[month], year );
+        sprintf(str, "%02d-%3S-%02d", day, months[month], year );
 }

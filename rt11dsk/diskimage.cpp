@@ -13,6 +13,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "rt11dsk.h"
 #include <time.h>
 #include "diskimage.h"
+#include <cctype>
 
 
 //////////////////////////////////////////////////////////////////////
@@ -119,13 +120,11 @@ static void ParseFileName63(const char * sFileName, char * filename, char * file
         return;
     }
     for (int i = 0; i < 6; i++) filename[i] = ' ';
-    for (uint16_t i = 0; i < nFilenameLength; i++) filename[i] = sFileName[i];
+    for (uint16_t i = 0; i < nFilenameLength; i++) filename[i] = toupper(sFileName[i]);
     filename[6] = 0;
-    _strupr_s(filename, 7);
     for (int i = 0; i < 3; i++) fileext[i] = ' ';
-    for (uint16_t i = 0; i < nFileextLength; i++) fileext[i] = sFilenameExt[i + 1];
+    for (uint16_t i = 0; i < nFileextLength; i++) fileext[i] = toupper(sFilenameExt[i + 1]);
     fileext[3] = 0;
-    _strupr_s(fileext, 4);
 }
 
 
@@ -255,7 +254,7 @@ void CDiskImage::FlushChanges()
         if (lBytesWritten != RT11_BLOCK_SIZE)
         {
             printf("Failed to write block number %d.\n", m_pCache[i].nBlock);
-            _exit(-1);
+            exit(-1);
         }
 
         m_pCache[i].bChanged = false;
@@ -317,7 +316,7 @@ void* CDiskImage::GetBlock(int nBlock)
     if (iEmpty == -1)
     {
         printf("Cache is full.\n");
-        _exit(-1);
+        exit(-1);
     }
 
     m_pCache[iEmpty].nBlock = nBlock;
@@ -326,7 +325,7 @@ void* CDiskImage::GetBlock(int nBlock)
     if (m_pCache[iEmpty].pData == nullptr)
     {
         printf("Failed to allocate memory for block number %d.\n", nBlock);
-        _exit(-1);
+        exit(-1);
     }
     m_pCache[iEmpty].cLastUsage = ::clock();
 
@@ -337,7 +336,7 @@ void* CDiskImage::GetBlock(int nBlock)
     if (lBytesRead != RT11_BLOCK_SIZE)
     {
         printf("Failed to read block number %d.\n", nBlock);
-        _exit(-1);
+        exit(-1);
     }
 
     return m_pCache[iEmpty].pData;
@@ -365,7 +364,7 @@ void CDiskImage::DecodeImageCatalog()
     if (nFirstCatalogBlock > 10)
     {
         printf("First catalog block is %d, out of range.\n", nFirstCatalogBlock);
-        _exit(-1);
+        exit(-1);
     }
     if (nFirstCatalogBlock == 0) nFirstCatalogBlock = 6;
     m_volumeinfo.firstcatalogblock = nFirstCatalogBlock;
@@ -395,7 +394,7 @@ void CDiskImage::DecodeImageCatalog()
     if (m_volumeinfo.catalogsegmentcount == 0 || m_volumeinfo.catalogsegmentcount > 31)
     {
         printf("Catalog segment count is %d, out of range (1..31).\n", m_volumeinfo.catalogsegmentcount);
-        _exit(-1);
+        exit(-1);
     }
 
     // Получаем память под список сегментов
@@ -669,7 +668,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
     FILE* fpFile = ::fopen(sFileName, "rb");
     if (fpFile == nullptr)
     {
-        printf("Failed to open the file.");
+        printf("Failed to open the file.\n");
         return;
     }
 
@@ -690,7 +689,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
     if (lBytesRead != lFileLength)
     {
         printf("Failed to read the file.\n");
-        _exit(-1);
+        exit(-1);
     }
     ::fclose(fpFile);
 
@@ -760,8 +759,8 @@ void CDiskImage::AddFileToImage(const char * sFileName)
 
     // Изменяем существующую запись каталога
     pFileEntry->length = nFileSizeBlocks;
-    strcpy_s(pFileEntry->name, 7, filename);
-    strcpy_s(pFileEntry->ext, 4, fileext);
+    strcpy(pFileEntry->name, filename);
+    strcpy(pFileEntry->ext, fileext);
     pFileEntry->datepac = 0;
     pFileEntry->status = RT11_STATUS_PERM;
 
@@ -877,7 +876,7 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
 
             unusedno++;
             char filename[20];
-            printf_s(filename, 20, "UNUSED%02d", unusedno);
+            sprintf(filename, "UNUSED%02d", unusedno);
 
             uint16_t filestart = pEntry->start;
             uint16_t filelength = pEntry->length;
