@@ -121,10 +121,10 @@ static void ParseFileName63(const char * sFileName, char * filename, char * file
         return;
     }
     for (int i = 0; i < 6; i++) filename[i] = ' ';
-    for (uint16_t i = 0; i < nFilenameLength; i++) filename[i] = toupper(sFileName[i]);
+    for (uint16_t i = 0; i < nFilenameLength; i++) filename[i] = (char)toupper(sFileName[i]);
     filename[6] = 0;
     for (int i = 0; i < 3; i++) fileext[i] = ' ';
-    for (uint16_t i = 0; i < nFileextLength; i++) fileext[i] = toupper(sFilenameExt[i + 1]);
+    for (uint16_t i = 0; i < nFileextLength; i++) fileext[i] = (char)toupper(sFilenameExt[i + 1]);
     fileext[3] = 0;
 }
 
@@ -675,7 +675,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
 
     // Определяем длину файла, с учетом округления до полного блока
     ::fseek(fpFile, 0, SEEK_END);
-    long lFileLength = ::ftell(fpFile);  // Точная длина файла
+    size_t lFileLength = ::ftell(fpFile);  // Точная длина файла
     uint16_t nFileSizeBlocks =  // Требуемая ширина свободного места в блоках
         (uint16_t) ((lFileLength + RT11_BLOCK_SIZE - 1) / RT11_BLOCK_SIZE);
     uint32_t dwFileSize =  // Длина файла с учетом округления до полного блока
@@ -865,7 +865,6 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
         CVolumeCatalogSegment* pSegment = m_volumeinfo.catalogsegments + segmno;
         if (pSegment->catalogentries == nullptr) continue;
 
-        bool okSegmentChanged = false;
         for (int entryno = 0; entryno < m_volumeinfo.catalogentriespersegment; entryno++)
         {
             CVolumeCatalogEntry* pEntry = pSegment->catalogentries + entryno;
@@ -899,7 +898,11 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
                 }
                 uint8_t* pData = (uint8_t*)GetBlock(blockno);
                 size_t nBytesWritten = fwrite(pData, sizeof(uint8_t), RT11_BLOCK_SIZE, foutput);
-                //TODO: Check if nBytesWritten < RT11_BLOCK_SIZE
+                if (nBytesWritten < RT11_BLOCK_SIZE)
+                {
+                    printf("Failed to write output file\n");  //TODO: Show error number
+                    return;
+                }
             }
 
             fclose(foutput);

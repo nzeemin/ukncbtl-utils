@@ -84,7 +84,7 @@ void r50asc(int cnt, uint16_t* r50, char str[])
         }
 
         v %= 40; /* mask all but bits of interest */
-        if (v == 0)                      ch = ' ';      /* space */
+        if (v == 0)                    ch = ' ';      /* space */
         else if (v >= 1 && v <= 26)    ch = v - 1 + 'A';    /* printable */
         else if (v == 27)              ch = '$';
         else if (v == 28)              ch = '.';
@@ -92,7 +92,7 @@ void r50asc(int cnt, uint16_t* r50, char str[])
         else if (v >= 30 && v <= 39)   ch = v - 30 + '0';   /* digit */
         /* end of valid RAD50 range, display table values */
 
-        str[i] = ch;
+        str[i] = (char)ch;
     }
     str[i] = 0; /* always nul terminate */
 }

@@ -64,7 +64,7 @@ CHardImage::CHardImage()
     m_fpFile = nullptr;
     m_lFileSize = 0;
     m_drivertype = HDD_DRIVER_UNKNOWN;
-    m_nSectorsPerTrack = m_nSidesPerTrack = m_nPartitions = 0;
+    m_nSectorsPerTrack = 0;  m_nSidesPerTrack = 0;  m_nPartitions = 0;
     m_pPartitionInfos = nullptr;
     m_okChecksum = false;
 }
@@ -97,7 +97,7 @@ bool CHardImage::Attach(const char * sImageFileName)
     if (lBytesRead != 512)
     {
         printf("Failed to read first 512 bytes of the hard disk image file.\n");
-        _exit(-1);
+        exit(-1);
     }
 
     // Check for inverted image
