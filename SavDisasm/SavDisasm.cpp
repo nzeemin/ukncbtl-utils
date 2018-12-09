@@ -171,11 +171,11 @@ void DisasmSavImage(uint16_t* pImage, FILE* fpOutFile)
             PrintOctalValue(value0, pImage[address / 2]);
             if (length > 1) PrintOctalValue(value1, pImage[address / 2 + 1]); else *value1 = 0;
             if (length > 2) PrintOctalValue(value2, pImage[address / 2 + 2]); else *value2 = 0;
-            sprintf_s(buffer, 128, ("%s\t%s\t%s\t%s\t%-7s\t%s\r\n"), bufaddr, value0, value1, value2, bufinstr, bufargs);
+            sprintf(buffer, "%s\t%s\t%s\t%s\t%-7s\t%s\r\n", bufaddr, value0, value1, value2, bufinstr, bufargs);
         }
         else
         {
-            sprintf_s(buffer, 128, ("%s\t%-7s\t%s\r\n"), bufaddr, bufinstr, bufargs);
+            sprintf_s(buffer, "%s\t%-7s\t%s\r\n", bufaddr, bufinstr, bufargs);
         }
 
         ::fwrite(buffer, 1, strlen(buffer), fpOutFile);

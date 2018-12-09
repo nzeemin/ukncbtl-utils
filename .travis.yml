@@ -7,9 +7,6 @@ dist: trusty
 sudo: required
 compiler: gcc
 
-before_script:
-  - gcc --version
-
 script:
   - cd ESCParser
   - make
