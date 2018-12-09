@@ -370,11 +370,11 @@ void CDiskImage::DecodeImageCatalog()
     m_volumeinfo.firstcatalogblock = nFirstCatalogBlock;
     m_volumeinfo.systemversion = pHomeSector[0726];
     const char* sVolumeId = (const char*) pHomeSector + 0730;
-    strncpy_s(m_volumeinfo.volumeid, 13, sVolumeId, 12);
+    strncpy(m_volumeinfo.volumeid, sVolumeId, 12);
     const char* sOwnerName = (const char*) pHomeSector + 0744;
-    strncpy_s(m_volumeinfo.ownername, 13, sOwnerName, 12);
+    strncpy(m_volumeinfo.ownername, sOwnerName, 12);
     const char* sSystemId = (const char*) pHomeSector + 0760;
-    strncpy_s(m_volumeinfo.systemid, 13, sSystemId, 12);
+    strncpy(m_volumeinfo.systemid, sSystemId, 12);
 
     // Разбор первого блока каталога
     uint8_t* pBlock1 = (uint8_t*) GetBlock(nFirstCatalogBlock);

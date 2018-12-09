@@ -20,9 +20,11 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include <stdint.h>
 #include <memory.h>
 #include <string.h>
+#include <cstring>
 
 #ifdef __GNUC__
 #define _stricmp    strcasecmp
+#define _strnicmp   strnicmp
 #endif
 
 
