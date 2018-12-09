@@ -1,0 +1,21 @@
+language: cpp
+
+os:
+  - linux
+  - osx
+dist: trusty
+sudo: required
+compiler: gcc
+
+before_script:
+  - gcc --version
+
+script:
+  - cd ESCParser
+  - make
+  - cd ../Sav2Cartridge
+  - make
+  - cd ../sav2wav
+  - make
+  - cd ../rt11dsk
+  - make

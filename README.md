@@ -2,6 +2,7 @@
 UKNCBTL emulator utilities.
 
 [![Build status](https://ci.appveyor.com/api/projects/status/y2mk1kliaxb8n71c?svg=true)](https://ci.appveyor.com/project/nzeemin/ukncbtl-utils)
+[![Build Status](https://travis-ci.org/nzeemin/ukncbtl-utils.svg?branch=master)](https://travis-ci.org/nzeemin/ukncbtl-utils)
 
 The UKNCBTL project consists of:
 * [ukncbtl](https://github.com/nzeemin/ukncbtl/) written for Win32 and works under Windows 2000/2003/2008/XP/Vista/7.
