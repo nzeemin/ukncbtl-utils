@@ -12,9 +12,14 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 /// \brief Disassembler for KM1801VM2 processor
 /// \details See defines in header file Emubase.h
 
-#include "stdafx.h"
+#include "SavDisasm.h"
 #include "Defines.h"
 
+
+//////////////////////////////////////////////////////////////////////
+
+// Названия регистров процессора
+const char* REGISTER_NAME[] = { ("R0"), ("R1"), ("R2"), ("R3"), ("R4"), ("R5"), ("SP"), ("PC") };
 
 // Формат отображения режимов адресации
 const LPCSTR ADDRESS_MODE_FORMAT[] =
