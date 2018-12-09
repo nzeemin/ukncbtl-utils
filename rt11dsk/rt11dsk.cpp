@@ -79,6 +79,7 @@ static g_CommandInfos[] =
     { "hpe",  true,   DoHardPartitionExtractFile,   CMDR_PARAM_PARTITION | CMDR_PARAM_FILENAME },
     { "hpa",  true,   DoHardPartitionAddFile,       CMDR_PARAM_PARTITION | CMDR_PARAM_FILENAME | CMDR_IMAGEFILERW },
 };
+static const int g_CommandInfos_count = (int)(sizeof(g_CommandInfos) / sizeof(CommandInfo));
 
 CDiskImage      g_diskimage;
 CHardImage      g_hardimage;
@@ -166,7 +167,7 @@ bool ParseCommandLine(int argc, char * argv[])
         return false;
     }
     CommandInfo* pcinfo = nullptr;
-    for (int i = 0; i < sizeof(g_CommandInfos) / sizeof(CommandInfo); i++)
+    for (int i = 0; i < g_CommandInfos_count; i++)
     {
         if (strcmp(g_sCommand, g_CommandInfos[i].command) == 0)
         {

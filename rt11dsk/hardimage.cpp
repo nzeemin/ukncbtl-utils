@@ -216,7 +216,7 @@ void CHardImage::SavePartitionToFile(int partition, const char * filename)
 
     CPartitionInfo* pPartInfo = m_pPartitionInfos + partition;
     printf("Extracting partition number %d to file %s\n", partition, filename);
-    printf("Saving %d blocks, %ld bytes.\n", pPartInfo->blocks, ((uint32_t)pPartInfo->blocks) * RT11_BLOCK_SIZE);
+    printf("Saving %d blocks, %d bytes.\n", pPartInfo->blocks, ((int)pPartInfo->blocks) * RT11_BLOCK_SIZE);
 
     // Copy data
     ::fseek(m_fpFile, pPartInfo->offset, SEEK_SET);
@@ -277,7 +277,7 @@ void CHardImage::UpdatePartitionFromFile(int partition, const char * filename)
         return;
     }
 
-    printf("Copying %d blocks, %ld bytes.\n", pPartInfo->blocks, ((uint32_t)pPartInfo->blocks) * RT11_BLOCK_SIZE);
+    printf("Copying %d blocks, %d bytes.\n", pPartInfo->blocks, ((int)pPartInfo->blocks) * RT11_BLOCK_SIZE);
 
     // Copy data
     ::fseek(finput, 0, SEEK_SET);

@@ -19,3 +19,5 @@ script:
   - make
   - cd ../rt11dsk
   - make
+  - cd ../SavDisasm
+  - make
