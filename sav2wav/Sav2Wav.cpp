@@ -256,14 +256,14 @@ void Convert()
     inputfile = fopen(inputfilename, "rb");
     if (inputfile == NULL)
     {
-        printf("Failed to open input file.");
+        printf("Failed to open input file.\n");
         return;
     }
 
     outputfile = fopen(outputfilename, "w+b");
     if (outputfile == NULL)
     {
-        printf("Failed to open output file.");
+        printf("Failed to open output file.\n");
         return;
     }
 
@@ -335,7 +335,7 @@ void Convert()
 
     fclose(outputfile);
 
-    printf("Done.");
+    printf("Done.\n");
 }
 
 
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 3)
     {
-        printf("Usage: sav2wav <inputfile.SAV> <outputfile.WAV>");
+        printf("Usage: sav2wav <inputfile.SAV> <outputfile.WAV>\n");
         return 255;
     }
 
