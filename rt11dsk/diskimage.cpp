@@ -99,6 +99,7 @@ void CDiskImage::UpdateCatalogSegment(CVolumeCatalogSegment* pSegment)
 }
 
 // Parse sFileName as RT11 file name, 6.3 format
+// Resulting filename and fileext are uppercased strings.
 static void ParseFileName63(const char * sFileName, char * filename, char * fileext)
 {
     const char * sFilenameExt = strrchr(sFileName, '.');
@@ -533,8 +534,8 @@ void CDiskImage::SaveEntryToExternalFile(const char * sFileName)
             if (pEntry->status == 0) continue;
             if (pEntry->status == RT11_STATUS_EMPTY) continue;
 
-            if (_strnicmp(filename, pEntry->name, 6) == 0 &&
-                _strnicmp(fileext, pEntry->ext, 3) == 0)
+            if (strncmp(filename, pEntry->name, 6) == 0 &&
+                strncmp(fileext, pEntry->ext, 3) == 0)
             {
                 pFileEntry = pEntry;
                 break;
@@ -822,8 +823,8 @@ void CDiskImage::DeleteFileFromImage(const char * sFileName)
             if (pEntry->status == 0) continue;
             if (pEntry->status == RT11_STATUS_EMPTY) continue;
 
-            if (_strnicmp(filename, pEntry->name, 6) == 0 &&
-                _strnicmp(fileext, pEntry->ext, 3) == 0)
+            if (strncmp(filename, pEntry->name, 6) == 0 &&
+                strncmp(fileext, pEntry->ext, 3) == 0)
             {
                 pFileEntry = pEntry;
                 pFileSegment = pSegment;
