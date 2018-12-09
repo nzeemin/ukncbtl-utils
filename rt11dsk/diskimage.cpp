@@ -474,9 +474,9 @@ void CDiskImage::PrintTableFooter()
 
 void CDiskImage::PrintCatalogDirectory()
 {
-    printf(" Volume: %S\n", m_volumeinfo.volumeid);
-    printf(" Owner:  %S\n", m_volumeinfo.ownername);
-    printf(" System: %S\n", m_volumeinfo.systemid);
+    printf(" Volume: %s\n", m_volumeinfo.volumeid);
+    printf(" Owner:  %s\n", m_volumeinfo.ownername);
+    printf(" System: %s\n", m_volumeinfo.systemid);
     printf("\n");
     printf(" %d available segments, last opened segment: %d\n", m_volumeinfo.catalogsegmentcount, m_volumeinfo.lastopenedsegment);
     printf("\n");

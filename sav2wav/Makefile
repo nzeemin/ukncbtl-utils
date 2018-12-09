@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -O3 -Wall
+CXXFLAGS = -std=c++11 -O3 -Wall
 
 SOURCES = Sav2Wav.cpp
 
