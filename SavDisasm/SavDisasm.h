@@ -18,7 +18,6 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <memory.h>
 #include <string.h>
 #include <ctype.h>

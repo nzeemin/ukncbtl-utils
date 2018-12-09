@@ -89,7 +89,7 @@ bool ParseCommandLine(int argc, char* argv[])
         LPCSTR arg = argv[argn];
         if (arg[0] == ('-') || arg[0] == ('/'))
         {
-            char option = tolower(arg[1]);
+            char option = (char)tolower(arg[1]);
             switch (option)
             {
             case ('s'):  // Set disasm Start address
@@ -175,12 +175,12 @@ void DisasmSavImage(uint16_t* pImage, FILE* fpOutFile)
         }
         else
         {
-            sprintf_s(buffer, "%s\t%-7s\t%s\r\n", bufaddr, bufinstr, bufargs);
+            sprintf(buffer, "%s\t%-7s\t%s\r\n", bufaddr, bufinstr, bufargs);
         }
 
         ::fwrite(buffer, 1, strlen(buffer), fpOutFile);
 
-        address += length * 2;
+        address += (uint16_t)length * 2;
         if (address == 0)
             break;
     }
