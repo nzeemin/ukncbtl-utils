@@ -1,14 +1,14 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -O3 -Wall
 
-SOURCES = diskimage.cpp hardimage.cpp rad50.cpp rt11dsk.cpp
+SOURCES = diskimage.cpp hardimage.cpp rad50.cpp rt11dsk.cpp rt11date.cpp
 
-OBJECTS = diskimage.o hardimage.o rad50.o rt11dsk.o
+OBJECTS = diskimage.o hardimage.o rad50.o rt11dsk.o rt11date.o
 
 all: rt11dsk
 
 rt11dsk: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o rt11dsk $(OBJECTS)
+	$(CXX) -g $(CXXFLAGS) -o rt11dsk $(OBJECTS)
 
 .PHONY: clean
 

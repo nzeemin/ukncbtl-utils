@@ -13,6 +13,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "rt11dsk.h"
 #include <time.h>
 #include "diskimage.h"
+#include "rt11date.h"
 #include <cctype>
 
 
@@ -45,7 +46,7 @@ public:  // Упакованные поля записи
     uint16_t start;     // File start block number
     uint16_t length;    // File length in 512-byte blocks
 public:  // Распакованные поля записи
-    char name[7];  // File name - 6 characters
+    char name[8];  // File name - 6 characters
     char ext[4];   // File extension - 3 characters
 
 public:
@@ -103,10 +104,14 @@ void CDiskImage::UpdateCatalogSegment(CVolumeCatalogSegment* pSegment)
 static void ParseFileName63(const char * sFileName, char * filename, char * fileext)
 {
     const char * sFilenameExt = strrchr(sFileName, '.');
+    const char * sFilenamePath = strrchr(sFileName, '/');
     if (sFilenameExt == nullptr)
     {
         printf("Wrong filename format: %s\n", sFileName);
         return;
+    }
+    if (sFilenamePath != nullptr) {
+        sFileName = sFilenamePath + 1;
     }
     size_t nFilenameLength = sFilenameExt - sFileName;
     if (nFilenameLength == 0 || nFilenameLength > 6)
@@ -762,7 +767,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
     pFileEntry->length = nFileSizeBlocks;
     strcpy(pFileEntry->name, filename);
     strcpy(pFileEntry->ext, fileext);
-    pFileEntry->datepac = 0;
+    pFileEntry->datepac = clock2rt11date(time(NULL));
     pFileEntry->status = RT11_STATUS_PERM;
 
     printf("\nCatalog entries to update:\n\n");
@@ -962,8 +967,12 @@ void CVolumeCatalogEntry::Unpack(uint16_t const * pCatalog, uint16_t filestartbl
 
     if (status != RT11_STATUS_EMPTY && status != RT11_STATUS_ENDMARK)
     {
-        r50asc(6, namerad50, name);
-        name[6] = 0;
+        char*   p = name;
+        if (status == RT11_STATUS_TENTATIVE) {
+            *p++ = '!';
+        }
+        r50asc(6, namerad50, p);
+        p[6] = 0;
         r50asc(3, namerad50 + 2, ext);
         ext[3] = 0;
     }
@@ -997,8 +1006,8 @@ void CVolumeCatalogEntry::Print()
     }
     else
     {
-        char datestr[10];
-        rtDateStr(datepac, datestr);
+        char datestr[16];
+        rt11date_str(datepac, datestr, sizeof(datestr));
         printf("%s.%s  %5d  %s %5d %8d\n",
                name, ext, length, datestr, start, length * RT11_BLOCK_SIZE);
     }
