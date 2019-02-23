@@ -93,11 +93,13 @@
     <ClCompile Include="hardimage.cpp" />
     <ClCompile Include="rt11dsk.cpp" />
     <ClCompile Include="rad50.cpp" />
+    <ClCompile Include="rt11date.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="diskimage.h" />
     <ClInclude Include="hardimage.h" />
     <ClInclude Include="rt11dsk.h" />
+    <ClInclude Include="rt11date.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

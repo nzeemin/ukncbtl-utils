@@ -127,20 +127,3 @@ void irad50( int cnt, char str[], uint16_t r50[] )
     }
 }
 
-
-/* */
-
-void rtDateStr(uint16_t date, char* str)
-{
-    const char* months[] =
-    { "???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-
-    int year  = (date & 0x1F) + 72;
-    int day   = (date >> 5)  & 0x1F;
-    int month = (date >> 10) & 0x1F;
-
-    if (month < 1 || month > 12)
-        strcpy(str, "  -BAD-  ");
-    else
-        sprintf(str, "%02d-%3s-%02d", day, months[month], year );
-}
