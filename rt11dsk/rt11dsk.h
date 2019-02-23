@@ -27,6 +27,15 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 
 //////////////////////////////////////////////////////////////////////
+// Структуры данных, представляющие информацию о томе RT-11
+
+/* Types for rtFileEntry 'status' */
+#define RT11_STATUS_TENTATIVE   256     /* Temporary file */
+#define RT11_STATUS_EMPTY       512     /* Marks empty space */
+#define RT11_STATUS_PERM        1024    /* A "real" file */
+#define RT11_STATUS_ENDMARK     2048    /* Marks the end of file entries */
+
+//////////////////////////////////////////////////////////////////////
 // RADIX50 convertion rotines headers, see rad50.cpp
 
 void r50asc(int cnt, uint16_t* r50, char str[]);
