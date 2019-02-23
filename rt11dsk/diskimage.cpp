@@ -110,7 +110,8 @@ static void ParseFileName63(const char * sFileName, char * filename, char * file
         printf("Wrong filename format: %s\n", sFileName);
         return;
     }
-    if (sFilenamePath != nullptr) {
+    if (sFilenamePath != nullptr)
+    {
         sFileName = sFilenamePath + 1;
     }
     size_t nFilenameLength = sFilenameExt - sFileName;
@@ -968,7 +969,8 @@ void CVolumeCatalogEntry::Unpack(uint16_t const * pCatalog, uint16_t filestartbl
     if (status != RT11_STATUS_EMPTY && status != RT11_STATUS_ENDMARK)
     {
         char*   p = name;
-        if (status == RT11_STATUS_TENTATIVE) {
+        if (status == RT11_STATUS_TENTATIVE)
+        {
             *p++ = '!';
         }
         r50asc(6, namerad50, p);

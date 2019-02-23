@@ -1,4 +1,14 @@
-﻿#include <stdio.h>
+﻿/*  This file is part of UKNCBTL.
+    UKNCBTL is free software: you can redistribute it and/or modify it under the terms
+of the GNU Lesser General Public License as published by the Free Software Foundation,
+either version 3 of the License, or (at your option) any later version.
+    UKNCBTL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU Lesser General Public License for more details.
+    You should have received a copy of the GNU Lesser General Public License along with
+UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
+
+#include <stdio.h>
 #include "rt11date.h"
 
 uint16_t clock2rt11date(const time_t clock)
@@ -30,11 +40,11 @@ void rt11date_str(uint16_t date, char* str, size_t sz)
     int day   = (date >> 5)  & 0x1F;
     int month = (date >> 10) & 0xF;
     int age = (date >> 14) & 0x3;
-    year += age*32;
+    year += age * 32;
 
     if (month < 1 || month > 12)
         strncpy(str, "  -BAD-  ", sz);
     else
         // sprintf(str, "[%d] %02d-%3s-%02d", age, day, months[month], year+1972);
-        ::snprintf(str, sz, "%02d-%3s-%02d", day, months[month], year >= 32? year+1972-2000: year+72);
+        ::snprintf(str, sz, "%02d-%3s-%02d", day, months[month], year >= 32 ? year + 1972 - 2000 : year + 72);
 }
