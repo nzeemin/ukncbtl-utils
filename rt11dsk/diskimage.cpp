@@ -11,7 +11,12 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 // diskimage.cpp : Disk image utilities
 
 #include <time.h>
-#include <unistd.h>
+#ifdef _MSC_VER
+  #include <stdio.h>
+  #define unlink(fn) _unlink(fn)
+#else
+  #include <unistd.h>
+#endif
 #include <assert.h>
 #include "rt11dsk.h"
 #include "diskimage.h"
