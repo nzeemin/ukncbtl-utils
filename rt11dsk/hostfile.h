@@ -34,7 +34,7 @@ extern "C" {
     public:
         const char* host_fn;
         void*       data;
-        clock_t     mtime_sec;
+        time_t      mtime_sec;
         uint16_t    rt11_fn[3]; // radix-50
         uint16_t    rt11_sz; // file size in blocks
         char        _name[10]; // 6(name) + 3(ext) + 1\0

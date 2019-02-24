@@ -564,8 +564,7 @@ void CDiskImage::SaveEntryToExternalFile(const char * sFileName)
     uint16_t filestart = pFileEntry->start;
     uint16_t filelength = pFileEntry->length;
 
-    FILE* foutput = nullptr;
-    foutput = fopen(sfilename, "wb");
+    FILE* foutput = fopen(sfilename, "wb");
     if (foutput == nullptr)
     {
         printf("Failed to open output file %s: error %d\n", sFileName, errno);
@@ -579,6 +578,7 @@ void CDiskImage::SaveEntryToExternalFile(const char * sFileName)
         if (nBytesWritten < RT11_BLOCK_SIZE)
         {
             printf("Failed to write output file\n");  //TODO: Show error number
+            fclose(foutput);
             return;
         }
     }
@@ -635,6 +635,7 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
                 if (nBytesWritten < RT11_BLOCK_SIZE)
                 {
                     printf("Failed to write output file\n");  //TODO: Show error number
+                    fclose(foutput);
                     return;
                 }
             }
@@ -886,6 +887,7 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
                 if (nBytesWritten < RT11_BLOCK_SIZE)
                 {
                     printf("Failed to write output file\n");  //TODO: Show error number
+                    fclose(foutput);
                     return;
                 }
             }
@@ -932,6 +934,7 @@ CVolumeCatalogEntry::CVolumeCatalogEntry()
     memset(name, 0, sizeof(name));
     memset(ext, 0, sizeof(ext));
     start = length = datepac = 0;
+    memset(namerad50, 0, sizeof(namerad50));
 }
 
 void CVolumeCatalogEntry::Unpack(uint16_t const * pCatalog, uint16_t filestartblock)

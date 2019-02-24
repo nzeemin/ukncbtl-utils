@@ -8,6 +8,10 @@ See the GNU Lesser General Public License for more details.
     You should have received a copy of the GNU Lesser General Public License along with
 UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifdef _MSC_VER
+# define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include "rt11date.h"
 
@@ -33,7 +37,7 @@ uint16_t clock2rt11date(const time_t clock)
 
 void rt11date_str(uint16_t date, char* str, size_t sz)
 {
-    const char* months[] =
+    static const char* months[] =
     { "???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
     int year  = (date & 0x1F);

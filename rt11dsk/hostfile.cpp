@@ -8,6 +8,10 @@ See the GNU Lesser General Public License for more details.
     You should have received a copy of the GNU Lesser General Public License along with
 UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifdef _MSC_VER
+# define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -23,6 +27,7 @@ CHostFile::CHostFile(const char* _host_fn)
     memset(rt11_fn, 0, sizeof(rt11_fn));
     mtime_sec = 0;
     host_fn = _host_fn;
+    rt11_sz = 0;
     memset(_name, 0, sizeof(_name));
 }
 
@@ -68,7 +73,7 @@ bool CHostFile::ParseFileName63(void)
     }
     for (int i = 0; i < fn_size; i++)
         _name[i] = (char)toupper(p_name[i]);
-    for (int i = 0; i < ext_size; i++)
+    for (size_t i = 0; i < ext_size; i++)
         _name[6 + i] = (char)toupper(p_ext[i + 1]);
     irad50(9, _name, rt11_fn);
     return true;
@@ -87,13 +92,13 @@ bool CHostFile::read(void)
     // Проверка, не слишком ли длинный файл для этого тома
     if (st.st_size > RT11_MAX_FILE_SIZE)
     {
-        fprintf(stderr, "Failed is too big (max %d bytes): %s\n", RT11_MAX_FILE_SIZE, host_fn);
+        fprintf(stderr, "File is too big (max %d bytes): %s\n", RT11_MAX_FILE_SIZE, host_fn);
         return false;
     }
     // Проверка на файл нулевой длины
     if (st.st_size == 0)
     {
-        fprintf(stderr, "Failed is empty: %s\n", host_fn);
+        fprintf(stderr, "File is empty: %s\n", host_fn);
         return false;
     }
     // Открываем помещаемый файл на чтение
@@ -116,7 +121,7 @@ bool CHostFile::read(void)
     if (lBytesRead != st.st_size)
     {
         fprintf(stderr, "Failed to read the file: %s\n", host_fn);
-        //exit(-1);
+        ::fclose(fpFile);
         return false;
     }
     ::fclose(fpFile);
