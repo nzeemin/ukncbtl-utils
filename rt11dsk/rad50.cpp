@@ -90,6 +90,7 @@ void r50asc(int cnt, uint16_t* r50, char str[])
         else if (v == 28)              ch = '.';
         else if (v == 29)              ch = 255;        /* unused ! */
         else if (v >= 30 && v <= 39)   ch = v - 30 + '0';   /* digit */
+        else ch = ' '; // make GCC compiller happy
         /* end of valid RAD50 range, display table values */
 
         str[i] = (char)ch;
