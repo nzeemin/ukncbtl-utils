@@ -17,20 +17,20 @@ extern "C" {
 #include <stdio.h>
 #include <time.h>
 
-inline char separator()
-{
+    inline char separator()
+    {
 #if defined _WIN32 || defined __CYGWIN__
-    return '\\';
+        return '\\';
 #else
-    return '/';
+        return '/';
 #endif
-}
+    }
 
 #define RT11_BLOCK_SIZE     512
 #define RT11_MAX_FILE_SIZE  (RT11_BLOCK_SIZE * 0xFFFF)
 
-struct CHostFile
-{
+    struct CHostFile
+    {
     public:
         const char* host_fn;
         void*       data;
@@ -45,8 +45,8 @@ struct CHostFile
         bool read(void);
 
         inline char* name(void) { return _name; };
-        inline char* ext(void) { return _name+6; };
-};
+        inline char* ext(void) { return _name + 6; };
+    };
 
 #ifdef __cplusplus
 }

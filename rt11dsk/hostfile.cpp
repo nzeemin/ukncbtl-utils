@@ -38,8 +38,8 @@ bool CHostFile::ParseFileName63(void)
 {
     const char * p_ext = strrchr(host_fn, '.');
     const char * p_name = strrchr(host_fn, separator());
-    memset(_name, ' ', sizeof(_name)-1);
-    _name[sizeof(_name)-1] = '\0';
+    memset(_name, ' ', sizeof(_name) - 1);
+    _name[sizeof(_name) - 1] = '\0';
     if (p_ext == nullptr)
     {
         fprintf(stderr, "Wrong filename format (no ext): %s\n", host_fn);
@@ -49,7 +49,7 @@ bool CHostFile::ParseFileName63(void)
     {
         p_name = host_fn;
     }
-    else 
+    else
     {
         ++p_name;
     }
@@ -69,8 +69,8 @@ bool CHostFile::ParseFileName63(void)
     for (int i = 0; i < fn_size; i++)
         _name[i] = (char)toupper(p_name[i]);
     for (int i = 0; i < ext_size; i++)
-        _name[6+i] = (char)toupper(p_ext[i + 1]);
-    irad50(9, _name, rt11_fn); 
+        _name[6 + i] = (char)toupper(p_ext[i + 1]);
+    irad50(9, _name, rt11_fn);
     return true;
 }
 
