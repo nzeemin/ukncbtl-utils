@@ -14,6 +14,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include <time.h>
 #include "diskimage.h"
 #include "rt11date.h"
+#include "hostfile.h"
 #include <cctype>
 
 
@@ -28,15 +29,6 @@ struct CCachedBlock
 };
 
 
-//////////////////////////////////////////////////////////////////////
-// Структуры данных, представляющие информацию о томе RT-11
-
-/* Types for rtFileEntry 'status' */
-#define RT11_STATUS_TENTATIVE   256     /* Temporary file */
-#define RT11_STATUS_EMPTY       512     /* Marks empty space */
-#define RT11_STATUS_PERM        1024    /* A "real" file */
-#define RT11_STATUS_ENDMARK     2048    /* Marks the end of file entries */
-
 // Структура для хранения разобранной строки каталога
 struct CVolumeCatalogEntry
 {
@@ -45,6 +37,7 @@ public:  // Упакованные поля записи
     uint16_t datepac;   // Упакованное поле даты
     uint16_t start;     // File start block number
     uint16_t length;    // File length in 512-byte blocks
+    uint16_t namerad50[3];  // filename in radix50: 6.3
 public:  // Распакованные поля записи
     char name[8];  // File name - 6 characters
     char ext[4];   // File extension - 3 characters
@@ -666,42 +659,12 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
 //NOTE: Пока НЕ проверяем что файл с таким именем уже есть, и НЕ выдаем ошибки
 void CDiskImage::AddFileToImage(const char * sFileName)
 {
-    // Parse sFileName
-    char filename[7];
-    char fileext[4];
-    ParseFileName63(sFileName, filename, fileext);
+    CHostFile   hfile(sFileName);
 
-    // Открываем помещаемый файл на чтение
-    FILE* fpFile = ::fopen(sFileName, "rb");
-    if (fpFile == nullptr)
-    {
-        printf("Failed to open the file.\n");
-        return;
-    }
-
-    // Определяем длину файла, с учетом округления до полного блока
-    ::fseek(fpFile, 0, SEEK_END);
-    size_t lFileLength = ::ftell(fpFile);  // Точная длина файла
-    uint16_t nFileSizeBlocks =  // Требуемая ширина свободного места в блоках
-        (uint16_t) ((lFileLength + RT11_BLOCK_SIZE - 1) / RT11_BLOCK_SIZE);
-    uint32_t dwFileSize =  // Длина файла с учетом округления до полного блока
-        ((uint32_t) nFileSizeBlocks) * RT11_BLOCK_SIZE;
-    //TODO: Проверка на файл нулевой длины
-    //TODO: Проверка, не слишком ли длинный файл для этого тома
-
-    // Выделяем память и считываем данные файла
-    void* pFileData = ::calloc(dwFileSize, 1);
-    ::fseek(fpFile, 0, SEEK_SET);
-    size_t lBytesRead = ::fread(pFileData, 1, lFileLength, fpFile);
-    if (lBytesRead != lFileLength)
-    {
-        printf("Failed to read the file.\n");
-        exit(-1);
-    }
-    ::fclose(fpFile);
-
-    printf("File size is %ld bytes or %d blocks\n", lFileLength, nFileSizeBlocks);
-
+    if (!hfile.ParseFileName63())
+        return; // error
+    if (!hfile.read())
+        return; // error
     // Перебираются все записи каталога, пока не будет найдена пустая запись длины >= dwFileLength
     //TODO: Выделить в отдельную функцию и искать наиболее подходящую запись, с минимальной разницей по длине
     CVolumeCatalogEntry* pFileEntry = nullptr;
@@ -718,7 +681,24 @@ void CDiskImage::AddFileToImage(const char * sFileName)
             if (pEntry->status == RT11_STATUS_ENDMARK) break;
             if (pEntry->status == 0) continue;
 
-            if (pEntry->status == RT11_STATUS_EMPTY && pEntry->length >= nFileSizeBlocks)
+            if (pEntry->status == RT11_STATUS_PERM)
+            {
+                // Проверить имя файла
+                if (memcmp(pEntry->namerad50, hfile.rt11_fn, sizeof(pEntry->namerad50)) == 0)
+                {
+                    pFileEntry = pEntry;
+                    pFileSegment = pSegment;
+                    if (pEntry->length != hfile.rt11_sz)
+                    {
+                        fprintf(stderr, "File exists with different size: %.6s.%.3s",
+                                hfile.name(), hfile.ext());
+                        exit(-1);
+                    }
+                    break;
+                }
+                continue;
+            }
+            if (pEntry->status == RT11_STATUS_EMPTY && pEntry->length >= hfile.rt11_sz)
             {
                 pFileEntry = pEntry;
                 pFileSegment = pSegment;
@@ -728,8 +708,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
     }
     if (pFileEntry == nullptr)
     {
-        printf("Empty catalog entry with %d or more blocks not found\n", nFileSizeBlocks);
-        free(pFileData);
+        fprintf(stderr, "Empty catalog entry with %d or more blocks not found\n", hfile.rt11_sz);
         return;
     }
     printf("Found empty catalog entry with %d blocks:\n\n", pFileEntry->length);
@@ -738,15 +717,14 @@ void CDiskImage::AddFileToImage(const char * sFileName)
     PrintTableFooter();
 
     // Определяем, нужна ли новая запись каталога
-    bool okNeedNewCatalogEntry = (pFileEntry->length != nFileSizeBlocks);
+    bool okNeedNewCatalogEntry = (pFileEntry->length != hfile.rt11_sz);
     CVolumeCatalogEntry* pEmptyEntry = nullptr;
     if (okNeedNewCatalogEntry)
     {
         // Проверяем, нужно ли для новой записи каталога открывать новый сегмент каталога
         if (pFileSegment->entriesused == m_volumeinfo.catalogentriespersegment)
         {
-            printf("New catalog segment needed - not implemented now, sorry.\n");
-            free(pFileData);
+            fprintf(stderr, "New catalog segment needed - not implemented now, sorry.\n");
             return;
         }
 
@@ -759,16 +737,18 @@ void CDiskImage::AddFileToImage(const char * sFileName)
         pEmptyEntry = pFileEntry + 1;
         // Заполнить данные новой записи каталога
         pEmptyEntry->status = RT11_STATUS_EMPTY;
-        pEmptyEntry->start = pFileEntry->start + nFileSizeBlocks;
-        pEmptyEntry->length = pFileEntry->length - nFileSizeBlocks;
+        pEmptyEntry->start = pFileEntry->start + hfile.rt11_sz;
+        pEmptyEntry->length = pFileEntry->length - hfile.rt11_sz;
         pEmptyEntry->datepac = pFileEntry->datepac;
     }
 
     // Изменяем существующую запись каталога
-    pFileEntry->length = nFileSizeBlocks;
-    strcpy(pFileEntry->name, filename);
-    strcpy(pFileEntry->ext, fileext);
-    pFileEntry->datepac = clock2rt11date(time(NULL));
+    pFileEntry->length = hfile.rt11_sz;
+    strncpy(pFileEntry->name, hfile.name(), 6); // FIXME
+    pFileEntry->name[6] = 0;
+    strncpy(pFileEntry->ext, hfile.ext(), 3);
+    pFileEntry->ext[3] = 0;
+    pFileEntry->datepac = clock2rt11date(hfile.mtime_sec);
     pFileEntry->status = RT11_STATUS_PERM;
 
     printf("\nCatalog entries to update:\n\n");
@@ -781,9 +761,9 @@ void CDiskImage::AddFileToImage(const char * sFileName)
     printf("\nWriting file data...\n");
     uint16_t nFileStartBlock = pFileEntry->start;  // Начиная с какого блока размещается новый файл
     uint16_t nBlock = nFileStartBlock;
-    for (int block = 0; block < nFileSizeBlocks; block++)
+    for (int block = 0; block < hfile.rt11_sz; block++)
     {
-        uint8_t* pFileBlockData = ((uint8_t*) pFileData) + block * RT11_BLOCK_SIZE;
+        uint8_t* pFileBlockData = ((uint8_t*) hfile.data) + block * RT11_BLOCK_SIZE;
         uint8_t* pData = (uint8_t*) GetBlock(nBlock);
         memcpy(pData, pFileBlockData, RT11_BLOCK_SIZE);
         // Сообщаем что блок был изменен
@@ -791,7 +771,6 @@ void CDiskImage::AddFileToImage(const char * sFileName)
 
         nBlock++;
     }
-    free(pFileData);
 
     // Сохраняем сегмент каталога на диск
     printf("Updating catalog segment...\n");
@@ -959,11 +938,11 @@ void CVolumeCatalogEntry::Unpack(uint16_t const * pCatalog, uint16_t filestartbl
 {
     start = filestartblock;
     status = pCatalog[0];
-    uint16_t namerad50[3];
     namerad50[0] = pCatalog[1];
     namerad50[1] = pCatalog[2];
     namerad50[2] = pCatalog[3];
     length  = pCatalog[4];
+    // FIXME pCatalog[5] - channel (lsb), job (msb) - used for E_TENT
     datepac = pCatalog[6];
 
     if (status != RT11_STATUS_EMPTY && status != RT11_STATUS_ENDMARK)
