@@ -9,6 +9,7 @@ See the GNU Lesser General Public License for more details.
 UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 // diskimage.h : Disk image utilities headers
+
 #include <time.h>
 #include "hostfile.h"
 
@@ -73,6 +74,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////
 // Структура для хранения информации о томе
+
 struct CVolumeInformation
 {
     char volumeid[13];
@@ -95,6 +97,7 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////
+
 enum EIterOp
 {
     IT_STOP = 0, // stop the iterator (loops over catalog entries)
@@ -140,7 +143,7 @@ public:
     }
     bool IsCurrentSegmentFull(void)
     {
-        return m_volumeinfo.catalogsegments[m_seg_idx].entriesused == 
+        return m_volumeinfo.catalogsegments[m_seg_idx].entriesused ==
                m_volumeinfo.catalogentriespersegment;
     }
 public:

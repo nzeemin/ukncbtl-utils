@@ -10,12 +10,16 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 // diskimage.cpp : Disk image utilities
 
+#ifdef _MSC_VER
+# define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <time.h>
 #ifdef _MSC_VER
-  #include <stdio.h>
-  #define unlink(fn) _unlink(fn)
+#include <stdio.h>
+#define unlink(fn) _unlink(fn)
 #else
-  #include <unistd.h>
+#include <unistd.h>
 #endif
 #include <assert.h>
 #include "rt11dsk.h"
@@ -280,12 +284,12 @@ void* CDiskImage::GetBlock(int nBlock)
     {
         // Find a non-changed cached block with oldest usage time
         int iCand = -1;
-        uint32_t maxdiff = 0;
+        time_t maxdiff = 0;
         for (int i = 0; i < m_nCacheBlocks; i++)
         {
             if (!m_pCache[i].bChanged)
             {
-                uint32_t diff = ::clock() - m_pCache[i].cLastUsage;
+                time_t diff = ::clock() - m_pCache[i].cLastUsage;
                 if (diff > maxdiff)
                 {
                     maxdiff = diff;
@@ -461,6 +465,7 @@ void CDiskImage::PrintTableFooter()
 }
 
 ////////////////////////////////////////////////////////////////////////
+
 struct d_print
 {
     uint16_t nFilesCount;
@@ -502,10 +507,10 @@ bool CDiskImage::Iterate(lookup_fn_t lookup, void* opaque)
             if (pEntry->status == 0) continue;
             switch (lookup(pEntry, opaque))
             {
-                case IT_STOP:
-                    return true;
-                case IT_NEXT:
-                    continue;
+            case IT_STOP:
+                return true;
+            case IT_NEXT:
+                continue;
             }
         }
     }
@@ -533,6 +538,7 @@ void CDiskImage::PrintCatalogDirectory()
 }
 
 ////////////////////////////////////////////////////////////////////////
+
 struct d_save_one
 {
     CHostFile*  hf_p;
@@ -557,13 +563,13 @@ EIterOp cb_save_one(CVolumeCatalogEntry* pEntry, void* opaque)
     char sfilename[11];
     char *p = sfilename;
     char *s = pEntry->name;
-    while(*s)
+    while (*s)
         *p++ = ::tolower(*s++);
     // remove trailing spaces
-    while(*--p == ' ' && p >= sfilename);
-    *++p = '.'; 
+    while (*--p == ' ' && p >= sfilename);
+    *++p = '.';
     s = pEntry->ext;
-    while(*s && *s != ' ')
+    while (*s && *s != ' ')
         *++p = ::tolower(*s++);
     *++p = 0;
 
@@ -671,6 +677,7 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
 }
 
 ////////////////////////////////////////////////////////////////////////
+
 struct d_add_one
 {
     CHostFile*  hf_p;
@@ -764,7 +771,7 @@ EIterOp cb_new_one(CVolumeCatalogEntry* pEntry, void* opaque)
 //   Если нужно, в файл образа прописывается новая пустая запись каталога
 //   В файл образа прописываются блоки нового файла
 //NOTE: Пока НЕ обрабатываем ситуацию открытия нового блока каталога - выходим по ошибке
-//NOTE: Проверяем что файл с таким именем уже есть, 
+//NOTE: Проверяем что файл с таким именем уже есть,
 //      если длина не совпадает, то выходим по ошибке
 void CDiskImage::AddFileToImage(const char * sFileName)
 {
@@ -793,6 +800,7 @@ void CDiskImage::AddFileToImage(const char * sFileName)
 }
 
 ////////////////////////////////////////////////////////////////////////
+
 struct d_remove_one
 {
     CHostFile*  hf_p;
@@ -848,6 +856,7 @@ void CDiskImage::DeleteFileFromImage(const char * sFileName)
 }
 
 ////////////////////////////////////////////////////////////////////////
+
 struct d_save_unused
 {
     CDiskImage* di_p;
@@ -914,6 +923,7 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
 
     printf("\nDone.\n");
 }
+
 
 //////////////////////////////////////////////////////////////////////
 
