@@ -118,7 +118,7 @@ bool CHostFile::read(void)
     // Выделяем память и считываем данные файла
     data = ::calloc(dwFileSize, 1);
     size_t lBytesRead = ::fread(data, 1, st.st_size, fpFile);
-    if (lBytesRead != st.st_size)
+    if ((off_t)lBytesRead != st.st_size)
     {
         fprintf(stderr, "Failed to read the file: %s\n", host_fn);
         ::fclose(fpFile);

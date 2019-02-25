@@ -10,9 +10,13 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 // diskimage.h : Disk image utilities headers
 
+#include <time.h>
+#include "hostfile.h"
+
 struct CCachedBlock;
 struct CVolumeInformation;
 struct CVolumeCatalogSegment;
+class CDiskImage;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -23,7 +27,54 @@ struct CVolumeCatalogSegment;
 
 
 //////////////////////////////////////////////////////////////////////
+
+struct CCachedBlock
+{
+    int     nBlock;
+    void*   pData;
+    bool    bChanged;
+    time_t cLastUsage;  // GetTickCount() for last usage
+};
+
+
+// Структура для хранения разобранной строки каталога
+struct CVolumeCatalogEntry
+{
+public:  // Упакованные поля записи
+    uint16_t status;    // See RT11_STATUS_xxx constants
+    uint16_t datepac;   // Упакованное поле даты
+    uint16_t start;     // File start block number
+    uint16_t length;    // File length in 512-byte blocks
+    uint16_t namerad50[3];  // filename in radix50: 6.3
+public:  // Распакованные поля записи
+    char name[8];  // File name - 6 characters
+    char ext[4];   // File extension - 3 characters
+
+public:
+    CVolumeCatalogEntry();
+    void Unpack(uint16_t const * pSrc, uint16_t filestartblock);  // Распаковка записи из каталога
+    void Pack(uint16_t* pDest);   // Упаковка записи в каталог
+    void Print();  // Печать строки каталога на консоль
+    void Store(CHostFile* hf_p, CDiskImage* di_p); // Сохранить файл в образ диска
+};
+
+// Структура данных для сегмента каталога
+struct CVolumeCatalogSegment
+{
+public:
+    uint16_t segmentblock;  // Блок на диске, в котором расположен этот сегмент каталога
+    uint16_t entriesused;   // Количество использованых записей каталога
+public:
+    uint16_t nextsegment;   // Номер следующего сегмента
+    uint16_t start;         // Номер блока, с которого начинаются файлы этого сегмента
+    // Массив записей каталога, размером в максимально возможное кол-во записей для этого сегмента
+    CVolumeCatalogEntry* catalogentries;
+};
+
+
+//////////////////////////////////////////////////////////////////////
 // Структура для хранения информации о томе
+
 struct CVolumeInformation
 {
     char volumeid[13];
@@ -45,6 +96,15 @@ public:
     ~CVolumeInformation();
 };
 
+//////////////////////////////////////////////////////////////////////
+
+enum EIterOp
+{
+    IT_STOP = 0, // stop the iterator (loops over catalog entries)
+    IT_NEXT = 1
+};
+
+typedef EIterOp (*lookup_fn_t)(CVolumeCatalogEntry* pEntry, void* opaque);
 
 //////////////////////////////////////////////////////////////////////
 // Образ диска в формате .dsk либо .rtd
@@ -58,6 +118,8 @@ protected:
     long            m_lStartOffset;  // First block start offset in the image file
     int             m_nTotalBlocks;  // Total blocks in the image
     int             m_nCacheBlocks;  // Cache size in blocks
+    int             m_seg_idx; // current segment number in the iterator
+    int             m_file_idx; // current file index in the iterator
     CCachedBlock*   m_pCache;
     CVolumeInformation m_volumeinfo;
 
@@ -73,7 +135,17 @@ public:
 public:
     int IsReadOnly() const { return m_okReadOnly; }
     int GetBlockCount() const { return m_nTotalBlocks; }
-
+    int iterSegmentIdx(void) const { return m_seg_idx; }
+    int iterFileIdx(void) const { return m_file_idx; }
+    int getEntriesPerSegment(void) const
+    {
+        return m_volumeinfo.catalogentriespersegment;
+    }
+    bool IsCurrentSegmentFull(void)
+    {
+        return m_volumeinfo.catalogsegments[m_seg_idx].entriesused ==
+               m_volumeinfo.catalogentriespersegment;
+    }
 public:
     void PrintCatalogDirectory();
     void PrintTableHeader();
@@ -82,12 +154,13 @@ public:
     void MarkBlockChanged(int nBlock);
     void FlushChanges();
     void DecodeImageCatalog();
-    void UpdateCatalogSegment(CVolumeCatalogSegment* pSegment);
+    void UpdateCatalogSegment(int segno);
     void SaveEntryToExternalFile(const char * sFileName);
     void SaveAllEntriesToExternalFiles();
     void AddFileToImage(const char * sFileName);
     void DeleteFileFromImage(const char * sFileName);
     void SaveAllUnusedEntriesToExternalFiles();
+    bool Iterate(lookup_fn_t, void* opaque);
 
 private:
     void PostAttach();
