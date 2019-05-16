@@ -20,6 +20,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 struct CPartitionInfo
 {
     long    offset;     // Offset from file start
+    bool    interleaving;  // Sector interleaving used for MS0515 disks
     uint16_t blocks;     // Size in blocks
 
 public:
@@ -172,7 +173,7 @@ bool CHardImage::PrepareDiskImage(int partition, CDiskImage* pdiskimage)
         return false;  // Wrong partition number
 
     CPartitionInfo* pinfo = m_pPartitionInfos + partition;
-    return pdiskimage->Attach(m_fpFile, pinfo->offset, pinfo->blocks, m_okReadOnly);
+    return pdiskimage->Attach(m_fpFile, pinfo->offset, pinfo->interleaving, pinfo->blocks, m_okReadOnly);
 }
 
 void CHardImage::PrintImageInfo()

@@ -116,6 +116,7 @@ protected:
     bool            m_okCloseFile;   // true - close m_fpFile in Detach(), false - do not close it
     bool            m_okReadOnly;
     long            m_lStartOffset;  // First block start offset in the image file
+    bool            m_okInterleaving;  // Sector interleaving used for MS0515 disks
     int             m_nTotalBlocks;  // Total blocks in the image
     int             m_nCacheBlocks;  // Cache size in blocks
     int             m_seg_idx; // current segment number in the iterator
@@ -128,8 +129,8 @@ public:
     ~CDiskImage();
 
 public:
-    bool Attach(const char * sFileName, long offset = 0);
-    bool Attach(FILE* fpfile, long offset, int blocks, bool readonly);
+    bool Attach(const char * sFileName, long offset = 0, bool interleaving = false);
+    bool Attach(FILE* fpfile, long offset, bool interleaving, int blocks, bool readonly);
     void Detach();
 
 public:

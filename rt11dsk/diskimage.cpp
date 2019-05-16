@@ -139,9 +139,10 @@ CDiskImage::~CDiskImage()
 }
 
 // Open the specified disk image file
-bool CDiskImage::Attach(const char * sImageFileName, long offset)
+bool CDiskImage::Attach(const char * sImageFileName, long offset, bool interleaving)
 {
     m_lStartOffset = offset;
+    m_okInterleaving = interleaving;
     if (m_lStartOffset <= 0)
     {
         m_lStartOffset = 0;
@@ -167,6 +168,8 @@ bool CDiskImage::Attach(const char * sImageFileName, long offset)
     ::fseek(m_fpFile, 0, SEEK_END);
     long lFileSize = ::ftell(m_fpFile);
     m_nTotalBlocks = lFileSize / RT11_BLOCK_SIZE;
+    if (interleaving)
+        m_nTotalBlocks -= 10;
 
     this->PostAttach();
 
@@ -174,13 +177,14 @@ bool CDiskImage::Attach(const char * sImageFileName, long offset)
 }
 
 // Use the given area of the file as a disk image; do not close the file in Detach() method.
-bool CDiskImage::Attach(FILE* fpfile, long offset, int blocks, bool readonly)
+bool CDiskImage::Attach(FILE* fpfile, long offset, bool interleaving, int blocks, bool readonly)
 {
     m_fpFile = fpfile;
     m_okCloseFile = false;
     m_okReadOnly = readonly;
     m_lStartOffset = offset;
     m_nTotalBlocks = blocks;
+    m_okInterleaving = interleaving;
 
     this->PostAttach();
 
@@ -228,6 +232,19 @@ void CDiskImage::Detach()
 long CDiskImage::GetBlockOffset(int nBlock) const
 {
     long foffset = ((long)nBlock) * RT11_BLOCK_SIZE;
+
+    if (m_okInterleaving)  // MS0515 sector interleaving
+    {
+        int track = nBlock / 10;
+        int sector = nBlock % 10;
+        int sector_00 = (track * 2) % 10;
+        sector = (sector_00 + sector * 2) % 10;
+        if (nBlock % 10 >= 5) sector++;
+        track++;
+        if (track > 79) track = 0;
+        foffset = long(track * 10 + sector) * RT11_BLOCK_SIZE;
+    }
+
     foffset += m_lStartOffset;
     return foffset;
 }
@@ -564,13 +581,13 @@ EIterOp cb_save_one(CVolumeCatalogEntry* pEntry, void* opaque)
     char *p = sfilename;
     char *s = pEntry->name;
     while (*s)
-        *p++ = ::tolower(*s++);
+        *p++ = (char)::tolower(*s++);
     // remove trailing spaces
     while (*--p == ' ' && p >= sfilename);
     *++p = '.';
     s = pEntry->ext;
     while (*s && *s != ' ')
-        *++p = ::tolower(*s++);
+        *++p = (char)::tolower(*s++);
     *++p = 0;
 
     uint16_t filestart = pEntry->start;
