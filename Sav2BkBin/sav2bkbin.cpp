@@ -61,6 +61,7 @@ void Convert()
     WORD baseAddress = *(((WORD*)pHeader) + 040 / 2);
     WORD lastAddress = *(((WORD*)pHeader) + 050 / 2);
     WORD dataSize = lastAddress + 2 - 01000;
+    WORD dataSizeOrig = dataSize;
 
     printf("SAV Start\t%06o  %04x  %5d\n", baseAddress, baseAddress, baseAddress);
     printf("SAV Top  \t%06o  %04x  %5d\n", lastAddress, lastAddress, lastAddress);
@@ -92,7 +93,7 @@ void Convert()
     }
 
     printf("Saving image, %u. bytes\n", (unsigned int)dataSize);
-    fwrite(pData, 1, dataSize, outputfile);
+    fwrite(pData, 1, dataSizeOrig, outputfile);
 
     free(pData);
 
