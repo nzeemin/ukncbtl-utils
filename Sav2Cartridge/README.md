@@ -5,12 +5,17 @@ Command line utility used to convert executable RT-11 SAV file into UKNC ROM car
 UKNC catridge is 24 KB = 24576 bytes, so that's "natural" limit for a file to put into the cartridge.
 
 If the SAV file is too large for the cartridge, the utility attempts to use RLE compression.
-
-If RLE compression fail to fit the image, the utility attempts to use LZSS compression.
+If RLE compression fail to fit the image, the utility attempts to use LZSS and LZ4 compression.
 
 Usage:
 ```
-Sav2Cart <inputfile.SAV> <outputfile.BIN>
+Sav2Cart [options] <inputfile.SAV> <outputfile.BIN>
+Options:
+    -none - try to fit non-compressed
+    -rle  - try RLE compression
+    -lzss - try LZSS compression
+    -lz4  - try LZ4 compression
+    (no compression options) - try all on-by-one until fit
 ```
 
 Example:
