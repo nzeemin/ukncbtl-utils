@@ -21,5 +21,8 @@
     <ClCompile Include="LZSS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LZ4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

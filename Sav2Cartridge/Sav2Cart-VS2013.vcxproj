@@ -89,6 +89,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="LZ4.cpp" />
     <ClCompile Include="LZSS.cpp" />
     <ClCompile Include="Sav2Cart.cpp" />
   </ItemGroup>
