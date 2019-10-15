@@ -21,6 +21,12 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include <string.h>
 #include <stdint.h>
 
+#ifndef WIN32
+#include <string.h>
+#define sprintf_s snprintf
+#define _stricmp  strcasecmp
+#endif
+
 
 //////////////////////////////////////////////////////////////////////
 // LZSS.cpp
