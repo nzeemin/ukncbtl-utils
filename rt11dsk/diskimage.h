@@ -166,7 +166,6 @@ public:
 private:
     void PostAttach();
     long GetBlockOffset(int nBlock) const;
-
 };
 
 

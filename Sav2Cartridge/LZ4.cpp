@@ -45,7 +45,6 @@ public:
     // write several bytes, see sendBytesToOut() in smallz4.cpp for a basic implementation
     typedef void(*SEND_BYTES)(const void* data, size_t numBytes);
 
-
     /// compress everything in input stream (accessed via getByte) and write to output stream (via send)
     static void lz4(GET_BYTES getBytes, SEND_BYTES sendBytes,
             unsigned int maxChainLength = MaxChainLength,
@@ -64,13 +63,6 @@ public:
         obj.compress(getBytes, sendBytes, dictionary, useLegacyFormat);
     }
 
-    /// version string
-    static const char* const getVersion()
-    {
-        return "1.3";
-    }
-
-
     // compression level thresholds, made public because I display them in the help screen ...
     enum
     {
@@ -80,11 +72,7 @@ public:
         ShortChainsLazy = 6
     };
 
-    // ----- END OF PUBLIC INTERFACE -----
 private:
-
-    // ----- constants and types -----
-
     /// a block can be 4 MB
     typedef uint32_t Length;
     /// matches must start within the most recent 64k
@@ -128,8 +116,6 @@ private:
         MaxBlockSizeLegacy = 8 * 1024 * 1024
     };
 
-    //  ----- one and only variable ... -----
-
     /// how many matches are checked in findLongestMatch, lower values yield faster encoding at the cost of worse compression ratio
     unsigned int maxChainLength;
 
@@ -150,20 +136,17 @@ private:
         Distance distance;
     };
 
-
     /// create new compressor (only invoked by lz4)
     explicit smallz4(unsigned int newMaxChainLength = MaxChainLength)
         : maxChainLength(newMaxChainLength) // => no limit, but can be changed by setMaxChainLength
     {
     }
 
-
     /// return true, if the four bytes at *a and *b match
     inline static bool match4(const void* const a, const void* const b)
     {
         return *(const uint32_t*)a == *(const uint32_t*)b;
     }
-
 
     /// find longest match of data[pos] between data[begin] and data[end], use match chain stored in previous
     Match findLongestMatch(const unsigned char* const data,
@@ -252,7 +235,6 @@ private:
 
         return result;
     }
-
 
     /// create shortest output
     /** data points to block's begin; we need it to extract literals **/
@@ -356,7 +338,6 @@ private:
         return result;
     }
 
-
     /// walk backwards through all matches and compute number of compressed bytes from current position to the end of the block
     /** note: matches are modified (shortened length) if necessary **/
     static void estimateCosts(std::vector<Match>& matches)
@@ -445,7 +426,6 @@ private:
             //       which could be more cache-friendly (=> faster decoding)
         }
     }
-
 
     /// compress everything in input stream (accessed via getByte) and write to output stream (via send), improve compression with a predefined dictionary
     void compress(GET_BYTES getBytes, SEND_BYTES sendBytes, const std::vector<unsigned char>& dictionary, bool useLegacyFormat) const
@@ -771,6 +751,7 @@ private:
         }
     }
 };
+
 
 //////////////////////////////////////////////////////////////////////
 
