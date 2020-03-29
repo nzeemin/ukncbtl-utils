@@ -44,7 +44,7 @@ void DoHardPartitionAddFile();
 #ifdef _MSC_VER
 #define OPTIONCHAR '/'
 #define OPTIONSTR "/"
-#elif
+#else
 #define OPTIONCHAR '-'
 #define OPTIONSTR "-"
 #endif

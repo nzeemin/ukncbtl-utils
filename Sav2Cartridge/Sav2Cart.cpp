@@ -27,6 +27,14 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #define _stricmp  strcasecmp
 #endif
 
+#ifdef _MSC_VER
+#define OPTIONCHAR '/'
+#define OPTIONSTR "/"
+#else
+#define OPTIONCHAR '-'
+#define OPTIONSTR "-"
+#endif
+
 
 //////////////////////////////////////////////////////////////////////
 // LZSS.cpp
@@ -524,7 +532,7 @@ bool ParseCommandLine(int argc, char* argv[])
     for (int argn = 1; argn < argc; argn++)
     {
         const char* arg = argv[argn];
-        if (arg[0] == '-' || arg[0] == '/')
+        if (arg[0] == OPTIONCHAR)
         {
             if (_stricmp(arg + 1, "none") == 0)
                 options |= OPTION_COMPRESSION_NONE;
@@ -566,10 +574,10 @@ int main(int argc, char* argv[])
         printf(
             "Usage: Sav2Cart [options] <inputfile.SAV> <outputfile.BIN>\n"
             "Options:\n"
-            "\t-none - try to fit non-compressed\n"
-            "\t-rle  - try RLE compression\n"
-            "\t-lzss - try LZSS compression\n"
-            "\t-lz4  - try LZ4 compression\n"
+            "\t" OPTIONSTR "none - try to fit non-compressed\n"
+            "\t" OPTIONSTR "rle  - try RLE compression\n"
+            "\t" OPTIONSTR "lzss - try LZSS compression\n"
+            "\t" OPTIONSTR "lz4  - try LZ4 compression\n"
             "\t(no compression options) - try all on-by-one until fit");
         return 255;
     }
