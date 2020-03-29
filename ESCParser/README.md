@@ -12,6 +12,8 @@ Usage examples:
   ESCParser -svg printer.log > DOC.svg
   ESCParser -pdf printer.log > DOC.pdf
 ```
+NOTE: '-' character used as an option sign under Linux/Mac, '/' character under Windows.
+
 Test sample with ESCParser produces the following result (converted to PNG):
 
 ![](https://github.com/nzeemin/ukncbtl-utils/blob/master/ESCParser/ESCParser.png)

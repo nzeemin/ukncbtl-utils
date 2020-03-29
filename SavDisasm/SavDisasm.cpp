@@ -11,6 +11,15 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "SavDisasm.h"
 
 
+#ifdef _MSC_VER
+#define OPTIONCHAR '/'
+#define OPTIONSTR "/"
+#else
+#define OPTIONCHAR '-'
+#define OPTIONSTR "-"
+#endif
+
+
 //////////////////////////////////////////////////////////////////////
 // Preliminary function declarations
 
@@ -44,10 +53,10 @@ void PrintUsage()
     printf(("  Parameters:\n"));
     printf(("    <SavFileName> is name of .SAV file to disassemble\n"));
     printf(("  Options:\n"));
-    printf(("    /O:<OutFileName>  Set output file name\n"));
-    printf(("    /S<addr>  Set disassembly start address (octal)\n"));
-    printf(("    /E<addr>  Set disassembly end address (octal)\n"));
-    printf(("    /V        Show original values\n"));
+    printf(("    " OPTIONSTR "O:<OutFileName>  Set output file name\n"));
+    printf(("    " OPTIONSTR "S<addr>  Set disassembly start address (octal)\n"));
+    printf(("    " OPTIONSTR "E<addr>  Set disassembly end address (octal)\n"));
+    printf(("    " OPTIONSTR "V        Show original values\n"));
 }
 
 // Print octal 16-bit value to buffer
@@ -87,7 +96,7 @@ bool ParseCommandLine(int argc, char* argv[])
     for (int argn = 1; argn < argc; argn++)
     {
         LPCSTR arg = argv[argn];
-        if (arg[0] == ('-') || arg[0] == ('/'))
+        if (arg[0] == (OPTIONCHAR))
         {
             char option = (char)tolower(arg[1]);
             switch (option)

@@ -18,6 +18,14 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 //////////////////////////////////////////////////////////////////////
 // Globals
 
+#ifdef _MSC_VER
+#define OPTIONCHAR '/'
+#define OPTIONSTR "/"
+#else
+#define OPTIONCHAR '-'
+#define OPTIONSTR "-"
+#endif
+
 const char* g_InputFileName = 0;
 int g_OutputDriverType = OUTPUT_DRIVER_POSTSCRIPT;
 OutputDriver* g_pOutputDriver = 0;
@@ -31,7 +39,7 @@ bool ParseCommandLine(int argc, char* argv[])
     for (int argn = 1; argn < argc; argn++)
     {
         const char* arg = argv[argn];
-        if (arg[0] == '-' || arg[0] == '/')
+        if (arg[0] == OPTIONCHAR)
         {
             if (_stricmp(arg + 1, "svg") == 0)
                 g_OutputDriverType = OUTPUT_DRIVER_SVG;
@@ -68,9 +76,9 @@ void PrintUsage()
     std::cerr << "Usage:" << std::endl
             << "\tESCParser [options] InputFile > OutputFile" << std::endl
             << "Options:" << std::endl
-            << "\t-ps\tPostScript output with multipage support" << std::endl
-            << "\t-svg\tSVG output, no multipage support" << std::endl
-            << "\t-pdf\tPDF output with multipage support" << std::endl;
+            << "\t" OPTIONSTR "ps\tPostScript output with multipage support" << std::endl
+            << "\t" OPTIONSTR "svg\tSVG output, no multipage support" << std::endl
+            << "\t" OPTIONSTR "pdf\tPDF output with multipage support" << std::endl;
 }
 
 int main(int argc, char* argv[])
