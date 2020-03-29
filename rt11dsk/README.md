@@ -27,3 +27,5 @@ Parameters:
 Options:
  * `-oXXXXX` -- Set start offset to XXXXX; 0 by default
  * `-ms0515` -- Sector interleaving used for MS0515 disks
+
+NOTE: '-' character used as an option sign under Linux/Mac, '/' character under Windows.

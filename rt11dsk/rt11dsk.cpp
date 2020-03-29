@@ -41,6 +41,14 @@ void DoHardPartitionAddFile();
 //////////////////////////////////////////////////////////////////////
 // Globals
 
+#ifdef _MSC_VER
+#define OPTIONCHAR '/'
+#define OPTIONSTR "/"
+#elif
+#define OPTIONCHAR '-'
+#define OPTIONSTR "-"
+#endif
+
 const char * g_sCommand = nullptr;
 const char * g_sImageFileName = nullptr;
 const char * g_sFileName = nullptr;
@@ -101,8 +109,8 @@ void PrintUsage()
            "  Floppy disk image commands:\n"
            "    rt11dsk l <ImageFile>  - list image contents\n"
            "    rt11dsk e <ImageFile> <FileName>  - extract file\n"
-           "    rt11dsk x <ImageFile>  - extract all files\n"
            "    rt11dsk a <ImageFile> <FileName>  - add file\n"
+           "    rt11dsk x <ImageFile>  - extract all files\n"
            "    rt11dsk d <ImageFile> <FileName>  - delete file\n"
            "    rt11dsk xu <ImageFile>  - extract all unused space\n"
            "  Hard disk image commands:\n"
@@ -119,8 +127,8 @@ void PrintUsage()
            "    <Partn>     is hard disk image partition number, 0..23\n"
            "    <FileName>  is a file name to read from or save to\n"
            "  Options:\n"
-           "    -oXXXXX  Set start offset to XXXXX; 0 by default, 256 for .trd files\n"
-           "    -ms0515  Sector interleaving used for MS0515 disks\n");
+           "    " OPTIONSTR "oXXXXX  Set start offset to XXXXX; 0 by default, 256 for .trd files\n"
+           "    " OPTIONSTR "ms0515  Sector interleaving used for MS0515 disks\n");
 }
 
 bool ParseCommandLine(int argc, char * argv[])
@@ -128,7 +136,7 @@ bool ParseCommandLine(int argc, char * argv[])
     for (int argn = 1; argn < argc; argn++)
     {
         const char * arg = argv[argn];
-        if (arg[0] == '-' || arg[0] == '/')
+        if (arg[0] == OPTIONCHAR)
         {
             if (arg[1] == 'o')
             {
