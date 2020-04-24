@@ -35,326 +35,9 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #define OPTIONSTR "-"
 #endif
 
-
-//////////////////////////////////////////////////////////////////////
-// LZSS.cpp
-
-size_t lzss_encode(unsigned char *inbuffer, size_t insize, unsigned char *outbuffer, size_t outsize);
-
-size_t lzss_decode(unsigned char *inbuffer, size_t insize, unsigned char *outbuffer, size_t outsize);
-
-
-//////////////////////////////////////////////////////////////////////
-// LZ4.cpp
-
-size_t lz4_encode(unsigned char *inbuffer, size_t insize, unsigned char *outbuffer, size_t outsize);
-
-size_t lz4_decode(unsigned char *src, size_t insize, unsigned char *dst, size_t outsize);
-
-
-//////////////////////////////////////////////////////////////////////
-
-
-static uint16_t const loader[] =
-{
-    0000240,  // 000000  000240  NOP
-    0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
-    0000104,
-    0110062,  // 000006  110062  MOVB    R0, 000003(R2)
-    0000003,
-    0012701,  // 000012  012701  MOV     #000005, R1
-    0000005,
-    0012703,  // 000016  012703  MOV     #000116, R3
-    0000116,
-    0000402,  // 000022  000402  BR      000030
-    0112337,  // 000024  112337  MOVB    (R3)+, @#176676
-    0176676,
-    0105737,  // 000030  105737  TSTB    @#176674
-    0176674,
-    0100375,  // 000034  100375  BPL     000030
-    0077106,  // 000036  077106  SOB     R1, 000024
-    0105712,  // 000040  105712  TSTB    (R2)
-    0001356,  // 000042  001356  BNE     000000
-    // Подсчёт контрольной суммы
-    0005003,  // 000044  005003  CLR     R3
-    0012701,  // 000046  012701  MOV     #001000, R1
-    0001000,  // 000050  001000
-    0012702,  // 000052  012702  MOV     #027400, R2
-    0027400,  // 000054  027400
-    0062103,  // 000056  062103  ADD     (R1)+, R3
-    0005503,  // 000060  005503  ADC     R3
-    0077203,  // 000062  077203  SOB     R2, 000056
-    0020327,  // 000064  020327  CMP     R3, #CHKSUM
-    0000000,  // 000066  ?????? <= CHKSUM
-    0001343,  // 000070  001343  BNE     000000
-    // Запуск загруженной программы на выполнение
-    0012706,  // 000072  016706  MOV	#STACK, SP
-    0001000,  // 000074  ?????? <= STACK
-    0000137,  // 000076  000137  JMP    START   ; Переход на загруженный код
-    0001000,  // 000100  ?????? <= START
-    0000240,  // 000102 NOP
-    // Массив параметров для получения данных с кассеты ПЗУ через канал 2
-    0004000,  // 000104  004000   ; Команда (10) и ответ
-    0000021,  // 000106  000021   ; Номер кассеты и номер устройства
-    0001000,  // 000110  001000   ; Адрес от начала кассеты ПЗУ
-    0001000,  // 000112  001000   ; Адрес в ОЗУ
-    0027400,  // 000114  027400   ; Количество слов = 12032. слов = 24064. байт
-    0000104,  // 000116
-    0177777,  // 000120
-};
-
-static uint16_t const loaderRLE[] =
-{
-    0000240,  // 000000  000240  NOP
-    0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
-    0000104,
-    0110062,  // 000006  110062  MOVB    R0, 000003(R2)
-    0000003,
-    0012701,  // 000012  012701  MOV     #000005, R1
-    0000005,
-    0012703,  // 000016  012703  MOV     #000116, R3
-    0000116,
-    0000402,  // 000022  000402  BR      000030
-    0112337,  // 000024  112337  MOVB    (R3)+, @#176676
-    0176676,
-    0105737,  // 000030  105737  TSTB    @#176674
-    0176674,
-    0100375,  // 000034  100375  BPL     000030
-    0077106,  // 000036  077106  SOB     R1, 000024
-    0105712,  // 000040  105712  TSTB    (R2)
-    0001356,  // 000042  001356  BNE     000000
-    // Подсчёт контрольной суммы
-    0005003,  // 000044  005003  CLR     R3
-    0012701,  // 000046  012701  MOV     #100000, R1
-    0100000,  // 000050  100000
-    0012702,  // 000052  012702  MOV     #027400, R2
-    0027400,  // 000054  027400
-    0062103,  // 000056  062103  ADD     (R1)+, R3
-    0005503,  // 000060  005503  ADC     R3
-    0077203,  // 000062  077203  SOB     R2, 000056
-    0020327,  // 000064  020327  CMP     R3, #CHKSUM
-    0000000,  // 000066  ?????? <= CHKSUM
-    0001343,  // 000070  001343  BNE     000000
-    0000413,  // 000072  000413  BR      000122        ; Переход на RLE decoder
-    // Запуск загруженной программы на выполнение
-    0012706,  // 000074  016706  MOV	#STACK, SP
-    0001000,  // 000076  ?????? <= STACK
-    0000137,  // 000100  000137  JMP    START   ; Переход на загруженный код
-    0001000,  // 000102  ?????? <= START
-    // Массив параметров для получения данных с кассеты ПЗУ через канал 2
-    0004000,  // 000104  004000   ; Команда (10) и ответ
-    0000021,  // 000106  000021   ; Номер кассеты и номер устройства
-    0001000,  // 000110  001000   ; Адрес от начала кассеты ПЗУ
-    0100000,  // 000112  100000   ; Адрес в ОЗУ == RLESTA
-    0027400,  // 000114  027400   ; Количество слов = 12032. слов = 24064. байт
-    0000104,  // 000116
-    0177777,  // 000120
-    // RLE decoder
-    0012701,  // 000122  012701      MOV  #RLESTA, R1
-    0100000,  // 000124  100000 <= RLESTA                ; start address of RLE block
-    0012702,  // 000126  012702      MOV  #1000, R2
-    0001000,  // 000130  001000                          ; destination start address
-    0112100,  // 000132  112100  $1: MOVB (R1+), R0
-    0001757,  // 000134  001757      BEQ  000074         ; 0 => decoding finished, let's start the application
-    0010003,  // 000136  010003      MOV  R0, R3         ; prepare counter
-    0042703,  // 000140  042703      BIC  #177740, R3    ; only lower 5 bits are significant
-    0177740,  // 000142  177740
-    0105700,  // 000144  105700      TSTB R0             ; 1-byte command?
-    0100002,  // 000146  100002      BPL  $2             ; yes => jump
-    0000303,  // 000150  000303      SWAB R3             ; move lower byte to high byte
-    0152103,  // 000152  152103      BISB (R1)+, R3      ; set lower byte of counter
-    0005004,  // 000154  005003  $2: CLR  R4             ; clear filler
-    0142700,  // 000156  142700      BICB #237, R0
-    0000237,  // 000160  000237
-    0001411,  // 000162  001411      BEQ  $3             ; zero pattern? => jump
-    0012704,  // 000164  012704      MOV  #377, R4       ;
-    0000377,  // 000166  000377
-    0122700,  // 000170  122700      CMPB #140, R0       ; #377 pattern?
-    0000140,  // 000172  000140
-    0001404,  // 000174  001404      BEQ  $3             ; yes => jump
-    0122700,  // 000176  122700      CMPB #40, R0       ; given pattern?
-    0000040,  // 000200  000040
-    0001004,  // 000202  001004      BNE  $4             ; no => jump
-    0112104,  // 000204  112104      MOVB (R1+), R4      ; read the given pattern
-    0110422,  // 000206  110422  $3: MOVB R4, (R2+)      ; loop: write pattern to destination
-    0077302,  // 000210  077302      SOB  R3, $3         ;
-    0000747,  // 000212  000747      BR   $1
-    0112104,  // 000214  112104  $4: MOVB (R1+), R4      ; loop: copy bytes to destination
-    0110422,  // 000216  110422      MOVB R4, (R2+)
-    0077303,  // 000220  077303      SOB  R3, $4
-    0000743,  // 000222  000743      BR   $1
-};
-
-static uint16_t const loaderLZSS[] =
-{
-    0000240,  // 000000  000240  NOP
-    0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
-    0000104,
-    0110062,  // 000006  110062  MOVB    R0, 000003(R2)
-    0000003,
-    0012701,  // 000012  012701  MOV     #000005, R1
-    0000005,
-    0012703,  // 000016  012703  MOV     #000116, R3
-    0000116,
-    0000402,  // 000022  000402  BR      000030
-    0112337,  // 000024  112337  MOVB    (R3)+, @#176676
-    0176676,
-    0105737,  // 000030  105737  TSTB    @#176674
-    0176674,
-    0100375,  // 000034  100375  BPL     000030
-    0077106,  // 000036  077106  SOB     R1, 000024
-    0105712,  // 000040  105712  TSTB    (R2)
-    0001356,  // 000042  001356  BNE     000000
-    // Подсчёт контрольной суммы
-    0005003,  // 000044  005003  CLR     R3
-    0012701,  // 000046  012701  MOV     #100600, R1
-    0100600,  // 000050  100600
-    0012702,  // 000052  012702  MOV     #027400, R2
-    0027400,  // 000054  027400
-    0062103,  // 000056  062103  ADD     (R1)+, R3
-    0005503,  // 000060  005503  ADC     R3
-    0077203,  // 000062  077203  SOB     R2, 000056
-    0020327,  // 000064  020327  CMP     R3, #CHKSUM
-    0000000,  // 000066  ?????? <= CHKSUM
-    0001343,  // 000070  001343  BNE     000000
-    0000413,  // 000072  000413  BR      000122        ; Переход на LZSS decoder
-    // Запуск загруженной программы на выполнение
-    0012706,  // 000074  016706  MOV	#STACK, SP
-    0001000,  // 000076  ?????? <= STACK
-    0000137,  // 000100  000137  JMP    START   ; Переход на загруженный код
-    0001000,  // 000102  ?????? <= START
-    // Массив параметров для получения данных с кассеты ПЗУ через канал 2
-    0004000,  // 000104  004000   ; Команда (10) и ответ
-    0000021,  // 000106  000021   ; Номер кассеты и номер устройства
-    0001000,  // 000110  001000   ; Адрес от начала кассеты ПЗУ
-    0100600,  // 000112  100600   ; Адрес в ОЗУ == LZSSTA
-    0027400,  // 000114  027400   ; Количество слов = 12032. слов = 24064. байт
-    0000104,  // 000116
-    0177777,  // 000120
-    // LZSS decoder, from LZSAV.MAC by Ostapenko Alexey
-    0012700,  // 000122  012700          MOV    #LZSSTA, R0
-    0100600,  // 000124  100600 <= LZSSTA
-    0012702,  // 000126  012702          MOV    #1000, R2
-    0001000,  // 000130  001000                                 ; destination start address
-    0005003,  // 000132  005003          CLR    R3
-    0112001,  // 000134  112001  UNPST:  MOVB	(R0)+,R1		;GET FLAGS
-    0012704,  // 000136  012704          MOV	#10,R4			;BITS COUNT
-    0000010,  // 000140  000010
-    0006001,  // 000142  006001  M402:   ROR	R1
-    0103402,  // 000144  103402          BCS	403$			;1?
-    0112022,  // 000146  112022          MOVB	(R0)+,(R2)+		;MOV uint8_t
-    0000417,  // 000150  000417          BR     405$
-    0152003,  // 000152  152003  403$:   BISB   (R0)+,R3		;GET LOW uint8_t
-    0000303,  // 000154  000303          SWAB   R3
-    0152003,  // 000156  152003          BISB	(R0)+,R3		;GET HIGH uint8_t
-    0010305,  // 000160  010305          MOV    R3,R5
-    0042705,  // 000162  042705          BIC	#170000,R5		;OFFSET FROM CURRENT POSITION
-    0170000,  // 000164  170000
-    0040503,  // 000166  040503          BIC	R5,R3
-    0073327,  // 000170  073327          ASHC	#-12.,R3
-    0177764,  // 000172  177764
-    0062703,  // 000174  062703          ADD	#3,R3
-    0000003,  // 000176  000003
-    0005405,  // 000200  005405          NEG	R5
-    0060205,  // 000202  060205          ADD	R2,R5			;ADRESS
-    0112522,  // 000204  112522  404$:   MOVB   (R5)+,(R2)+
-    0077302,  // 000206  077302          SOB	R3,404$
-    0020227,  // 000210  020227  405$:   CMP	R2,(PC)+
-    0000000,  // 000212  ?????? <= CTOP
-    0001402,  // 000214  001402          BEQ	406$
-    0077427,  // 000216  077427          SOB	R4,M402
-    0000745,  // 000220  000745          BR     UNPST
-    0000724,  // 000222  000724  406$:   BR     LAUNCH
-};
-
-static uint16_t const loaderLZ4[] =
-{
-    0000240,  // 000000  000240  NOP
-    0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
-    0000104,
-    0110062,  // 000006  110062  MOVB    R0, 000003(R2)
-    0000003,
-    0012701,  // 000012  012701  MOV     #000005, R1
-    0000005,
-    0012703,  // 000016  012703  MOV     #000116, R3
-    0000116,
-    0000402,  // 000022  000402  BR      000030
-    0112337,  // 000024  112337  MOVB    (R3)+, @#176676
-    0176676,
-    0105737,  // 000030  105737  TSTB    @#176674
-    0176674,
-    0100375,  // 000034  100375  BPL     000030
-    0077106,  // 000036  077106  SOB     R1, 000024
-    0105712,  // 000040  105712  TSTB    (R2)
-    0001356,  // 000042  001356  BNE     000000
-    // Подсчёт контрольной суммы
-    0005003,  // 000044  005003  CLR     R3
-    0012701,  // 000046  012701  MOV     #100600, R1
-    0100600,  // 000050  100600
-    0012702,  // 000052  012702  MOV     #027400, R2
-    0027400,  // 000054  027400
-    0062103,  // 000056  062103  ADD     (R1)+, R3
-    0005503,  // 000060  005503  ADC     R3
-    0077203,  // 000062  077203  SOB     R2, 000056
-    0020327,  // 000064  020327  CMP     R3, #CHKSUM
-    0000000,  // 000066  ?????? <= CHKSUM
-    0001343,  // 000070  001343  BNE     000000
-    0000413,  // 000072  000413  BR      000122        ; Переход на LZ4 unpacker
-    // Запуск загруженной программы на выполнение
-    0012706,  // 000074  016706  MOV	#STACK, SP
-    0001000,  // 000076  ?????? <= STACK
-    0000137,  // 000100  000137  JMP    START   ; Переход на загруженный код
-    0001000,  // 000102  ?????? <= START
-    // Массив параметров для получения данных с кассеты ПЗУ через канал 2
-    0004000,  // 000104  004000   ; Команда (10) и ответ
-    0000021,  // 000106  000021   ; Номер кассеты и номер устройства
-    0001000,  // 000110  001000   ; Адрес от начала кассеты ПЗУ
-    0100600,  // 000112  100600   ; Адрес в ОЗУ == LZ4TA
-    0027400,  // 000114  027400   ; Количество слов = 12032. слов = 24064. байт
-    0000104,  // 000116
-    0177777,  // 000120
-    // LZ4 unpacker for PDP11/EIS by Alexander Troosh
-    0012705, 0001000, // 000122  012705 ??????'          MOV     #dst, R5
-    0012700, 0000000, // 000126  012700 ??????'          MOV     #src, R0
-    0012704, 0177774, // 000132  012704 177774           MOV     #-4,  R4        ; Нет лучше места под константу -4, чем R4
-    //
-    0005002,          // 000136  005002                  CLR     R2
-    //                   000140                  gettoken:
-    0152002,          // 000140  152002                  BISB    (R0)+, R2       ; (на входе всегда R2=0), считываем
-    0010201,          // 000142  010201                  MOV     R2, R1          ; байт-токен без знакового расширения
-    //
-    0072104,          // 000144  072104                  ASH     R4, R1          ; Старший полубайт - число литералов
-    0001412,          // 000146  001412                  BEQ     noliterals      ; Литералов может и не быть...
-    0022701, 0000017, // 000150  022701 000017           CMP     #^X0f, R1       ; Признак большой длины?
-    0001005,          // 000154  001005                  BNE     copylits
-    0005003,          // 000156  005003                    CLR     R3
-    0152003,          // 000160  152003          1$:         BISB  (R0)+, R3     ; Уточняем длину...
-    0060301,          // 000162  060301                      ADD   R3, R1
-    0105203,          // 000164  105203                      INCB  R3            ; бесконечно долго, пока приходят 0xFF
-    0001774,          // 000166  001774                      BEQ   1$
-    //
-    0112025,          // 000170  112025          copylits: MOVB  (R0)+, (R5)+    ; Копируем литералы
-    0077102,          // 000172  077102                    SOB     R1, copylits
-    //
-    //                   000174                  noliterals:
-    0012003,          // 000174  012003                  MOV     (R0)+, R3       ; Получаем два байт смещения
-    0001702,          // 000176  001702                  BEQ     LAUNCH          ; Нулевое смещение - конец сжатого блока
-    //                                                         ; R1=0, как бы мы сюда не попали
-    0042702, 0177760, // 000200  042702 177760           BIC     #^X0fff0, R2    ; Младший полубайт - число копируемых байт
-    0022702, 0000017, // 000204  022702 000017           CMP     #^X0f, R2       ; Признак большой длины?
-    0001004,          // 000210  001004                  BNE     shortstr
-    0152001,          // 000212  152001          2$:       BISB  (R0)+, R1       ; Уточняем длину...
-    0060102,          // 000214  060102                    ADD   R1, R2
-    0105201,          // 000216  105201                    INCB  R1              ; бесконечно долго, пока приходят 0xFF
-    0001774,          // 000220  001774                    BEQ   2$
-    //                   000222                  shortstr:
-    0160402,          // 000222  160402                  SUB     R4, R2          ; Минимальный размер строки - 4 байта
-    0010501,          // 000224  010501                  MOV     R5, R1
-    0160301,          // 000226  160301                  SUB     R3, R1
-    0112125,          // 000230  112125          copystr:  MOVB  (R1)+, (R5)+    ; Копируем строку из
-    0077202,          // 000232  077202                    SOB   R2, copystr     ; уже распакованных данных
-    0000741           // 000234  000741                  BR      gettoken
-};
+#include "Sav2Cart.h"
+#include "lzsa/lib.h"
+#include "lzsa/shrink_inmem.h"
 
 
 //////////////////////////////////////////////////////////////////////
@@ -507,11 +190,13 @@ size_t DecodeRLE(const uint8_t * source, size_t sourceLength, uint8_t * buffer, 
 
 enum
 {
-    OPTION_COMPRESSION_NONE = 0x100,
-    OPTION_COMPRESSION_RLE  = 0x200,
-    OPTION_COMPRESSION_LZSS = 0x400,
-    OPTION_COMPRESSION_LZ4  = 0x800,
-    OPTION_COMPRESSION_MASK = 0xf00
+    OPTION_COMPRESSION_NONE  = 0x0100,
+    OPTION_COMPRESSION_RLE   = 0x0200,
+    OPTION_COMPRESSION_LZSS  = 0x0400,
+    OPTION_COMPRESSION_LZ4   = 0x0800,
+    OPTION_COMPRESSION_LZSA1 = 0x1000,
+    OPTION_COMPRESSION_LZSA2 = 0x2000,
+    OPTION_COMPRESSION_MASK  = 0xff00
 };
 
 int options = 0;
@@ -542,6 +227,10 @@ bool ParseCommandLine(int argc, char* argv[])
                 options |= OPTION_COMPRESSION_LZSS;
             else if (_stricmp(arg + 1, "lz4") == 0)
                 options |= OPTION_COMPRESSION_LZ4;
+            else if (_stricmp(arg + 1, "lzsa1") == 0)
+                options |= OPTION_COMPRESSION_LZSA1;
+            else if (_stricmp(arg + 1, "lzsa2") == 0)
+                options |= OPTION_COMPRESSION_LZSA2;
             else
             {
                 printf("Unknown option: %s\n", arg);
@@ -567,6 +256,21 @@ bool ParseCommandLine(int argc, char* argv[])
     return true;
 }
 
+uint16_t CalcCheckum(const uint16_t* pData, int nWords)
+{
+    uint16_t wChecksum = 0;
+    for (int i = 0; i < nWords; i++)
+    {
+        uint16_t src = wChecksum;
+        uint16_t src2 = *pData;
+        wChecksum += src2;
+        if (((src & src2) | ((src ^ src2) & ~wChecksum)) & 0100000)  // if Carry
+            wChecksum++;
+        pData++;
+    }
+    return wChecksum;
+}
+
 int main(int argc, char* argv[])
 {
     if (!ParseCommandLine(argc, argv))
@@ -574,10 +278,12 @@ int main(int argc, char* argv[])
         printf(
             "Usage: Sav2Cart [options] <inputfile.SAV> <outputfile.BIN>\n"
             "Options:\n"
-            "\t" OPTIONSTR "none - try to fit non-compressed\n"
-            "\t" OPTIONSTR "rle  - try RLE compression\n"
-            "\t" OPTIONSTR "lzss - try LZSS compression\n"
-            "\t" OPTIONSTR "lz4  - try LZ4 compression\n"
+            "\t" OPTIONSTR "none  - try to fit non-compressed\n"
+            "\t" OPTIONSTR "rle   - try RLE compression\n"
+            "\t" OPTIONSTR "lzss  - try LZSS compression\n"
+            "\t" OPTIONSTR "lz4   - try LZ4 compression\n"
+            "\t" OPTIONSTR "lzsa1 - try LZSA1 compression\n"
+            "\t" OPTIONSTR "lzsa2 - try LZSA2 compression\n"
             "\t(no compression options) - try all on-by-one until fit");
         return 255;
     }
@@ -635,10 +341,10 @@ int main(int argc, char* argv[])
                 ::memcpy(pCartImage, pFileImage, inputfileSize);
 
                 // Prepare the loader
-                memcpy(pCartImage, loader, sizeof(loader));
+                memcpy(pCartImage, loader, loaderSize);
                 *((uint16_t*)(pCartImage + 0074)) = wStackAddr;
                 *((uint16_t*)(pCartImage + 0100)) = wStartAddr;
-
+                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
                 break;  // Finished encoding with plain copy
             }
         }
@@ -676,10 +382,10 @@ int main(int argc, char* argv[])
                 ::memcpy(pCartImage, pFileImage, 512);
 
                 // Prepare the loader
-                memcpy(pCartImage, loaderRLE, sizeof(loaderRLE));
+                memcpy(pCartImage, loaderRLE, loaderRLESize);
                 *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
                 *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
-
+                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
                 break;  // Finished encoding with RLE
             }
         }
@@ -712,15 +418,17 @@ int main(int argc, char* argv[])
                     return 255;
                 }
                 ::free(pTempBuffer);
+
                 printf("LZSS decode check done, decoded size %lu. bytes\n", decodedSize);
 
                 ::memcpy(pCartImage, pFileImage, 512);
 
                 // Prepare the loader
-                memcpy(pCartImage, loaderLZSS, sizeof(loaderLZSS));
+                memcpy(pCartImage, loaderLZSS, loaderLZSSSize);
                 *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
                 *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
                 *((uint16_t*)(pCartImage + 0212)) = 01000 + savImageSize;  // CTOP
+                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
                 //printf("LZSS CTOP = %06o\n", 01000 + savImageSize);
 
                 break;  // Finished encoding with LZSS
@@ -746,7 +454,7 @@ int main(int argc, char* argv[])
                     return 255;
                 }
                 size_t decodedSize = lz4_decode(pCartImage + 512, lz4CodedSize, pTempBuffer, 65536);
-                if (decodedSize != savImageSize) printf("failed, LZ4 decoded size = %zu (must be: %zu)\n", decodedSize, savImageSize);
+                if (decodedSize != savImageSize) printf("failed, LZ4 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
                 for (size_t offset = 0; offset < savImageSize; offset++)
                 {
                     if (pTempBuffer[offset] == pFileImage[512 + offset])
@@ -757,36 +465,138 @@ int main(int argc, char* argv[])
                     return 255;
                 }
                 ::free(pTempBuffer);
+
                 printf("LZ4 decode check done, decoded size %lu. bytes\n", decodedSize);
+
                 ::memcpy(pCartImage, pFileImage, 512);
 
                 // Prepare the loader
-                memcpy(pCartImage, loaderLZ4, sizeof(loaderLZ4));
+                memcpy(pCartImage, loaderLZ4, loaderLZ4Size);
                 *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
                 *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
                 *((uint16_t*)(pCartImage + 0130)) = wStartAddr;
+                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
                 break;  // Finished encoding with LZ4
+            }
+        }
+
+        // LZSA1
+        if (options & OPTION_COMPRESSION_LZSA1)
+        {
+            ::memset(pCartImage, -1, 65536);
+            int nFormatVersion = 1;
+            unsigned int nFlags = LZSA_FLAG_RAW_BLOCK | LZSA_FLAG_FAVOR_RATIO;
+            size_t encodedSize = lzsa_compress_inmem(
+                    pFileImage + 512, pCartImage + 512, savImageSize, 65536 - 512, nFlags, 3, nFormatVersion);
+            printf("LZSA1 output size %lu. bytes (%1.2f %%)\n", encodedSize, encodedSize * 100.0 / savImageSize);
+            if (encodedSize > 24576 - 512)
+            {
+                printf("LZSA1 encoded size too big: %lu. bytes, max %d. bytes\n", encodedSize, 24576 - 512);
+            }
+            else
+            {
+                // Trying to decode to make sure encoder works fine
+                uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
+                if (pTempBuffer == NULL)
+                {
+                    printf("Failed to allocate memory.");
+                    return 255;
+                }
+                int nFormatVersion = 1;
+                size_t decodedSize = lzsa_decompress_inmem(
+                        pCartImage + 512, pTempBuffer, encodedSize, 65536, nFlags, &nFormatVersion);
+                if (decodedSize != savImageSize) printf("failed, LZSA1 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
+                for (size_t offset = 0; offset < savImageSize; offset++)
+                {
+                    if (pTempBuffer[offset] == pFileImage[512 + offset])
+                        continue;
+
+                    printf("LZSA1 decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset),
+                           (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
+                    return 255;
+                }
+                ::free(pTempBuffer);
+
+                printf("LZSA1 decode check done, decoded size %lu. bytes\n", decodedSize);
+
+                ::memcpy(pCartImage, pFileImage, 512);
+
+                // Prepare the loader
+                memcpy(pCartImage, loaderLZSA1, loaderLZSA1Size);
+                uint16_t wLZWords = (encodedSize + 1) / 2;  // How many words to copy from the cartridge
+                uint16_t wLZStart = 0160000 - wLZWords * 2 - 0100;  // Address where to copy to from the cartridge
+                *((uint16_t*)(pCartImage + 0050)) = wLZStart;
+                *((uint16_t*)(pCartImage + 0054)) = wLZWords;
+                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
+                *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
+                *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
+                *((uint16_t*)(pCartImage + 0112)) = wLZStart;
+                *((uint16_t*)(pCartImage + 0114)) = wLZWords;
+                *((uint16_t*)(pCartImage + 0124)) = wLZStart;
+                break;  // Finished encoding with LZSA1
+            }
+        }
+
+        // LZSA2
+        if (options & OPTION_COMPRESSION_LZSA2)
+        {
+            ::memset(pCartImage, -1, 65536);
+            int nFormatVersion = 2;
+            unsigned int nFlags = LZSA_FLAG_RAW_BLOCK | LZSA_FLAG_FAVOR_RATIO;
+            size_t encodedSize = lzsa_compress_inmem(
+                    pFileImage + 512, pCartImage + 512, savImageSize, 65536 - 512, nFlags, 3, nFormatVersion);
+            printf("LZSA2 output size %lu. bytes (%1.2f %%)\n", encodedSize, encodedSize * 100.0 / savImageSize);
+            if (encodedSize > 24576 - 512)
+            {
+                printf("LZSA2 encoded size too big: %lu. bytes, max %d. bytes\n", encodedSize, 24576 - 512);
+            }
+            else
+            {
+                // Trying to decode to make sure encoder works fine
+                uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
+                if (pTempBuffer == NULL)
+                {
+                    printf("Failed to allocate memory.");
+                    return 255;
+                }
+                size_t decodedSize = lzsa_decompress_inmem(
+                        pCartImage + 512, pTempBuffer, encodedSize, 65536, nFlags, &nFormatVersion);
+                if (decodedSize != savImageSize) printf("failed, LZSA2 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
+                for (size_t offset = 0; offset < savImageSize; offset++)
+                {
+                    if (pTempBuffer[offset] == pFileImage[512 + offset])
+                        continue;
+
+                    printf("LZSA2 decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset),
+                           (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
+                    return 255;
+                }
+                ::free(pTempBuffer);
+
+                printf("LZSA2 decode check done, decoded size %lu. bytes\n", decodedSize);
+
+                ::memcpy(pCartImage, pFileImage, 512);
+
+                // Prepare the loader
+                memcpy(pCartImage, loaderLZSA2, loaderLZSA2Size);
+                uint16_t wLZWords = (encodedSize + 1) / 2;  // How many words to copy from the cartridge
+                uint16_t wLZStart = 0160000 - wLZWords * 2 - 0100;  // Address where to copy to from the cartridge
+                *((uint16_t*)(pCartImage + 0050)) = wLZStart;
+                *((uint16_t*)(pCartImage + 0054)) = wLZWords;
+                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), wLZWords);
+                *((uint16_t*)(pCartImage + 0074)) = wLZStart;
+                *((uint16_t*)(pCartImage + 0110)) = wStackAddr;
+                *((uint16_t*)(pCartImage + 0124)) = wLZStart;
+                *((uint16_t*)(pCartImage + 0126)) = wLZWords;
+                //TODO
+                break;  // Finished encoding with LZSA2
             }
         }
 
         return 255;  // All attempts failed
     }
 
-    // Calculate checksum
-    uint16_t* pData = ((uint16_t*)(pCartImage + 01000));
-    uint16_t wChecksum = 0;
-    for (int i = 0; i < 027400; i++)
-    {
-        uint16_t src = wChecksum;
-        uint16_t src2 = *pData;
-        wChecksum += src2;
-        if (((src & src2) | ((src ^ src2) & ~wChecksum)) & 0100000)  // if Carry
-            wChecksum++;
-        pData++;
-    }
-    *((uint16_t*)(pCartImage + 0066)) = wChecksum;
-
-    ::free(pFileImage);
+    ::free(pFileImage);  pFileImage = nullptr;
 
     printf("Output file: %s\n", outputfilename);
     outputfile = fopen(outputfilename, "wb");

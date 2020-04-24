@@ -24,5 +24,109 @@
     <ClCompile Include="LZ4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Loaders.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\shrink_inmem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\expand_inmem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\frame.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\expand_context.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\expand_block_v1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\expand_block_v2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\shrink_context.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\shrink_block_v1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\shrink_block_v2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\matchfinder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\divsufsort.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\sssort.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lzsa\trsort.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Sav2Cart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\shrink_inmem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\shrink_context.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\format.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\frame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\stream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\dictionary.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\expand_context.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\shrink_streaming.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\expand_inmem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\expand_streaming.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\divsufsort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\expand_block_v1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\expand_block_v2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\shrink_block_v1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\shrink_block_v2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\matchfinder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\divsufsort_private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lzsa\divsufsort_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -45,6 +45,7 @@
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <TargetName>Sav2Cart</TargetName>
+    <IncludePath>$(ProjectDir)lzsa;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
@@ -89,9 +90,45 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Loaders.cpp" />
     <ClCompile Include="LZ4.cpp" />
+    <ClCompile Include="lzsa\divsufsort.c" />
+    <ClCompile Include="lzsa\expand_block_v1.c" />
+    <ClCompile Include="lzsa\expand_block_v2.c" />
+    <ClCompile Include="lzsa\expand_context.c" />
+    <ClCompile Include="lzsa\expand_inmem.c" />
+    <ClCompile Include="lzsa\frame.c" />
+    <ClCompile Include="lzsa\matchfinder.c" />
+    <ClCompile Include="lzsa\shrink_block_v1.c" />
+    <ClCompile Include="lzsa\shrink_block_v2.c" />
+    <ClCompile Include="lzsa\shrink_context.c" />
+    <ClCompile Include="lzsa\shrink_inmem.c" />
+    <ClCompile Include="lzsa\sssort.c" />
+    <ClCompile Include="lzsa\trsort.c" />
     <ClCompile Include="LZSS.cpp" />
     <ClCompile Include="Sav2Cart.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="lzsa\dictionary.h" />
+    <ClInclude Include="lzsa\divsufsort.h" />
+    <ClInclude Include="lzsa\divsufsort_config.h" />
+    <ClInclude Include="lzsa\divsufsort_private.h" />
+    <ClInclude Include="lzsa\expand_block_v1.h" />
+    <ClInclude Include="lzsa\expand_block_v2.h" />
+    <ClInclude Include="lzsa\expand_context.h" />
+    <ClInclude Include="lzsa\expand_inmem.h" />
+    <ClInclude Include="lzsa\expand_streaming.h" />
+    <ClInclude Include="lzsa\format.h" />
+    <ClInclude Include="lzsa\frame.h" />
+    <ClInclude Include="lzsa\lib.h" />
+    <ClInclude Include="lzsa\matchfinder.h" />
+    <ClInclude Include="lzsa\shrink_block_v1.h" />
+    <ClInclude Include="lzsa\shrink_block_v2.h" />
+    <ClInclude Include="lzsa\shrink_context.h" />
+    <ClInclude Include="lzsa\shrink_inmem.h" />
+    <ClInclude Include="lzsa\shrink_streaming.h" />
+    <ClInclude Include="lzsa\stream.h" />
+    <ClInclude Include="Sav2Cart.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
