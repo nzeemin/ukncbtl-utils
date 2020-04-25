@@ -10,6 +10,8 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 // LZSA.cpp
 
+#include <stddef.h>
+#include <stdint.h>
 #include "lzsa/lib.h"
 #include "lzsa/shrink_inmem.h"
 
@@ -28,7 +30,7 @@ size_t lzsa1_decode(unsigned char *src, size_t insize, unsigned char *dst, size_
 {
     int nFormatVersion = 1;
     unsigned int nFlags = LZSA_FLAG_RAW_BLOCK | LZSA_FLAG_FAVOR_RATIO;
-    size_t decodedSize = lzsa_decompress_inmem(src, dst, insize, 65536, nFlags, &nFormatVersion);
+    size_t decodedSize = lzsa_decompress_inmem(src, dst, insize, outsize, nFlags, &nFormatVersion);
     return decodedSize;
 }
 
@@ -44,7 +46,7 @@ size_t lzsa2_decode(unsigned char *src, size_t insize, unsigned char *dst, size_
 {
     int nFormatVersion = 2;
     unsigned int nFlags = LZSA_FLAG_RAW_BLOCK | LZSA_FLAG_FAVOR_RATIO;
-    size_t decodedSize = lzsa_decompress_inmem(src, dst, insize, 65536, nFlags, &nFormatVersion);
+    size_t decodedSize = lzsa_decompress_inmem(src, dst, insize, outsize, nFlags, &nFormatVersion);
     return decodedSize;
 }
 

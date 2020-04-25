@@ -534,7 +534,6 @@ int main(int argc, char* argv[])
         if (options & OPTION_COMPRESSION_LZSA2)
         {
             ::memset(pCartImage, -1, 65536);
-            int nFormatVersion = 2;
             size_t encodedSize = lzsa2_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
             printf("LZSA2 output size %lu. bytes (%1.2f %%)\n", encodedSize, encodedSize * 100.0 / savImageSize);
             if (encodedSize > 24576 - 512)
