@@ -127,12 +127,13 @@ int lzsa_build_suffix_array(lzsa_compressor *pCompressor, const unsigned char *p
    unsigned int next_interval_idx;
    unsigned int *top = pCompressor->open_intervals;
    unsigned int prev_pos = SA_and_LCP[0] & POS_MASK;
+   int r;
 
    *top = 0;
    intervals[0] = 0;
    next_interval_idx = 1;
 
-   for (int r = 1; r < nInWindowSize; r++) {
+   for (r = 1; r < nInWindowSize; r++) {
       const unsigned int next_pos = SA_and_LCP[r] & POS_MASK;
       const unsigned int next_lcp = SA_and_LCP[r] & LCP_MASK;
       const unsigned int top_lcp = *top & LCP_MASK;
