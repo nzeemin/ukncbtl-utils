@@ -284,7 +284,7 @@ int main(int argc, char* argv[])
             "\t" OPTIONSTR "lz4   - try LZ4 compression\n"
             "\t" OPTIONSTR "lzsa1 - try LZSA1 compression\n"
             "\t" OPTIONSTR "lzsa2 - try LZSA2 compression\n"
-            "\t(no compression options) - try all on-by-one until fit");
+            "\t(no compression options) - try all on-by-one until fit\n");
         return 255;
     }
 

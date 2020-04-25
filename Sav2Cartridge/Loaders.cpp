@@ -10,13 +10,14 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 // Loaders.cpp
 
+#include <stddef.h>
 #include <stdint.h>
 #include "Sav2Cart.h"
 
 
 //////////////////////////////////////////////////////////////////////
 
-static uint16_t const loader[] =
+uint16_t const loader[] =
 {
     0000240,  // 000000  000240  NOP
     0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
@@ -68,7 +69,7 @@ size_t const loaderSize = sizeof(loader);
 
 //////////////////////////////////////////////////////////////////////
 
-static uint16_t const loaderRLE[] =
+uint16_t const loaderRLE[] =
 {
     0000240,  // 000000  000240  NOP
     0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
@@ -154,7 +155,7 @@ size_t const loaderRLESize = sizeof(loaderRLE);
 
 //////////////////////////////////////////////////////////////////////
 
-static uint16_t const loaderLZSS[] =
+uint16_t const loaderLZSS[] =
 {
     0000240,  // 000000  000240  NOP
     0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
@@ -240,7 +241,7 @@ size_t const loaderLZSSSize = sizeof(loaderLZSS);
 
 //////////////////////////////////////////////////////////////////////
 
-static uint16_t const loaderLZ4[] =
+uint16_t const loaderLZ4[] =
 {
     0000240,  // 000000  000240  NOP
     0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
@@ -333,7 +334,7 @@ size_t const loaderLZ4Size = sizeof(loaderLZ4);
 
 //////////////////////////////////////////////////////////////////////
 
-static uint16_t const loaderLZSA1[] =
+uint16_t const loaderLZSA1[] =
 {
     0000240,  // 000000  000240  NOP
     0012702,  // 000002  012702  MOV     #000104, R2    ; Адрес массива параметров
@@ -462,7 +463,7 @@ size_t const loaderLZSA1Size = sizeof(loaderLZSA1);
 
 //////////////////////////////////////////////////////////////////////
 
-static uint16_t const loaderLZSA2[] =
+uint16_t const loaderLZSA2[] =
 {
     0000240,  // 000000  000240  NOP
     0012702,  // 000002  012702  MOV     #000116, R2    ; Адрес массива параметров

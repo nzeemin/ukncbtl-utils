@@ -38,10 +38,10 @@
 #include "frame.h"
 #include "format.h"
 #include "shrink_context.h"
-#include "shrink_streaming.h"
+//#include "shrink_streaming.h"
 #include "shrink_inmem.h"
 #include "expand_context.h"
-#include "expand_streaming.h"
+//#include "expand_streaming.h"
 #include "expand_inmem.h"
 
 #ifdef __cplusplus
