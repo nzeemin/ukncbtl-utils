@@ -259,7 +259,7 @@ static void lzsa_optimize_forward_v2(lzsa_compressor *pCompressor, const unsigne
    const int nMinMatchSize = pCompressor->min_match_size;
    const int nDisableScore = nReduce ? 0 : (2 * BLOCK_SIZE);
    const int nLeaveAloneMatchSize = (nMatchesPerArrival == NMATCHES_PER_ARRIVAL_V2_SMALL) ? LEAVE_ALONE_MATCH_SIZE_SMALL : LEAVE_ALONE_MATCH_SIZE;
-   int i, j, n;
+   int i, j, n, nn;
 
    if ((nEndOffset - nStartOffset) > BLOCK_SIZE) return;
 
@@ -441,7 +441,7 @@ static void lzsa_optimize_forward_v2(lzsa_compressor *pCompressor, const unsigne
                         }
 
                         if (!exists) {
-                           for (int nn = n;
+                           for (nn = n;
                               nn < nMatchesPerArrival && pDestSlots[nn].cost == nCodingChoiceCost;
                               nn++) {
                               if (pDestSlots[nn].rep_offset == nMatchOffset &&
