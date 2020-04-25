@@ -92,6 +92,7 @@
   <ItemGroup>
     <ClCompile Include="Loaders.cpp" />
     <ClCompile Include="LZ4.cpp" />
+    <ClCompile Include="LZSA.cpp" />
     <ClCompile Include="lzsa\divsufsort.c" />
     <ClCompile Include="lzsa\expand_block_v1.c" />
     <ClCompile Include="lzsa\expand_block_v2.c" />
@@ -117,7 +118,6 @@
     <ClInclude Include="lzsa\expand_block_v2.h" />
     <ClInclude Include="lzsa\expand_context.h" />
     <ClInclude Include="lzsa\expand_inmem.h" />
-    <ClInclude Include="lzsa\expand_streaming.h" />
     <ClInclude Include="lzsa\format.h" />
     <ClInclude Include="lzsa\frame.h" />
     <ClInclude Include="lzsa\lib.h" />
@@ -126,7 +126,6 @@
     <ClInclude Include="lzsa\shrink_block_v2.h" />
     <ClInclude Include="lzsa\shrink_context.h" />
     <ClInclude Include="lzsa\shrink_inmem.h" />
-    <ClInclude Include="lzsa\shrink_streaming.h" />
     <ClInclude Include="lzsa\stream.h" />
     <ClInclude Include="Sav2Cart.h" />
   </ItemGroup>

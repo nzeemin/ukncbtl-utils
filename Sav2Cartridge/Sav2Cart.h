@@ -52,3 +52,15 @@ size_t lz4_decode(unsigned char *src, size_t insize, unsigned char *dst, size_t 
 
 
 //////////////////////////////////////////////////////////////////////
+// LZSA.cpp
+
+size_t lzsa1_encode(unsigned char *inbuffer, size_t insize, unsigned char *outbuffer, size_t outsize);
+
+size_t lzsa1_decode(unsigned char *src, size_t insize, unsigned char *dst, size_t outsize);
+
+size_t lzsa2_encode(unsigned char *inbuffer, size_t insize, unsigned char *outbuffer, size_t outsize);
+
+size_t lzsa2_decode(unsigned char *src, size_t insize, unsigned char *dst, size_t outsize);
+
+
+//////////////////////////////////////////////////////////////////////

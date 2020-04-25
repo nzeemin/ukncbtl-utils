@@ -36,8 +36,6 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #endif
 
 #include "Sav2Cart.h"
-#include "lzsa/lib.h"
-#include "lzsa/shrink_inmem.h"
 
 
 //////////////////////////////////////////////////////////////////////
@@ -484,10 +482,7 @@ int main(int argc, char* argv[])
         if (options & OPTION_COMPRESSION_LZSA1)
         {
             ::memset(pCartImage, -1, 65536);
-            int nFormatVersion = 1;
-            unsigned int nFlags = LZSA_FLAG_RAW_BLOCK | LZSA_FLAG_FAVOR_RATIO;
-            size_t encodedSize = lzsa_compress_inmem(
-                    pFileImage + 512, pCartImage + 512, savImageSize, 65536 - 512, nFlags, 3, nFormatVersion);
+            size_t encodedSize = lzsa1_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
             printf("LZSA1 output size %lu. bytes (%1.2f %%)\n", encodedSize, encodedSize * 100.0 / savImageSize);
             if (encodedSize > 24576 - 512)
             {
@@ -502,9 +497,7 @@ int main(int argc, char* argv[])
                     printf("Failed to allocate memory.");
                     return 255;
                 }
-                int nFormatVersion = 1;
-                size_t decodedSize = lzsa_decompress_inmem(
-                        pCartImage + 512, pTempBuffer, encodedSize, 65536, nFlags, &nFormatVersion);
+                size_t decodedSize = lzsa1_decode(pCartImage + 512, encodedSize, pTempBuffer, 65536);
                 if (decodedSize != savImageSize) printf("failed, LZSA1 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
                 for (size_t offset = 0; offset < savImageSize; offset++)
                 {
@@ -542,9 +535,7 @@ int main(int argc, char* argv[])
         {
             ::memset(pCartImage, -1, 65536);
             int nFormatVersion = 2;
-            unsigned int nFlags = LZSA_FLAG_RAW_BLOCK | LZSA_FLAG_FAVOR_RATIO;
-            size_t encodedSize = lzsa_compress_inmem(
-                    pFileImage + 512, pCartImage + 512, savImageSize, 65536 - 512, nFlags, 3, nFormatVersion);
+            size_t encodedSize = lzsa2_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
             printf("LZSA2 output size %lu. bytes (%1.2f %%)\n", encodedSize, encodedSize * 100.0 / savImageSize);
             if (encodedSize > 24576 - 512)
             {
@@ -559,8 +550,7 @@ int main(int argc, char* argv[])
                     printf("Failed to allocate memory.");
                     return 255;
                 }
-                size_t decodedSize = lzsa_decompress_inmem(
-                        pCartImage + 512, pTempBuffer, encodedSize, 65536, nFlags, &nFormatVersion);
+                size_t decodedSize = lzsa2_decode(pCartImage + 512, encodedSize, pTempBuffer, 65536);
                 if (decodedSize != savImageSize) printf("failed, LZSA2 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
                 for (size_t offset = 0; offset < savImageSize; offset++)
                 {
@@ -588,7 +578,6 @@ int main(int argc, char* argv[])
                 *((uint16_t*)(pCartImage + 0110)) = wStackAddr;
                 *((uint16_t*)(pCartImage + 0124)) = wLZStart;
                 *((uint16_t*)(pCartImage + 0126)) = wLZWords;
-                //TODO
                 break;  // Finished encoding with LZSA2
             }
         }

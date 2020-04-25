@@ -66,6 +66,9 @@
     <ClCompile Include="lzsa\trsort.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LZSA.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sav2Cart.h">
@@ -95,13 +98,7 @@
     <ClInclude Include="lzsa\expand_context.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="lzsa\shrink_streaming.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="lzsa\expand_inmem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lzsa\expand_streaming.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="lzsa\divsufsort.h">

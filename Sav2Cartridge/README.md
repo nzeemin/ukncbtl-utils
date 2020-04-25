@@ -4,16 +4,18 @@ Command line utility used to convert executable RT-11 SAV file into UKNC ROM car
 
 UKNC catridge is 24 KB = 24576 bytes, so that's "natural" limit for a file to put into the cartridge.
 
-If the SAV file is too large for the cartridge, the utility attempts to use RLE / LZSS / LZ4 compression.
+If the SAV file is too large for the cartridge, the utility attempts to use RLE / LZSS / LZ4 / LZSA compression.
 
-Usage:
+### Usage
 ```
 Sav2Cart [options] <inputfile.SAV> <outputfile.BIN>
 Options:
-    -none - try to fit non-compressed
-    -rle  - try RLE compression
-    -lzss - try LZSS compression
-    -lz4  - try LZ4 compression
+    -none  - try to fit non-compressed
+    -rle   - try RLE compression
+    -lzss  - try LZSS compression
+    -lz4   - try LZ4 compression
+    -lzsa1 - try LZSA1 compression
+    -lzsa1 - try LZSA2 compression
     (no compression options) - try all on-by-one until fit
 ```
 NOTE: '-' character used as an option sign under Linux/Mac, '/' character under Windows.
@@ -37,3 +39,20 @@ LZSS decode check done, decoded size 47036. bytes
 Output file: HWYENC.BIN
 Done.
 ```
+
+### Authors
+
+The main part of Sav2Cart utility code by Nikita Zimin.
+
+LZSS decompression code for PDP-11 by Ostapenko Alexey.
+LZSS code by Haruhiko Okumura, adopted for the decompressor.
+
+LZ4 decompression code for PDP-11/EIS by Alexander Troosh.
+
+LZSA code by Emmanuel Marty.
+LZSA decompression code for PDP-11 by Ivan Gorodetsky.
+
+
+### License
+
+The LZSA code is available under the Zlib license, except for src/matchfinder.c which is placed under the Creative Commons CC0 license.
