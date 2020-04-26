@@ -202,13 +202,15 @@ int options = 0;
 char inputfilename[256] = { 0 };
 char outputfilename[256] = { 0 };
 
-FILE* inputfile;
-FILE* outputfile;
-uint8_t* pFileImage = NULL;
-uint8_t* pCartImage = NULL;
-uint16_t wStartAddr;
-uint16_t wStackAddr;
-uint16_t wTopAddr;
+FILE* inputfile = nullptr;
+FILE* outputfile = nullptr;
+uint8_t* pFileImage = nullptr;
+uint8_t* pCartImage = nullptr;
+uint32_t inputfileSize = 0;
+size_t savImageSize = 0;
+uint16_t wStartAddr = 01000;
+uint16_t wStackAddr = 0;
+uint16_t wTopAddr = 0;
 
 bool ParseCommandLine(int argc, char* argv[])
 {
@@ -269,6 +271,257 @@ uint16_t CalcCheckum(const uint16_t* pData, int nWords)
     return wChecksum;
 }
 
+size_t PrepareCartPlain()
+{
+    if (inputfileSize > 24576)
+    {
+        printf("Input file is too big for cartridge: %u. bytes, max 24576. bytes\n", inputfileSize);
+        return 0;
+    }
+
+    // Copy SAV image as is
+    ::memcpy(pCartImage, pFileImage, inputfileSize);
+
+    // Prepare the loader
+    memcpy(pCartImage, loader, loaderSize);
+    *((uint16_t*)(pCartImage + 0074)) = wStackAddr;
+    *((uint16_t*)(pCartImage + 0100)) = wStartAddr;
+    *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
+
+    return inputfileSize;  // Finished encoding with plain copy
+}
+
+size_t PrepareCartRLE()
+{
+    ::memset(pCartImage, 0, 65536);
+    size_t rleCodedSize = EncodeRLE(pFileImage + 512, savImageSize, pCartImage + 512, 24576 - 512);
+    if (rleCodedSize > 24576 - 512)
+    {
+        printf("RLE encoded size too big: %lu. bytes, max %d. bytes\n", rleCodedSize, 24576 - 512);
+        return 0;
+    }
+
+    // Trying to decode to make sure encoder works fine
+    uint8_t* pTempBuffer = (uint8_t*) ::calloc(savImageSize, 1);
+    if (pTempBuffer == NULL)
+    {
+        printf("Failed to allocate memory.");
+        return 0;
+    }
+    size_t decodedSize = DecodeRLE(pCartImage + 512, 24576 - 512, pTempBuffer, savImageSize);
+    if (decodedSize != savImageSize)
+        printf("failed, RLE decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
+    for (size_t offset = 0; offset < savImageSize; offset++)
+    {
+        if (pTempBuffer[offset] == pFileImage[512 + offset])
+            continue;
+
+        printf("RLE decode failed at offset %06ho (%02x != %02x)\n", (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
+        return 0;
+    }
+    ::free(pTempBuffer);
+    printf("RLE decode check done, decoded size %lu. bytes\n", decodedSize);
+
+    ::memcpy(pCartImage, pFileImage, 512);
+
+    // Prepare the loader
+    memcpy(pCartImage, loaderRLE, loaderRLESize);
+    *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
+    *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
+    *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
+
+    return rleCodedSize;  // Finished encoding with RLE
+}
+
+size_t PrepareCartLZSS()
+{
+    ::memset(pCartImage, 0, 65536);
+    size_t lzssCodedSize = lzss_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
+    if (lzssCodedSize > 24576 - 512)
+    {
+        printf("LZSS encoded size too big: %lu. bytes, max %d. bytes\n", lzssCodedSize, 24576 - 512);
+        return 0;
+    }
+
+    // Trying to decode to make sure encoder works fine
+    uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
+    if (pTempBuffer == NULL)
+    {
+        printf("Failed to allocate memory.");
+        return 0;
+    }
+    size_t decodedSize = lzss_decode(pCartImage + 512, lzssCodedSize, pTempBuffer, 65536);
+    if (decodedSize != savImageSize)
+        printf("failed, LZSS decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
+    for (size_t offset = 0; offset < savImageSize; offset++)
+    {
+        if (pTempBuffer[offset] == pFileImage[512 + offset])
+            continue;
+
+        printf("LZSS decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset), (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
+        return 0;
+    }
+    ::free(pTempBuffer);
+    printf("LZSS decode check done, decoded size %lu. bytes\n", decodedSize);
+
+    ::memcpy(pCartImage, pFileImage, 512);
+
+    // Prepare the loader
+    memcpy(pCartImage, loaderLZSS, loaderLZSSSize);
+    *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
+    *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
+    *((uint16_t*)(pCartImage + 0212)) = 01000 + savImageSize;  // CTOP
+    *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
+    //printf("LZSS CTOP = %06o\n", 01000 + savImageSize);
+
+    return lzssCodedSize;  // Finished encoding with LZSS
+}
+
+size_t PrepareCartLZ4()
+{
+    ::memset(pCartImage, -1, 65536);
+    size_t lz4CodedSize = lz4_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
+    if (lz4CodedSize > 24576 - 512)
+    {
+        printf("LZ4 encoded size too big: %lu. bytes, max %d. bytes\n", lz4CodedSize, 24576 - 512);
+        return 0;
+    }
+
+    // Trying to decode to make sure encoder works fine
+    uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
+    if (pTempBuffer == NULL)
+    {
+        printf("Failed to allocate memory.");
+        return 0;
+    }
+    size_t decodedSize = lz4_decode(pCartImage + 512, lz4CodedSize, pTempBuffer, 65536);
+    if (decodedSize != savImageSize)
+        printf("failed, LZ4 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
+    for (size_t offset = 0; offset < savImageSize; offset++)
+    {
+        if (pTempBuffer[offset] == pFileImage[512 + offset])
+            continue;
+
+        printf("LZ4 decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset),
+               (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
+        return 0;
+    }
+    ::free(pTempBuffer);
+    printf("LZ4 decode check done, decoded size %lu. bytes\n", decodedSize);
+
+    ::memcpy(pCartImage, pFileImage, 512);
+
+    // Prepare the loader
+    memcpy(pCartImage, loaderLZ4, loaderLZ4Size);
+    *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
+    *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
+    *((uint16_t*)(pCartImage + 0130)) = wStartAddr;
+    *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
+
+    return lz4CodedSize;  // Finished encoding with LZ4
+}
+
+size_t PrepareCartLZSA1()
+{
+    ::memset(pCartImage, -1, 65536);
+    size_t encodedSize = lzsa1_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
+    printf("LZSA1 output size %lu. bytes (%1.2f %%)\n", encodedSize, encodedSize * 100.0 / savImageSize);
+    if (encodedSize > 24576 - 512)
+    {
+        printf("LZSA1 encoded size too big: %lu. bytes, max %d. bytes\n", encodedSize, 24576 - 512);
+        return 0;
+    }
+
+    // Trying to decode to make sure encoder works fine
+    uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
+    if (pTempBuffer == NULL)
+    {
+        printf("Failed to allocate memory.");
+        return 0;
+    }
+    size_t decodedSize = lzsa1_decode(pCartImage + 512, encodedSize, pTempBuffer, 65536);
+    if (decodedSize != savImageSize)
+        printf("failed, LZSA1 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
+    for (size_t offset = 0; offset < savImageSize; offset++)
+    {
+        if (pTempBuffer[offset] == pFileImage[512 + offset])
+            continue;
+
+        printf("LZSA1 decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset),
+               (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
+        return 0;
+    }
+    ::free(pTempBuffer);
+    printf("LZSA1 decode check done, decoded size %lu. bytes\n", decodedSize);
+
+    ::memcpy(pCartImage, pFileImage, 512);
+
+    // Prepare the loader
+    memcpy(pCartImage, loaderLZSA1, loaderLZSA1Size);
+    uint16_t wLZWords = (encodedSize + 1) / 2;  // How many words to copy from the cartridge
+    uint16_t wLZStart = 0160000 - wLZWords * 2 - 0100;  // Address where to copy to from the cartridge
+    *((uint16_t*)(pCartImage + 0050)) = wLZStart;
+    *((uint16_t*)(pCartImage + 0054)) = wLZWords;
+    *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
+    *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
+    *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
+    *((uint16_t*)(pCartImage + 0112)) = wLZStart;
+    *((uint16_t*)(pCartImage + 0114)) = wLZWords;
+    *((uint16_t*)(pCartImage + 0124)) = wLZStart;
+
+    return encodedSize;  // Finished encoding with LZSA1
+}
+
+size_t PrepareCartLZSA2()
+{
+    ::memset(pCartImage, -1, 65536);
+    size_t encodedSize = lzsa2_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
+    printf("LZSA2 output size %lu. bytes (%1.2f %%)\n", encodedSize, encodedSize * 100.0 / savImageSize);
+    if (encodedSize > 24576 - 512)
+    {
+        printf("LZSA2 encoded size too big: %lu. bytes, max %d. bytes\n", encodedSize, 24576 - 512);
+        return 0;
+    }
+
+    // Trying to decode to make sure encoder works fine
+    uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
+    if (pTempBuffer == NULL)
+    {
+        printf("Failed to allocate memory.");
+        return 0;
+    }
+    size_t decodedSize = lzsa2_decode(pCartImage + 512, encodedSize, pTempBuffer, 65536);
+    if (decodedSize != savImageSize)
+        printf("failed, LZSA2 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
+    for (size_t offset = 0; offset < savImageSize; offset++)
+    {
+        if (pTempBuffer[offset] == pFileImage[512 + offset])
+            continue;
+
+        printf("LZSA2 decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset),
+               (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
+        return 0;
+    }
+    ::free(pTempBuffer);
+    printf("LZSA2 decode check done, decoded size %lu. bytes\n", decodedSize);
+
+    ::memcpy(pCartImage, pFileImage, 512);
+
+    // Prepare the loader
+    memcpy(pCartImage, loaderLZSA2, loaderLZSA2Size);
+    uint16_t wLZWords = (encodedSize + 1) / 2;  // How many words to copy from the cartridge
+    uint16_t wLZStart = 0160000 - wLZWords * 2 - 0100;  // Address where to copy to from the cartridge
+    *((uint16_t*)(pCartImage + 0050)) = wLZStart;
+    *((uint16_t*)(pCartImage + 0054)) = wLZWords;
+    *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), wLZWords);
+    *((uint16_t*)(pCartImage + 0074)) = wLZStart;
+    *((uint16_t*)(pCartImage + 0110)) = wStackAddr;
+    *((uint16_t*)(pCartImage + 0124)) = wLZStart;
+    *((uint16_t*)(pCartImage + 0126)) = wLZWords;
+
+    return encodedSize;  // Finished encoding with LZSA2
+}
+
 int main(int argc, char* argv[])
 {
     if (!ParseCommandLine(argc, argv))
@@ -276,12 +529,12 @@ int main(int argc, char* argv[])
         printf(
             "Usage: Sav2Cart [options] <inputfile.SAV> <outputfile.BIN>\n"
             "Options:\n"
-            "\t" OPTIONSTR "none  - try to fit non-compressed\n"
-            "\t" OPTIONSTR "rle   - try RLE compression\n"
-            "\t" OPTIONSTR "lzss  - try LZSS compression\n"
-            "\t" OPTIONSTR "lz4   - try LZ4 compression\n"
-            "\t" OPTIONSTR "lzsa1 - try LZSA1 compression\n"
-            "\t" OPTIONSTR "lzsa2 - try LZSA2 compression\n"
+            "\t" OPTIONSTR "none  - use to fit non-compressed\n"
+            "\t" OPTIONSTR "rle   - use RLE compression\n"
+            "\t" OPTIONSTR "lzss  - use LZSS compression\n"
+            "\t" OPTIONSTR "lz4   - use LZ4 compression\n"
+            "\t" OPTIONSTR "lzsa1 - use LZSA1 compression\n"
+            "\t" OPTIONSTR "lzsa2 - use LZSA2 compression\n"
             "\t(no compression options) - try all on-by-one until fit\n");
         return 255;
     }
@@ -295,7 +548,7 @@ int main(int argc, char* argv[])
         return 255;
     }
     ::fseek(inputfile, 0, SEEK_END);
-    uint32_t inputfileSize = ::ftell(inputfile);
+    inputfileSize = ::ftell(inputfile);
 
     pFileImage = (uint8_t*) ::malloc(inputfileSize);
 
@@ -306,7 +559,7 @@ int main(int argc, char* argv[])
         printf("Failed to read the input file.");
         return 255;
     }
-    ::fclose(inputfile);
+    ::fclose(inputfile);  inputfile = nullptr;
     printf("Input file size %u. bytes\n", inputfileSize);
 
     wStartAddr = *((uint16_t*)(pFileImage + 040));
@@ -315,7 +568,7 @@ int main(int argc, char* argv[])
     printf("SAV Start\t%06ho  %04x  %5d\n", wStartAddr, wStartAddr, wStartAddr);
     printf("SAV Stack\t%06ho  %04x  %5d\n", wStackAddr, wStackAddr, wStackAddr);
     printf("SAV Top  \t%06ho  %04x  %5d\n", wTopAddr, wTopAddr, wTopAddr);
-    size_t savImageSize = ((size_t)wTopAddr + 2 - 01000);
+    savImageSize = ((size_t)wTopAddr + 2 - 01000);
     printf("SAV image size\t%06ho  %04lx  %5lu\n", (uint16_t)savImageSize, savImageSize, savImageSize);
 
     pCartImage = (uint8_t*) ::calloc(65536, 1);
@@ -330,255 +583,49 @@ int main(int argc, char* argv[])
         // Plain copy
         if (options & OPTION_COMPRESSION_NONE)
         {
-            if (inputfileSize > 24576)
-            {
-                printf("Input file is too big for cartridge: %u. bytes, max 24576. bytes\n", inputfileSize);
-            }
-            else  // Copy SAV image as is, add loader
-            {
-                ::memcpy(pCartImage, pFileImage, inputfileSize);
-
-                // Prepare the loader
-                memcpy(pCartImage, loader, loaderSize);
-                *((uint16_t*)(pCartImage + 0074)) = wStackAddr;
-                *((uint16_t*)(pCartImage + 0100)) = wStartAddr;
-                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
+            size_t encodedSize = PrepareCartPlain();
+            if (encodedSize > 0)
                 break;  // Finished encoding with plain copy
-            }
         }
 
         // RLE
         if (options & OPTION_COMPRESSION_RLE)
         {
-            ::memset(pCartImage, 0, 65536);
-            size_t rleCodedSize = EncodeRLE(pFileImage + 512, savImageSize, pCartImage + 512, 24576 - 512);
-            if (rleCodedSize > 24576 - 512)
-            {
-                printf("RLE encoded size too big: %lu. bytes, max %d. bytes\n", rleCodedSize, 24576 - 512);
-            }
-            else  // Use RLE compression
-            {
-                // Trying to decode to make sure encoder works fine
-                uint8_t* pTempBuffer = (uint8_t*) ::calloc(savImageSize, 1);
-                if (pTempBuffer == NULL)
-                {
-                    printf("Failed to allocate memory.");
-                    return 255;
-                }
-                size_t decodedSize = DecodeRLE(pCartImage + 512, 24576 - 512, pTempBuffer, savImageSize);
-                for (size_t offset = 0; offset < savImageSize; offset++)
-                {
-                    if (pTempBuffer[offset] == pFileImage[512 + offset])
-                        continue;
-
-                    printf("RLE decode failed at offset %06ho (%02x != %02x)\n", (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
-                    return 255;
-                }
-                ::free(pTempBuffer);
-                printf("RLE decode check done, decoded size %lu. bytes\n", decodedSize);
-
-                ::memcpy(pCartImage, pFileImage, 512);
-
-                // Prepare the loader
-                memcpy(pCartImage, loaderRLE, loaderRLESize);
-                *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
-                *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
-                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
+            size_t encodedSize = PrepareCartRLE();
+            if (encodedSize > 0)
                 break;  // Finished encoding with RLE
-            }
         }
 
         // LZSS
         if (options & OPTION_COMPRESSION_LZSS)
         {
-            ::memset(pCartImage, 0, 65536);
-            size_t lzssCodedSize = lzss_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
-            if (lzssCodedSize > 24576 - 512)
-            {
-                printf("LZSS encoded size too big: %lu. bytes, max %d. bytes\n", lzssCodedSize, 24576 - 512);
-            }
-            else
-            {
-                // Trying to decode to make sure encoder works fine
-                uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
-                if (pTempBuffer == NULL)
-                {
-                    printf("Failed to allocate memory.");
-                    return 255;
-                }
-                size_t decodedSize = lzss_decode(pCartImage + 512, lzssCodedSize, pTempBuffer, 65536);
-                for (size_t offset = 0; offset < savImageSize; offset++)
-                {
-                    if (pTempBuffer[offset] == pFileImage[512 + offset])
-                        continue;
-
-                    printf("LZSS decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset), (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
-                    return 255;
-                }
-                ::free(pTempBuffer);
-
-                printf("LZSS decode check done, decoded size %lu. bytes\n", decodedSize);
-
-                ::memcpy(pCartImage, pFileImage, 512);
-
-                // Prepare the loader
-                memcpy(pCartImage, loaderLZSS, loaderLZSSSize);
-                *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
-                *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
-                *((uint16_t*)(pCartImage + 0212)) = 01000 + savImageSize;  // CTOP
-                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
-                //printf("LZSS CTOP = %06o\n", 01000 + savImageSize);
-
+            size_t encodedSize = PrepareCartLZSS();
+            if (encodedSize > 0)
                 break;  // Finished encoding with LZSS
-            }
         }
 
         // LZ4
         if (options & OPTION_COMPRESSION_LZ4)
         {
-            ::memset(pCartImage, -1, 65536);
-            size_t lz4CodedSize = lz4_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
-            if (lz4CodedSize > 24576 - 512)
-            {
-                printf("LZ4 encoded size too big: %lu. bytes, max %d. bytes\n", lz4CodedSize, 24576 - 512);
-            }
-            else
-            {
-                // Trying to decode to make sure encoder works fine
-                uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
-                if (pTempBuffer == NULL)
-                {
-                    printf("Failed to allocate memory.");
-                    return 255;
-                }
-                size_t decodedSize = lz4_decode(pCartImage + 512, lz4CodedSize, pTempBuffer, 65536);
-                if (decodedSize != savImageSize) printf("failed, LZ4 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
-                for (size_t offset = 0; offset < savImageSize; offset++)
-                {
-                    if (pTempBuffer[offset] == pFileImage[512 + offset])
-                        continue;
-
-                    printf("LZ4 decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset),
-                           (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
-                    return 255;
-                }
-                ::free(pTempBuffer);
-
-                printf("LZ4 decode check done, decoded size %lu. bytes\n", decodedSize);
-
-                ::memcpy(pCartImage, pFileImage, 512);
-
-                // Prepare the loader
-                memcpy(pCartImage, loaderLZ4, loaderLZ4Size);
-                *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
-                *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
-                *((uint16_t*)(pCartImage + 0130)) = wStartAddr;
-                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
+            size_t encodedSize = PrepareCartLZ4();
+            if (encodedSize > 0)
                 break;  // Finished encoding with LZ4
-            }
         }
 
         // LZSA1
         if (options & OPTION_COMPRESSION_LZSA1)
         {
-            ::memset(pCartImage, -1, 65536);
-            size_t encodedSize = lzsa1_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
-            printf("LZSA1 output size %lu. bytes (%1.2f %%)\n", encodedSize, encodedSize * 100.0 / savImageSize);
-            if (encodedSize > 24576 - 512)
-            {
-                printf("LZSA1 encoded size too big: %lu. bytes, max %d. bytes\n", encodedSize, 24576 - 512);
-            }
-            else
-            {
-                // Trying to decode to make sure encoder works fine
-                uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
-                if (pTempBuffer == NULL)
-                {
-                    printf("Failed to allocate memory.");
-                    return 255;
-                }
-                size_t decodedSize = lzsa1_decode(pCartImage + 512, encodedSize, pTempBuffer, 65536);
-                if (decodedSize != savImageSize) printf("failed, LZSA1 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
-                for (size_t offset = 0; offset < savImageSize; offset++)
-                {
-                    if (pTempBuffer[offset] == pFileImage[512 + offset])
-                        continue;
-
-                    printf("LZSA1 decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset),
-                           (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
-                    return 255;
-                }
-                ::free(pTempBuffer);
-
-                printf("LZSA1 decode check done, decoded size %lu. bytes\n", decodedSize);
-
-                ::memcpy(pCartImage, pFileImage, 512);
-
-                // Prepare the loader
-                memcpy(pCartImage, loaderLZSA1, loaderLZSA1Size);
-                uint16_t wLZWords = (encodedSize + 1) / 2;  // How many words to copy from the cartridge
-                uint16_t wLZStart = 0160000 - wLZWords * 2 - 0100;  // Address where to copy to from the cartridge
-                *((uint16_t*)(pCartImage + 0050)) = wLZStart;
-                *((uint16_t*)(pCartImage + 0054)) = wLZWords;
-                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), 027400);
-                *((uint16_t*)(pCartImage + 0076)) = wStackAddr;
-                *((uint16_t*)(pCartImage + 0102)) = wStartAddr;
-                *((uint16_t*)(pCartImage + 0112)) = wLZStart;
-                *((uint16_t*)(pCartImage + 0114)) = wLZWords;
-                *((uint16_t*)(pCartImage + 0124)) = wLZStart;
+            size_t encodedSize = PrepareCartLZSA1();
+            if (encodedSize > 0)
                 break;  // Finished encoding with LZSA1
-            }
         }
 
         // LZSA2
         if (options & OPTION_COMPRESSION_LZSA2)
         {
-            ::memset(pCartImage, -1, 65536);
-            size_t encodedSize = lzsa2_encode(pFileImage + 512, savImageSize, pCartImage + 512, 65536 - 512);
-            printf("LZSA2 output size %lu. bytes (%1.2f %%)\n", encodedSize, encodedSize * 100.0 / savImageSize);
-            if (encodedSize > 24576 - 512)
-            {
-                printf("LZSA2 encoded size too big: %lu. bytes, max %d. bytes\n", encodedSize, 24576 - 512);
-            }
-            else
-            {
-                // Trying to decode to make sure encoder works fine
-                uint8_t* pTempBuffer = (uint8_t*) ::calloc(65536, 1);
-                if (pTempBuffer == NULL)
-                {
-                    printf("Failed to allocate memory.");
-                    return 255;
-                }
-                size_t decodedSize = lzsa2_decode(pCartImage + 512, encodedSize, pTempBuffer, 65536);
-                if (decodedSize != savImageSize) printf("failed, LZSA2 decoded size = %lu (must be: %lu)\n", decodedSize, savImageSize);
-                for (size_t offset = 0; offset < savImageSize; offset++)
-                {
-                    if (pTempBuffer[offset] == pFileImage[512 + offset])
-                        continue;
-
-                    printf("LZSA2 decode failed at offset %06ho 0x%04x (%02x != %02x)\n", (uint16_t)(512 + offset),
-                           (uint16_t)(512 + offset), pTempBuffer[offset], pFileImage[512 + offset]);
-                    return 255;
-                }
-                ::free(pTempBuffer);
-
-                printf("LZSA2 decode check done, decoded size %lu. bytes\n", decodedSize);
-
-                ::memcpy(pCartImage, pFileImage, 512);
-
-                // Prepare the loader
-                memcpy(pCartImage, loaderLZSA2, loaderLZSA2Size);
-                uint16_t wLZWords = (encodedSize + 1) / 2;  // How many words to copy from the cartridge
-                uint16_t wLZStart = 0160000 - wLZWords * 2 - 0100;  // Address where to copy to from the cartridge
-                *((uint16_t*)(pCartImage + 0050)) = wLZStart;
-                *((uint16_t*)(pCartImage + 0054)) = wLZWords;
-                *((uint16_t*)(pCartImage + 0066)) = CalcCheckum((uint16_t*)(pCartImage + 01000), wLZWords);
-                *((uint16_t*)(pCartImage + 0074)) = wLZStart;
-                *((uint16_t*)(pCartImage + 0110)) = wStackAddr;
-                *((uint16_t*)(pCartImage + 0124)) = wLZStart;
-                *((uint16_t*)(pCartImage + 0126)) = wLZWords;
+            size_t encodedSize = PrepareCartLZSA2();
+            if (encodedSize > 0)
                 break;  // Finished encoding with LZSA2
-            }
         }
 
         return 255;  // All attempts failed
