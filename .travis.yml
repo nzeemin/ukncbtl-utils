@@ -6,6 +6,9 @@ matrix:
   include:
     - { os: linux, dist: trusty, compiler: gcc }
     - { os: linux, dist: trusty, compiler: clang }
+    - { os: linux, dist: xenial, compiler: clang }
+    - { os: linux, dist: bionic, compiler: clang }
+    - { os: linux, dist: focal, compiler: clang }
     - { os: osx, compiler: gcc }
     - { os: osx, compiler: clang }
 
