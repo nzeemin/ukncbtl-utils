@@ -1,2 +1,2 @@
 #!/bin/sh
-docker run -v `pwd`:/work escparser $@
+docker run -v $(pwd):/work escparser $@
