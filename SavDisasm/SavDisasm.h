@@ -16,11 +16,14 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #  define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include <stdlib.h>
-#include <stdio.h>
+//#include <stdlib.h>
+//#include <stdio.h>
 #include <memory.h>
-#include <string.h>
 #include <ctype.h>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
 
 typedef const char * LPCSTR;
 
@@ -53,7 +56,7 @@ typedef unsigned __int64  uint64_t;
 /// \param[out] sInstr  Instruction mnemonics buffer - at least 8 characters
 /// \param[out] sArg    Instruction arguments buffer - at least 32 characters
 /// \return  Number of words in the instruction
-uint16_t DisassembleInstruction(uint16_t* pMemory, uint16_t addr, char* sInstr, char* sArg);
+uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, char* sInstr, char* sArg);
 
 
 //////////////////////////////////////////////////////////////////////

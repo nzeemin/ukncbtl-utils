@@ -19,6 +19,8 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #define OPTIONSTR "-"
 #endif
 
+typedef std::string string;
+
 
 //////////////////////////////////////////////////////////////////////
 // Preliminary function declarations
@@ -31,11 +33,11 @@ bool ParseCommandLine(int argc, char* argv[]);
 //////////////////////////////////////////////////////////////////////
 // Globals
 
-LPCSTR g_sSavFileName = NULL;
+string g_sSavFileName;
 bool g_okShowValues = false;
 uint16_t g_wStartAddress = 001000;
 uint16_t g_wEndAddress = 0xffff;
-char g_sOutFileName[255] = { 0 };
+string g_sOutFileName;
 
 
 //////////////////////////////////////////////////////////////////////
@@ -43,20 +45,20 @@ char g_sOutFileName[255] = { 0 };
 
 void PrintWelcome()
 {
-    printf(("SavDisasm Utility  by Nikita Zimin  [%s %s]\n\n"), __DATE__, __TIME__);
+    std::cout << "SavDisasm Utility  by Nikita Zimin  [" << __DATE__ << " " << __TIME__ << "]" << std::endl << std::endl;
 }
 
 void PrintUsage()
 {
-    printf(("\nUsage:\n"));
-    printf(("    SavDisasm [options] <SavFileFile>\n"));
-    printf(("  Parameters:\n"));
-    printf(("    <SavFileName> is name of .SAV file to disassemble\n"));
-    printf(("  Options:\n"));
-    printf(("    " OPTIONSTR "O:<OutFileName>  Set output file name\n"));
-    printf(("    " OPTIONSTR "S<addr>  Set disassembly start address (octal)\n"));
-    printf(("    " OPTIONSTR "E<addr>  Set disassembly end address (octal)\n"));
-    printf(("    " OPTIONSTR "V        Show original values\n"));
+    std::cout << "\nUsage:" << std::endl
+            << "    savdisasm [options] <SavFileFile>" << std::endl
+            << "  Parameters:" << std::endl
+            << "    <SavFileName> is name of .SAV file to disassemble" << std::endl
+            << "  Options:" << std::endl
+            << "    " OPTIONSTR "o:<OutFileName>  Set output file name" << std::endl
+            << "    " OPTIONSTR "s<addr>  Set disassembly start address (octal)" << std::endl
+            << "    " OPTIONSTR "e<addr>  Set disassembly end address (octal)" << std::endl
+            << "    " OPTIONSTR "v        Show original values" << std::endl;
 }
 
 // Print octal 16-bit value to buffer
@@ -73,7 +75,7 @@ void PrintOctalValue(char* buffer, uint16_t value)
 }
 
 // Parse octal value from text
-bool ParseOctalValue(LPCSTR text, uint16_t* pValue)
+bool ParseOctalValue(const char * text, uint16_t* pValue)
 {
     uint16_t value = 0;
     char* pChar = (char*)text;
@@ -95,7 +97,7 @@ bool ParseCommandLine(int argc, char* argv[])
 {
     for (int argn = 1; argn < argc; argn++)
     {
-        LPCSTR arg = argv[argn];
+        const char * arg = argv[argn];
         if (arg[0] == (OPTIONCHAR))
         {
             char option = (char)tolower(arg[1]);
@@ -104,14 +106,14 @@ bool ParseCommandLine(int argc, char* argv[])
             case ('s'):  // Set disasm Start address
                 if (!ParseOctalValue(arg + 2, &g_wStartAddress))
                 {
-                    printf(("Failed to parse start address: %s\n"), arg);
+                    std::cout << "Failed to parse start address: " << arg << std::endl;
                     return false;
                 }
                 break;
             case ('e'):  // Set disasm End address
                 if (!ParseOctalValue(arg + 2, &g_wEndAddress))
                 {
-                    printf(("Failed to parse end address: %s\n"), arg);
+                    std::cout << "Failed to parse end address: " << arg << std::endl;
                     return false;
                 }
                 break;
@@ -120,44 +122,44 @@ bool ParseCommandLine(int argc, char* argv[])
                 break;
             case ('o'):  // Set Output file name
                 {
-                    LPCSTR pOuFileName = arg + 2;
+                    const char * pOuFileName = arg + 2;
                     if (*pOuFileName == (':')) pOuFileName++;  // Skip ':' if found
                     if (*pOuFileName == 0)
                     {
-                        printf(("Output file name is not specified: %s\n"), arg);
+                        std::cout << "Output file name is not specified: " << arg << std::endl;
                         return false;
                     }
-                    strcpy(g_sOutFileName, pOuFileName);
+                    g_sOutFileName = pOuFileName;
                     break;
                 }
             default:
-                printf(("Unknown option: %s\n"), arg);
+                std::cout << "Unknown option: " << arg << std::endl;
                 return false;
             }
         }
         else
         {
-            if (g_sSavFileName == NULL)
+            if (g_sSavFileName.empty())
                 g_sSavFileName = arg;
             else
             {
-                printf(("Unknown param: %s\n"), arg);
+                std::cout << "Unknown param: " << arg << std::endl;
                 return false;
             }
         }
     }
 
     // Parsed options validation
-    if (g_sSavFileName == NULL)
+    if (g_sSavFileName.empty())
     {
-        printf(("<SavFileName> not specified.\n"));
+        std::cout << "<SavFileName> not specified." << std::endl;
         return false;
     }
 
     return true;
 }
 
-void DisasmSavImage(uint16_t* pImage, FILE* fpOutFile)
+void DisasmSavImage(uint16_t* pImage, std::ofstream & foutfile)
 {
     uint16_t address = g_wStartAddress;
 
@@ -180,14 +182,16 @@ void DisasmSavImage(uint16_t* pImage, FILE* fpOutFile)
             PrintOctalValue(value0, pImage[address / 2]);
             if (length > 1) PrintOctalValue(value1, pImage[address / 2 + 1]); else *value1 = 0;
             if (length > 2) PrintOctalValue(value2, pImage[address / 2 + 2]); else *value2 = 0;
-            sprintf(buffer, "%s\t%s\t%s\t%s\t%-7s\t%s\r\n", bufaddr, value0, value1, value2, bufinstr, bufargs);
+            sprintf(buffer, "%s\t%s\t%s\t%s\t%-7s\t%s", bufaddr, value0, value1, value2, bufinstr, bufargs);
+            //sprintf(buffer, "%s: %s\t%s\t%s\t%-7s\t%s", bufaddr, value0, value1, value2, bufinstr, bufargs);
         }
         else
         {
-            sprintf(buffer, "%s\t%-7s\t%s\r\n", bufaddr, bufinstr, bufargs);
+            sprintf(buffer, "%s\t%-7s\t%s", bufaddr, bufinstr, bufargs);
+            //sprintf(buffer, "%s: %-7s\t%s", bufaddr, bufinstr, bufargs);
         }
 
-        ::fwrite(buffer, 1, strlen(buffer), fpOutFile);
+        foutfile << buffer << std::endl;
 
         address += (uint16_t)length * 2;
         if (address == 0)
@@ -201,75 +205,93 @@ int main(int argc, char* argv[])
 
     if (!ParseCommandLine(argc, argv))
     {
-        if (g_sSavFileName == NULL)
+        if (g_sSavFileName.empty())
             PrintUsage();
         return 255;
     }
 
-    if (*g_sOutFileName == 0)
-        strcpy(g_sOutFileName, ("disasm.txt"));
-
-    printf("Input file:       %s\n", g_sSavFileName);
-    FILE* fpFile = ::fopen(g_sSavFileName, ("rb"));
-    if (fpFile == NULL)
+    if (g_sOutFileName.empty())
     {
-        printf(("Failed to open the input file.\n"));
+        g_sOutFileName = "disasm.txt";
+    }
+
+    std::cout << "Input file: " << g_sSavFileName << std::endl;
+    std::ifstream savfile(g_sSavFileName.c_str(), std::ifstream::ate | std::ifstream::binary);
+    if (savfile.fail())
+    {
+        std::cout << "Failed to open the input file." << std::endl;
         return 255;
     }
 
     uint16_t* pImage = (uint16_t*) ::calloc(65536, 1);
-    if (pImage == NULL)
+    if (pImage == nullptr)
     {
-        ::fclose(fpFile);
-        printf(("Failed to allocate memory.\n"));
+        savfile.close();
+        std::cout << "Failed to allocate memory." << std::endl;
         return 255;
     }
 
-    ::fseek(fpFile, 0, SEEK_END);
-    long lFileSize = ::ftell(fpFile);
-    long lReadSize = (lFileSize < 65535) ? lFileSize : 65535;
-    ::fseek(fpFile, 0, SEEK_SET);
-    long lReadSizeFact = ::fread(pImage, 1, lReadSize, fpFile);
-    ::fclose(fpFile);
-    if (lReadSizeFact != lReadSize)
+    std::streamoff lFileSize = savfile.tellg();
+    std::streamoff lReadSize = (lFileSize < 65535) ? lFileSize : 65535;
+    savfile.seekg(std::ifstream::beg);
+    savfile.read((char*)pImage, lReadSize);
+    if (savfile.fail())
     {
-        printf(("Failed to read the input file.\n"));
+        savfile.close();
+        std::cout << "Failed to read the input file." << std::endl;
         ::free(pImage);
         return 255;
     }
-    printf("Input file size:  %06lo  %04lx  %5ld bytes\n", lFileSize, lFileSize, lFileSize);
+    savfile.close();
+    std::cout << "Input file size:   " << std::setw(6) << std::oct << std::setfill('0') << lFileSize
+            << "  " << std::setw(4) << std::hex << lFileSize
+            << "  " << std::setw(5) << std::dec << std::setfill(' ') << lFileSize
+            << ". bytes" << std::endl;
 
     // .SAV file analysis
     uint16_t wStartAddr = *(pImage + 040 / 2);
     uint16_t wStackAddr = *(pImage + 042 / 2);
     uint16_t wTopAddr = *(pImage + 050 / 2);
-    printf("SAV Start:        %06o  %04x  %5d\n", wStartAddr, wStartAddr, wStartAddr);
-    printf("SAV Stack:        %06o  %04x  %5d\n", wStackAddr, wStackAddr, wStackAddr);
-    printf("SAV Top:          %06o  %04x  %5d\n", wTopAddr, wTopAddr, wTopAddr);
+    std::cout << "SAV Start addr:    " << std::setw(6) << std::oct << std::setfill('0') << wStartAddr
+            << "  " << std::setw(4) << std::hex << wStartAddr
+            << "  " << std::setw(5) << std::dec << std::setfill(' ') << wStartAddr << "." << std::endl;
+    std::cout << "SAV Stack addr:    " << std::setw(6) << std::oct << std::setfill('0') << wStackAddr
+            << "  " << std::setw(4) << std::hex << wStackAddr
+            << "  " << std::setw(5) << std::dec << std::setfill(' ') << wStackAddr << "." << std::endl;
+    std::cout << "SAV Top addr:      " << std::setw(6) << std::oct << std::setfill('0') << wTopAddr
+            << "  " << std::setw(4) << std::hex << wTopAddr
+            << "  " << std::setw(5) << std::dec << std::setfill(' ') << wTopAddr << "." << std::endl;
 
-    printf("Output file:      %s\n", g_sOutFileName);
-    FILE* fpOutFile = ::fopen(g_sOutFileName, ("w+b"));
-    if (fpOutFile == NULL)
+    std::cout << "Output file: " << g_sOutFileName << std::endl;
+    std::ofstream foutfile(g_sOutFileName.c_str(), std::ofstream::out | std::ofstream::binary);
+    if (foutfile.fail())
     {
-        printf(("Failed to open the output file.\n"));
+        std::cout << "Failed to open the output file." << std::endl;
         ::free(pImage);
         return 255;
     }
 
     if (g_wEndAddress > lReadSize) g_wEndAddress = (uint16_t)lReadSize;
 
-    printf("Disasm start:     %06o  %04x  %5d\n", g_wStartAddress, g_wStartAddress, g_wStartAddress);
-    printf("Disasm end:       %06o  %04x  %5d\n", g_wEndAddress, g_wEndAddress, g_wEndAddress);
+    std::cout << "Disasm start:      " << std::setw(6) << std::oct << std::setfill('0') << g_wStartAddress
+            << "  " << std::setw(4) << std::hex << g_wStartAddress
+            << "  " << std::setw(5) << std::dec << std::setfill(' ') << g_wStartAddress << "." << std::endl;
+    std::cout << "Disasm end:        " << std::setw(6) << std::oct << std::setfill('0') << g_wEndAddress
+            << "  " << std::setw(4) << std::hex << g_wEndAddress
+            << "  " << std::setw(5) << std::dec << std::setfill(' ') << g_wEndAddress << "." << std::endl;
 
-    DisasmSavImage(pImage, fpOutFile);
+    DisasmSavImage(pImage, foutfile);
 
-    long lOutFileSize = ::ftell(fpOutFile);
-    ::fclose(fpOutFile);
-    printf("Output file size:             %7ld bytes\n", lOutFileSize);
+    foutfile.flush();
+
+    std::streamoff lOutFileSize = foutfile.tellp();
+    foutfile.close();
+    std::cout << "Output file size: " << lOutFileSize << ". bytes" << std::endl;
 
     ::free(pImage);
 
     return 0;
 }
+
 
 //////////////////////////////////////////////////////////////////////

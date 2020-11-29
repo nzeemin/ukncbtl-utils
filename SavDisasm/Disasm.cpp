@@ -122,7 +122,7 @@ uint16_t ConvertDstToString (uint16_t instr, uint16_t addr, char* strDst, uint16
 //   sInstr  - instruction mnemonics buffer - at least 8 characters
 //   sArg    - instruction arguments buffer - at least 32 characters
 //   Return value: number of words in the instruction
-uint16_t DisassembleInstruction(uint16_t* pMemory, uint16_t addr, char* strInstr, char* strArg)
+uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, char* strInstr, char* strArg)
 {
     *strInstr = 0;
     *strArg = 0;
