@@ -22,12 +22,12 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 const char* REGISTER_NAME[] = { ("R0"), ("R1"), ("R2"), ("R3"), ("R4"), ("R5"), ("SP"), ("PC") };
 
 // ‘ормат отображени€ режимов адресации
-const LPCSTR ADDRESS_MODE_FORMAT[] =
+const char * ADDRESS_MODE_FORMAT[] =
 {
     ("%s"), ("(%s)"), ("(%s)+"), ("@(%s)+"), ("-(%s)"), ("@-(%s)"), ("%06o(%s)"), ("@%06o(%s)")
 };
 // ‘ормат отображени€ режимов адресации дл€ регистра PC
-const LPCSTR ADDRESS_MODE_PC_FORMAT[] =
+const char * ADDRESS_MODE_PC_FORMAT[] =
 {
     ("PC"), ("(PC)"), ("#%06o"), ("@#%06o"), ("-(PC)"), ("@-(PC)"), ("%06o"), ("@%06o")
 };
@@ -38,11 +38,11 @@ uint16_t ConvertSrcToString(uint16_t instr, uint16_t addr, char* strSrc, uint16_
     uint8_t reg = GetDigit(instr, 2);
     uint8_t param = GetDigit(instr, 3);
 
-    LPCSTR pszReg = REGISTER_NAME[reg];
+    const char * pszReg = REGISTER_NAME[reg];
 
     if (reg != 7)
     {
-        LPCSTR format = ADDRESS_MODE_FORMAT[param];
+        const char * format = ADDRESS_MODE_FORMAT[param];
 
         if (param == 6 || param == 7)
         {
@@ -55,7 +55,7 @@ uint16_t ConvertSrcToString(uint16_t instr, uint16_t addr, char* strSrc, uint16_
     }
     else
     {
-        LPCSTR format = ADDRESS_MODE_PC_FORMAT[param];
+        const char * format = ADDRESS_MODE_PC_FORMAT[param];
 
         if (param == 2 || param == 3)
         {
@@ -82,11 +82,11 @@ uint16_t ConvertDstToString (uint16_t instr, uint16_t addr, char* strDst, uint16
     uint8_t reg = GetDigit(instr, 0);
     uint8_t param = GetDigit(instr, 1);
 
-    LPCSTR pszReg = REGISTER_NAME[reg];
+    const char * pszReg = REGISTER_NAME[reg];
 
     if (reg != 7)
     {
-        LPCSTR format = ADDRESS_MODE_FORMAT[param];
+        const char * format = ADDRESS_MODE_FORMAT[param];
 
         if (param == 6 || param == 7)
         {
@@ -98,7 +98,7 @@ uint16_t ConvertDstToString (uint16_t instr, uint16_t addr, char* strDst, uint16
     }
     else
     {
-        LPCSTR format = ADDRESS_MODE_PC_FORMAT[param];
+        const char * format = ADDRESS_MODE_PC_FORMAT[param];
 
         if (param == 2 || param == 3)
         {
@@ -130,7 +130,7 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, char* st
     uint16_t instr = *pMemory;
 
     uint16_t length = 1;
-    LPCSTR strReg = NULL;
+    const char * strReg = nullptr;
     char strSrc[24];
     char strDst[24];
     bool okByte;
@@ -196,13 +196,21 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, char* st
         if (GetDigit(instr, 0) == 7)
         {
             strcpy(strInstr, ("RETURN"));
+            return 1;
         }
-        else
-        {
-            strcpy(strInstr, ("RTS"));
-            strcpy(strArg, REGISTER_NAME[GetDigit(instr, 0)]);
-        }
+
+        strcpy(strInstr, ("RTS"));
+        strcpy(strArg, REGISTER_NAME[GetDigit(instr, 0)]);
         return 1;
+    }
+
+    // FIS
+    switch (instr & ~(uint16_t)7)
+    {
+    case PI_FADD:  strcpy(strInstr, ("FADD"));  strcpy(strArg, REGISTER_NAME[GetDigit(instr, 0)]);  return 1;
+    case PI_FSUB:  strcpy(strInstr, ("FSUB"));  strcpy(strArg, REGISTER_NAME[GetDigit(instr, 0)]);  return 1;
+    case PI_FMUL:  strcpy(strInstr, ("FMUL"));  strcpy(strArg, REGISTER_NAME[GetDigit(instr, 0)]);  return 1;
+    case PI_FDIV:  strcpy(strInstr, ("FDIV"));  strcpy(strArg, REGISTER_NAME[GetDigit(instr, 0)]);  return 1;
     }
 
     // Two fields
@@ -263,8 +271,8 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, char* st
 
     switch (instr & ~(uint16_t)0377)
     {
-    case PI_EMT:   strcpy(strInstr, ("EMT"));   strcpy(strArg, strDst);  return 1;
-    case PI_TRAP:  strcpy(strInstr, ("TRAP"));  strcpy(strArg, strDst);  return 1;
+    case PI_EMT:   strcpy(strInstr, ("EMT"));   strcpy(strArg, strDst + 3);  return 1;
+    case PI_TRAP:  strcpy(strInstr, ("TRAP"));  strcpy(strArg, strDst + 3);  return 1;
     }
 
     // Three fields

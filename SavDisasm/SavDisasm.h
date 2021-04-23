@@ -25,8 +25,6 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include <fstream>
 #include <iomanip>
 
-typedef const char * LPCSTR;
-
 // Define C99 stdint.h types for Visual Studio
 #ifdef _MSC_VER
 typedef unsigned __int8   uint8_t;
