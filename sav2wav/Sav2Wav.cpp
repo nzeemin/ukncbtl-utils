@@ -327,6 +327,9 @@ void Convert()
 
     fclose(inputfile);
 
+    // Пауза в конце
+    PauseWrite(11000);
+
     DefWaveFormat();  // Формируем длину в заголовке WAV-файла
 
     fseek(outputfile, 0, SEEK_END);
