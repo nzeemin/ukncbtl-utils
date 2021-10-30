@@ -46,8 +46,7 @@ void rt11date_str(uint16_t date, char* str, size_t sz)
     year += age * 32;
 
     if (month < 1 || month > 12)
-        strncpy(str, "  -BAD-  ", sz);
+        strncpy(str, "   -BAD-   ", sz);
     else
-        // sprintf(str, "[%d] %02d-%3s-%02d", age, day, months[month], year+1972);
-        ::snprintf(str, sz, "%02d-%3s-%02d", day, months[month], year >= 32 ? year + 1972 - 2000 : year + 72);
+        ::snprintf(str, sz, "%02d-%3s-%02d", day, months[month], year + 1972);
 }

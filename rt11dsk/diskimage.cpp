@@ -473,12 +473,12 @@ void CDiskImage::DecodeImageCatalog()
 
 void CDiskImage::PrintTableHeader()
 {
-    printf(" Filename  Blocks  Date      Start    Bytes\n"
-           "---------- ------  --------- ----- --------\n");
+    printf("Filename  Blocks  Date        Start    Bytes\n"
+           "---------- -----  ----------- ----- --------\n");
 }
 void CDiskImage::PrintTableFooter()
 {
-    printf("---------- ------  --------- ----- --------\n");
+    printf("---------- -----  ----------- ----- --------\n");
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -495,7 +495,7 @@ EIterOp cb_print_entries(CVolumeCatalogEntry* pEntry, void* opaque)
     struct d_print* p = (struct d_print*)opaque;
 
     pEntry->Print();
-    if (pEntry->status == RT11_STATUS_EMPTY)
+    if (pEntry->status == RT11_STATUS_EMPTY || pEntry->status == RT11_STATUS_TENTATIVE)
         p->nFreeBlocksCount += pEntry->length;
     else
     {
@@ -550,8 +550,8 @@ void CDiskImage::PrintCatalogDirectory()
     Iterate(cb_print_entries, (void*)&res);
 
     PrintTableFooter();
-    printf(" %d files, %d blocks\n", res.nFilesCount, res.nBlocksCount);
-    printf(" %d free blocks\n\n", res.nFreeBlocksCount);
+    printf(" %d Files, %d Blocks\n", res.nFilesCount, res.nBlocksCount);
+    printf(" %d Free blocks\n\n", res.nFreeBlocksCount);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -987,13 +987,9 @@ void CVolumeCatalogEntry::Unpack(uint16_t const * pCatalog, uint16_t filestartbl
     // FIXME pCatalog[5] - channel (lsb), job (msb) - used for E_TENT
     datepac = pCatalog[6];
 
-    if (status != RT11_STATUS_EMPTY && status != RT11_STATUS_ENDMARK)
+    if (status != RT11_STATUS_EMPTY && status != RT11_STATUS_ENDMARK && status != RT11_STATUS_TENTATIVE)
     {
         char*   p = name;
-        if (status == RT11_STATUS_TENTATIVE)
-        {
-            *p++ = '!';
-        }
         r50asc(6, namerad50, p);
         p[6] = 0;
         r50asc(3, namerad50 + 2, ext);
@@ -1022,16 +1018,16 @@ void CVolumeCatalogEntry::Pack(uint16_t* pCatalog)
 
 void CVolumeCatalogEntry::Print()
 {
-    if (status == RT11_STATUS_EMPTY)
+    if (status == RT11_STATUS_EMPTY || status == RT11_STATUS_TENTATIVE)
     {
-        printf("< UNUSED >  %5d            %5d %8d\n",
+        printf("< UNUSED > %5d              %5d %8d\n",
                length, start, length * RT11_BLOCK_SIZE);
     }
     else
     {
         char datestr[16];
         rt11date_str(datepac, datestr, sizeof(datestr));
-        printf("%s.%s  %5d  %s %5d %8d\n",
+        printf("%s.%s %5d  %s %5d %8d\n",
                name, ext, length, datestr, start, length * RT11_BLOCK_SIZE);
     }
 }
