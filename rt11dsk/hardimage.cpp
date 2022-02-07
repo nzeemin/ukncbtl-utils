@@ -101,57 +101,111 @@ bool CHardImage::Attach(const char * sImageFileName)
         exit(-1);
     }
 
-    // Check for inverted image
-    uint8_t test = 0xff;
-    for (int i = 0x1f0; i <= 0x1fb; i++)
-        test &= g_hardbuffer[i];
-    m_okInverted = (test == 0xff);
-    // Invert the buffer if needed
-    if (m_okInverted)
-        InvertBuffer(g_hardbuffer);
-
-    // Calculate and verify checksum
-    uint32_t checksum = CheckHomeBlockChecksum(g_hardbuffer);
-    //wprintf(_T("Home block checksum is 0x%08lx.\n"), checksum);
-    m_okChecksum = checksum == 0;
-    if (checksum != 0)
-        printf("Home block checksum is incorrect!\n");
-
-    m_nSectorsPerTrack = g_hardbuffer[0];
-    m_nSidesPerTrack = g_hardbuffer[1];
-
     m_drivertype = HDD_DRIVER_UNKNOWN;
-    uint16_t wdwaittime = ((uint16_t*)g_hardbuffer)[0122 / 2];
-    uint16_t wdhidden = ((uint16_t*)g_hardbuffer)[0124 / 2];
-    if (wdwaittime != 0 || wdhidden != 0)
-        m_drivertype = HDD_DRIVER_WD;
 
-    // Count partitions
-    int count = 0;
-    long totalblocks = 0;
-    for (int i = 1; i < 24; i++)
+    // Detect hard disk type
+    const uint16_t * pwHardBuffer = (const uint16_t*)g_hardbuffer;
+    if (pwHardBuffer[0] == 0x54A9 && pwHardBuffer[1] == 0xFFEF && pwHardBuffer[2] == 0xFEFF ||
+        pwHardBuffer[0] == 0xAB56 && pwHardBuffer[1] == 0x0010 && pwHardBuffer[2] == 0x0100)
     {
-        uint16_t blocks = *((uint16_t*)g_hardbuffer + i);
-        if (blocks == 0) break;
-        if (blocks + totalblocks > (m_lFileSize / 512) - 1)
-            break;
-        count++;
-        totalblocks += blocks;
-    }
+        m_drivertype = HDD_DRIVER_HD;
+        m_okInverted = (pwHardBuffer[0] == 0xAB56);
+        // Invert the buffer if needed
+        if (m_okInverted)
+            InvertBuffer(g_hardbuffer);
 
-    m_nPartitions = count;
-    if (m_nPartitions > 0)
-    {
-        m_pPartitionInfos = (CPartitionInfo*) ::calloc(m_nPartitions, sizeof(CPartitionInfo));
+        m_okChecksum = true;
 
-        // Prepare m_pPartitionInfos
-        long offset = 512;
-        for (int i = 0; i < m_nPartitions; i++)
+        m_nSectorsPerTrack = pwHardBuffer[4];
+        if (m_nSectorsPerTrack == 0)
         {
-            m_pPartitionInfos[i].offset = offset;
-            uint16_t blocks = *((uint16_t*)g_hardbuffer + i + 1);
-            m_pPartitionInfos[i].blocks = blocks;
-            offset += blocks * 512;
+            printf("Home block Sector per Side value invalid.\n");
+            return false;
+        }
+        m_nSidesPerTrack = (uint8_t)(pwHardBuffer[5] / m_nSectorsPerTrack);
+        if (m_nSidesPerTrack == 0)
+        {
+            printf("Home block Sector per Track value invalid.\n");
+            return false;
+        }
+
+        // Count partitions
+        m_nPartitions = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            if (pwHardBuffer[6 + i] == 0 || pwHardBuffer[14 + i] == 0)
+                continue;
+            m_nPartitions++;
+        }
+
+        if (m_nPartitions > 0)
+        {
+            m_pPartitionInfos = (CPartitionInfo*) ::calloc(m_nPartitions, sizeof(CPartitionInfo));
+
+            int index = 0;
+            for (int i = 0; i < 8; i++)
+            {
+                if (pwHardBuffer[6 + i] == 0 || pwHardBuffer[14 + i] == 0)
+                    continue;
+                m_pPartitionInfos[index].offset = pwHardBuffer[6 + i] * m_nSectorsPerTrack * m_nSidesPerTrack * 512;
+                m_pPartitionInfos[index].blocks = pwHardBuffer[14 + i];
+                index++;
+            }
+        }
+    }
+    else  // ID or WD
+    {
+        // Check for inverted image
+        uint8_t test = 0xff;
+        for (int i = 0x1f0; i <= 0x1fb; i++)
+            test &= g_hardbuffer[i];
+        m_okInverted = (test == 0xff);
+        // Invert the buffer if needed
+        if (m_okInverted)
+            InvertBuffer(g_hardbuffer);
+
+        // Calculate and verify checksum
+        uint32_t checksum = CheckHomeBlockChecksum(g_hardbuffer);
+        //wprintf(_T("Home block checksum is 0x%08lx.\n"), checksum);
+        m_okChecksum = checksum == 0;
+        if (checksum != 0)
+            printf("Home block checksum is incorrect!\n");
+
+        m_nSectorsPerTrack = g_hardbuffer[0];
+        m_nSidesPerTrack = g_hardbuffer[1];
+
+        uint16_t wdwaittime = ((uint16_t*)g_hardbuffer)[0122 / 2];
+        uint16_t wdhidden = ((uint16_t*)g_hardbuffer)[0124 / 2];
+        if (wdwaittime != 0 || wdhidden != 0)
+            m_drivertype = HDD_DRIVER_WD;
+
+        // Count partitions
+        int count = 0;
+        long totalblocks = 0;
+        for (int i = 1; i < 24; i++)
+        {
+            uint16_t blocks = *((uint16_t*)g_hardbuffer + i);
+            if (blocks == 0) break;
+            if (blocks + totalblocks > (m_lFileSize / 512) - 1)
+                break;
+            count++;
+            totalblocks += blocks;
+        }
+
+        m_nPartitions = count;
+        if (m_nPartitions > 0)
+        {
+            m_pPartitionInfos = (CPartitionInfo*) ::calloc(m_nPartitions, sizeof(CPartitionInfo));
+
+            // Prepare m_pPartitionInfos
+            long offset = 512;
+            for (int i = 0; i < m_nPartitions; i++)
+            {
+                m_pPartitionInfos[i].offset = offset;
+                uint16_t blocks = *((uint16_t*)g_hardbuffer + i + 1);
+                m_pPartitionInfos[i].blocks = blocks;
+                offset += blocks * 512;
+            }
         }
     }
 
@@ -167,7 +221,7 @@ void CHardImage::Detach()
     }
 }
 
-bool CHardImage::PrepareDiskImage(int partition, CDiskImage* pdiskimage)
+bool CHardImage::PrepareDiskImage(int partition, CDiskImage * pdiskimage)
 {
     if (partition < 0 || partition >= m_nPartitions)
         return false;  // Wrong partition number

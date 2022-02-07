@@ -19,6 +19,7 @@ enum HDDDriverType
     HDD_DRIVER_UNKNOWN = 0,
     HDD_DRIVER_ID = 1,
     HDD_DRIVER_WD = 2,
+    HDD_DRIVER_HD = 11,
 };
 
 struct CPartitionInfo;
