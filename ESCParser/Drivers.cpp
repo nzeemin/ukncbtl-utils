@@ -232,7 +232,7 @@ typedef char Z85_uint32_t_static_assert[(sizeof(uint32_t) * 8 == 32) * 2 - 1];
 // make sure magic constant is 64-bit
 typedef char Z85_div85_magic_static_assert[(sizeof(DIV85_MAGIC) * 8 == 64) * 2 - 1];
 
-#define DIV85(number) ((uint32_t)((DIV85_MAGIC * number) >> 32) >> 6)
+#define DIV85(number) ((uint32_t)((DIV85_MAGIC * (number)) >> 32) >> 6)
 
 static const char* base85 =
     "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu";

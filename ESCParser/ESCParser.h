@@ -137,6 +137,7 @@ private:  // Input and output
     OutputDriver& m_output;
 
 private:  // Current state
+    // Units for all the int values are equal to 1/10 point = 1/720 inch
     int  m_x, m_y;      // Current position
     int  m_marginleft, m_margintop;
     int  m_limitright;

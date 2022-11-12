@@ -17,8 +17,8 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 EscInterpreter::EscInterpreter(std::istream& input, OutputDriver& output) :
     m_output(output), m_input(input)
 {
-    m_marginleft = 96;
-    m_margintop = 160;
+    m_marginleft = 96;  // 96/720 inch = 9.6 points
+    m_margintop = 160;  // 160/720 inch = 16 points
     m_endofpage = false;
     m_fontsp = m_fontdo = m_fontfe = m_fontks = m_fontel = m_fontun = false;
     m_superscript = m_subscript = false;
@@ -44,7 +44,7 @@ void EscInterpreter::PrinterReset()
     m_fontsp = m_fontdo = m_fontfe = m_fontks = m_fontel = m_fontun = false;
     m_shifty = 720 / 6;  // 6 lines/inch
     UpdateShiftX();
-    m_limitright = m_shiftx * 80;
+    m_limitright = m_shiftx * 80;  //TODO
     m_limitbottom = 720 * 11;  // 11 inches = 66 lines
 
     m_superscript = m_subscript = false;
@@ -160,7 +160,10 @@ bool EscInterpreter::InterpretEscape()
         GetNextByte();  // Игнорируем
         break;
     case 'x': // Выбор качества
-        m_printmode = (GetNextByte() != 0);
+        {
+            unsigned char ss = GetNextByte();
+            m_printmode = (ss != 0 && ss != '0');
+        }
         break;
 
         // Группа функций character pitch
@@ -339,22 +342,28 @@ bool EscInterpreter::InterpretEscape()
         m_superscript = m_subscript = false;
         break;
     case '-': // Подчеркивание
-        m_fontun = (GetNextByte() != 0);
+        {
+            unsigned char ss = GetNextByte();
+            m_fontun = (ss != 0 && ss != '0');
+        }
         break;
 
     case 'S': // Включение печати в верхней или нижней части строки
         {
             unsigned char ss = GetNextByte();
-            m_superscript = (ss == 0);
-            m_subscript = (ss == 1);
+            m_superscript = (ss == 0 || ss == '0');
+            m_subscript = (ss == 1 || ss == '1');
         }
         break;
     case 'T': // Выключение печати в верхней или нижней части строки
         m_superscript = m_subscript = false;
         break;
     case 'W': // Включение или выключение шрифта вразрядку
-        m_fontsp = (GetNextByte() != 0);
-        UpdateShiftX();
+        {
+            unsigned char ss = GetNextByte();
+            m_fontsp = (ss != 0 && ss != '0');
+            UpdateShiftX();
+        }
         break;
     case '!': // Выбор вида шрифта
         {
