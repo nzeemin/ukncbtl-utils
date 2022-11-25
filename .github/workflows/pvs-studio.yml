@@ -1,0 +1,32 @@
+name: PVS-Studio analysis
+
+on: workflow_dispatch
+
+jobs:
+  build-analyze:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install PVS Studio
+      run: |
+        wget -q -O - https://files.pvs-studio.com/etc/pubkey.txt | sudo apt-key add -
+        sudo wget -O /etc/apt/sources.list.d/viva64.list https://files.pvs-studio.com/etc/viva64.list
+        sudo apt update
+        sudo apt install pvs-studio
+        pvs-studio-analyzer credentials ${{ secrets.PVS_STUDIO_CREDENTIALS }}
+    - name: Build
+      run: |
+        pvs-studio-analyzer trace -- make
+    - name: Analyze
+      run: |
+        pvs-studio-analyzer analyze
+      continue-on-error: true
+    - name: Convert
+      run: |
+        mkdir Results
+        plog-converter -t html,totals -d V536,V1042 -o ./Results/ ./PVS-Studio.log
+    - name: Upload the report
+      uses: actions/upload-artifact@v3
+      with:
+        name: ukncbtl-utils-pvs
+        path: ./Results/

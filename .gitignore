@@ -1,5 +1,11 @@
 /Debug
 /Release
+*.suo
+*.user
+*.suppress
 *.sdf
 *.opensdf
-*.suo
+.vs
+*.VC.db
+ipch
+/x-*
