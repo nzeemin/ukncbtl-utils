@@ -1,6 +1,6 @@
 
 # List all the sub-projects
-SUBDIRS = ESCParser rt11dsk Sav2Cartridge sav2wav SavDisasm
+SUBDIRS = rt11dsk Sav2Cartridge sav2wav SavDisasm
 
 .PHONY: subdirs $(SUBDIRS)
 
