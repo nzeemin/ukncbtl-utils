@@ -29,6 +29,17 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #include <cctype>
 
 
+#ifdef _MSC_VER
+// See https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+static const char * g_forbiddenFileNames[] =
+{
+    "CON", "PRN", "AUX", "NUL",
+    "COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+    "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+};
+#endif
+
+
 //////////////////////////////////////////////////////////////////////
 
 static uint16_t g_segmentBuffer[512];
@@ -653,12 +664,26 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
 
             pEntry->Print();
 
-            // Collect file name + ext without trailing spaces
+            // Get file name without trailing spaces
             char filename[11];
             strcpy(filename, pEntry->name);
             char * p = filename + 5;
             while (p > filename && *p == ' ') p--;
             p++;
+            *p = 0;
+
+#ifdef _MSC_VER
+            // Windows only: check the file name agains the forbidden name list
+            for (size_t i = 0; i < sizeof(g_forbiddenFileNames) / sizeof(g_forbiddenFileNames[0]); i++)
+            {
+                if (strcmp(filename, g_forbiddenFileNames[i]) == 0)
+                {
+                    *p++ = '_';
+                    break;
+                }
+            }
+#endif
+            // add file extension
             *p = '.';
             p++;
             strcpy(p, pEntry->ext);
