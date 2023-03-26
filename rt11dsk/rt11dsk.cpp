@@ -57,6 +57,7 @@ const char * g_sPartition = nullptr;
 int     g_nPartition = -1;
 long    g_lStartOffset = 0;
 bool    g_okInterleaving = false;
+bool    g_okHard32M = false;
 
 enum CommandRequirements
 {
@@ -128,7 +129,9 @@ void PrintUsage()
            "    <FileName>  is a file name to read from or save to\n"
            "  Options:\n"
            "    " OPTIONSTR "oXXXXX  Set start offset to XXXXX; 0 by default, 256 for .trd files\n"
-           "    " OPTIONSTR "ms0515  Sector interleaving used for MS0515 disks\n");
+           "    " OPTIONSTR "ms0515  Sector interleaving used for MS0515 disks\n"
+           "    " OPTIONSTR "hd32    Hard disk with 32 MB partitions\n"
+          );
 }
 
 bool ParseCommandLine(int argc, char * argv[])
@@ -149,6 +152,10 @@ bool ParseCommandLine(int argc, char * argv[])
             else if (strcmp(arg + 1, "ms0515") == 0)
             {
                 g_okInterleaving = true;
+            }
+            else if (strcmp(arg + 1, "hd32") == 0)
+            {
+                g_okHard32M = true;
             }
             else
             {
@@ -240,7 +247,7 @@ int main(int argc, char* argv[])
     // Подключение к файлу образа
     if (g_okHardCommand)
     {
-        if (!g_hardimage.Attach(g_sImageFileName))
+        if (!g_hardimage.Attach(g_sImageFileName, g_okHard32M))
         {
             printf("Failed to open the image file.\n");
             return 255;

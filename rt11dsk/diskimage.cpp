@@ -327,6 +327,7 @@ void* CDiskImage::GetBlock(int nBlock)
         }
         if (iCand != -1)  // Found
         {
+            iEmpty = iCand;
             ::free(m_pCache[iEmpty].pData);
             m_pCache[iEmpty].pData = nullptr;
             m_pCache[iEmpty].nBlock = 0;

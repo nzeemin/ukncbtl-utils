@@ -21,7 +21,7 @@ struct CPartitionInfo
 {
     long    offset;     // Offset from file start
     bool    interleaving;  // Sector interleaving used for MS0515 disks
-    uint16_t blocks;     // Size in blocks
+    int     blocks;     // Size in blocks
 
 public:
     void Print(int number);
@@ -75,7 +75,7 @@ CHardImage::~CHardImage()
     Detach();
 }
 
-bool CHardImage::Attach(const char * sImageFileName)
+bool CHardImage::Attach(const char * sImageFileName, bool okHard32M)
 {
     // Try to open as Normal first, then as ReadOnly
     m_okReadOnly = false;
@@ -105,7 +105,23 @@ bool CHardImage::Attach(const char * sImageFileName)
 
     // Detect hard disk type
     const uint16_t * pwHardBuffer = (const uint16_t*)g_hardbuffer;
-    if (pwHardBuffer[0] == 0x54A9 && pwHardBuffer[1] == 0xFFEF && pwHardBuffer[2] == 0xFEFF ||
+    if (okHard32M)  // Разделы по 32 МБ
+    {
+        m_drivertype = HDD_DRIVER_HZ;
+
+        m_nPartitions = (m_lFileSize + 32 * 1024 * 1024 - 1) / (32 * 1024 * 1024);
+
+        m_pPartitionInfos = (CPartitionInfo*) ::calloc(m_nPartitions, sizeof(CPartitionInfo));
+        for (int part = 0; part < m_nPartitions; part++)
+        {
+            CPartitionInfo* pInfo = m_pPartitionInfos + part;
+            pInfo->offset = 32 * 1024 * 1024 * part;
+            pInfo->blocks = 65536;
+        }
+
+        m_okChecksum = true;
+    }
+    else if (pwHardBuffer[0] == 0x54A9 && pwHardBuffer[1] == 0xFFEF && pwHardBuffer[2] == 0xFEFF ||
         pwHardBuffer[0] == 0xAB56 && pwHardBuffer[1] == 0x0010 && pwHardBuffer[2] == 0x0100)
     {
         m_drivertype = HDD_DRIVER_HD;

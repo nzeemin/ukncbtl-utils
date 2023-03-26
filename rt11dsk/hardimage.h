@@ -20,6 +20,7 @@ enum HDDDriverType
     HDD_DRIVER_ID = 1,
     HDD_DRIVER_WD = 2,
     HDD_DRIVER_HD = 11,
+    HDD_DRIVER_HZ = 21,
 };
 
 struct CPartitionInfo;
@@ -44,7 +45,7 @@ public:
     ~CHardImage();
 
 public:
-    bool Attach(const char * sFileName);
+    bool Attach(const char * sFileName, bool okHard32M);
     void Detach();
     bool PrepareDiskImage(int partition, CDiskImage* pdiskimage);
 
