@@ -150,7 +150,7 @@ public:
 public:
     void PrintCatalogDirectory();
     void PrintTableHeader();
-    void PrintTableFooter();
+    void PrintTableDivider();
     void* GetBlock(int nBlock);
     void MarkBlockChanged(int nBlock);
     void FlushChanges();

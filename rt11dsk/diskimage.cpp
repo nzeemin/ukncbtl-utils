@@ -484,10 +484,10 @@ void CDiskImage::DecodeImageCatalog()
 
 void CDiskImage::PrintTableHeader()
 {
-    printf("Filename  Blocks  Date        Start    Bytes\n"
-           "---------- -----  ----------- ----- --------\n");
+    printf("Filename  Blocks  Date        Start    Bytes\n");
+    PrintTableDivider();
 }
-void CDiskImage::PrintTableFooter()
+void CDiskImage::PrintTableDivider()
 {
     printf("---------- -----  ----------- ----- --------\n");
 }
@@ -560,7 +560,7 @@ void CDiskImage::PrintCatalogDirectory()
     memset(&res, 0, sizeof(res));
     Iterate(cb_print_entries, (void*)&res);
 
-    PrintTableFooter();
+    PrintTableDivider();
     printf(" %d Files, %d Blocks\n", res.nFilesCount, res.nBlocksCount);
     printf(" %d Free blocks\n\n", res.nFreeBlocksCount);
 }
@@ -585,26 +585,35 @@ EIterOp cb_save_one(CVolumeCatalogEntry* pEntry, void* opaque)
     printf("Extracting file:\n\n");
     r->di_p->PrintTableHeader();
     pEntry->Print();
-    r->di_p->PrintTableFooter();
+    r->di_p->PrintTableDivider();
 
-    // Collect file name + ext without trailing spaces
-    char sfilename[11];
-    char *p = sfilename;
-    char *s = pEntry->name;
-    while (*s)
-        *p++ = (char)::tolower(*s++);
-    // remove trailing spaces
-    while (*--p == ' ' && p >= sfilename);
-    *++p = '.';
-    s = pEntry->ext;
-    while (*s && *s != ' ')
-        *++p = (char)::tolower(*s++);
-    *++p = 0;
+    // Get file name without trailing spaces
+    char filename[11];
+    strcpy(filename, pEntry->name);
+    char * p = filename + 5;
+    while (p > filename && *p == ' ') p--;
+    p++;
+    *p = 0;
+#ifdef _MSC_VER
+    // Windows only: check the file name agains the forbidden name list
+    for (size_t i = 0; i < sizeof(g_forbiddenFileNames) / sizeof(g_forbiddenFileNames[0]); i++)
+    {
+        if (strcmp(filename, g_forbiddenFileNames[i]) == 0)
+        {
+            *p++ = '_';
+            break;
+        }
+    }
+#endif
+    // add file extension
+    *p = '.';
+    p++;
+    strcpy(p, pEntry->ext);
 
     uint16_t filestart = pEntry->start;
     uint16_t filelength = pEntry->length;
 
-    FILE* foutput = ::fopen(r->hf_p->host_fn, "wb");
+    FILE* foutput = ::fopen(filename, "wb");
     if (foutput == nullptr)
     {
         fprintf(stderr, "Failed to open output file %s: error %d\n", r->hf_p->host_fn, errno);
@@ -629,7 +638,7 @@ EIterOp cb_save_one(CVolumeCatalogEntry* pEntry, void* opaque)
 
 void CDiskImage::SaveEntryToExternalFile(const char * sFileName)
 {
-    CHostFile   hf(sFileName);
+    CHostFile hf(sFileName);
     struct d_save_one   res;
     res.hf_p = &hf;
     res.di_p = this;
@@ -671,7 +680,6 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
             while (p > filename && *p == ' ') p--;
             p++;
             *p = 0;
-
 #ifdef _MSC_VER
             // Windows only: check the file name agains the forbidden name list
             for (size_t i = 0; i < sizeof(g_forbiddenFileNames) / sizeof(g_forbiddenFileNames[0]); i++)
@@ -713,7 +721,7 @@ void CDiskImage::SaveAllEntriesToExternalFiles()
             fclose(foutput);
         }
     }
-    PrintTableFooter();
+    PrintTableDivider();
 
     printf("\nDone.\n");
 }
@@ -746,7 +754,7 @@ EIterOp cb_replace_one(CVolumeCatalogEntry* pEntry, void* opaque)
     printf("\nCatalog entries to update:\n\n");
     r->di_p->PrintTableHeader();
     pEntry->Print();
-    r->di_p->PrintTableFooter();
+    r->di_p->PrintTableDivider();
 
     printf("\nWriting file data...\n");
     pEntry->Store(r->hf_p, r->di_p);
@@ -779,7 +787,7 @@ EIterOp cb_new_one(CVolumeCatalogEntry* pEntry, void* opaque)
     printf("\nCatalog entries to update:\n\n");
     r->di_p->PrintTableHeader();
     pEntry->Print();
-    r->di_p->PrintTableFooter();
+    r->di_p->PrintTableDivider();
 
     if (pEntry->length > r->hf_p->rt11_sz)
     {
@@ -862,7 +870,7 @@ EIterOp cb_remove_one(CVolumeCatalogEntry* pEntry, void* opaque)
     printf("Deleting file:\n\n");
     r->di_p->PrintTableHeader();
     pEntry->Print();
-    r->di_p->PrintTableFooter();
+    r->di_p->PrintTableDivider();
 
     // Изменяем существующую запись каталога
     pEntry->status = RT11_STATUS_EMPTY;
@@ -960,7 +968,7 @@ void CDiskImage::SaveAllUnusedEntriesToExternalFiles()
 
     Iterate(cb_save_unused, &res);
 
-    PrintTableFooter();
+    PrintTableDivider();
     FlushChanges();
 
     printf("\nDone.\n");
