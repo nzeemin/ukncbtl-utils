@@ -122,7 +122,7 @@ bool CHardImage::Attach(const char * sImageFileName, bool okHard32M)
         m_okChecksum = true;
     }
     else if (pwHardBuffer[0] == 0x54A9 && pwHardBuffer[1] == 0xFFEF && pwHardBuffer[2] == 0xFEFF ||
-        pwHardBuffer[0] == 0xAB56 && pwHardBuffer[1] == 0x0010 && pwHardBuffer[2] == 0x0100)
+            pwHardBuffer[0] == 0xAB56 && pwHardBuffer[1] == 0x0010 && pwHardBuffer[2] == 0x0100)
     {
         m_drivertype = HDD_DRIVER_HD;
         m_okInverted = (pwHardBuffer[0] == 0xAB56);
@@ -249,7 +249,8 @@ bool CHardImage::PrepareDiskImage(int partition, CDiskImage * pdiskimage)
 void CHardImage::PrintImageInfo()
 {
     printf("Image file size: %ld bytes, %ld blocks\n", m_lFileSize, m_lFileSize / 512);
-    printf("Disk geometry: %d sectors/track, %d heads\n", m_nSectorsPerTrack, m_nSidesPerTrack);
+    if (m_drivertype != HDD_DRIVER_HZ)  // для LBA нет смысла показывать геометрию
+        printf("Disk geometry: %d sectors/track, %d heads\n", m_nSectorsPerTrack, m_nSidesPerTrack);
 }
 
 void CHardImage::PrintPartitionTable()
