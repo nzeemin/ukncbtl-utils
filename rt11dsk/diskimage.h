@@ -156,7 +156,7 @@ public:
     void FlushChanges();
     void DecodeImageCatalog();
     void UpdateCatalogSegment(int segno);
-    void SaveEntryToExternalFile(const char * sFileName);
+    void SaveEntryToExternalFile(const char * sFileName, bool trimZeroes);
     void SaveAllEntriesToExternalFiles();
     void AddFileToImage(const char * sFileName);
     void DeleteFileFromImage(const char * sFileName);

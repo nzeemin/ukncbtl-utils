@@ -58,6 +58,7 @@ int     g_nPartition = -1;
 long    g_lStartOffset = 0;
 bool    g_okInterleaving = false;
 bool    g_okHard32M = false;
+bool    g_okTrimZeroes = false;
 
 enum CommandRequirements
 {
@@ -131,6 +132,7 @@ void PrintUsage()
            "    " OPTIONSTR "oXXXXX  Set start offset to XXXXX; 0 by default (offsets 128 and 256 are detected by word 000240)\n"
            "    " OPTIONSTR "ms0515  Sector interleaving used for MS0515 disks\n"
            "    " OPTIONSTR "hd32    Hard disk with 32 MB partitions\n"
+           "    " OPTIONSTR "trimz   (Extract file commands) Trim trailing zeroes in the last block\n"
           );
 }
 
@@ -156,6 +158,10 @@ bool ParseCommandLine(int argc, char * argv[])
             else if (strcmp(arg + 1, "hd32") == 0)
             {
                 g_okHard32M = true;
+            }
+            else if (strcmp(arg + 1, "trimz") == 0)
+            {
+                g_okTrimZeroes = true;
             }
             else
             {
@@ -285,7 +291,7 @@ void DoDiskList()
 void DoDiskExtractFile()
 {
     g_diskimage.DecodeImageCatalog();
-    g_diskimage.SaveEntryToExternalFile(g_sFileName);
+    g_diskimage.SaveEntryToExternalFile(g_sFileName, g_okTrimZeroes);
 }
 
 void DoDiskExtractAllFiles()
@@ -388,7 +394,7 @@ void DoHardPartitionExtractFile()
     }
 
     g_diskimage.DecodeImageCatalog();
-    g_diskimage.SaveEntryToExternalFile(g_sFileName);
+    g_diskimage.SaveEntryToExternalFile(g_sFileName, g_okTrimZeroes);
 }
 
 void DoHardPartitionAddFile()

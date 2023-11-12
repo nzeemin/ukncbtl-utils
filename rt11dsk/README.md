@@ -28,5 +28,6 @@ Options:
  * `-oXXXXX` — Set start offset to XXXXX; 0 by default (offsets 128 and 256 are detected by word 000240)
  * `-ms0515` — Sector interleaving used for MS0515 disks
  * `-hd32` — Hard disk with 32 MB partitions
+ * `-trimz` — (Extract file commands) Trim trailing zeroes in the last block
 
 NOTE: '-' character used as an option sign under Linux/Mac, '/' character under Windows.

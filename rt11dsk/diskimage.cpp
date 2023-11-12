@@ -587,6 +587,7 @@ struct d_save_one
 {
     CHostFile*  hf_p;
     CDiskImage* di_p;
+    bool        okTrimZeroes;
 };
 
 EIterOp cb_save_one(CVolumeCatalogEntry* pEntry, void* opaque)
@@ -639,8 +640,22 @@ EIterOp cb_save_one(CVolumeCatalogEntry* pEntry, void* opaque)
     for (uint16_t blockpos = 0; blockpos < filelength; blockpos++)
     {
         uint8_t* pData = (uint8_t*) r->di_p->GetBlock(filestart + blockpos);
-        size_t nBytesWritten = ::fwrite(pData, sizeof(uint8_t), RT11_BLOCK_SIZE, foutput);
-        if (nBytesWritten < RT11_BLOCK_SIZE)
+
+        size_t sizeToSave = RT11_BLOCK_SIZE;
+        if (r->okTrimZeroes && blockpos == filelength - 1)  // Need to trim zeroes in the last block
+        {
+            while (sizeToSave > 0)
+            {
+                if (pData[sizeToSave - 1] != 0)
+                    break;
+                sizeToSave--;
+            }
+            if (sizeToSave == 0)
+                sizeToSave = RT11_BLOCK_SIZE;
+        }
+
+        size_t nBytesWritten = ::fwrite(pData, sizeof(uint8_t), sizeToSave, foutput);
+        if (nBytesWritten < sizeToSave)
         {
             fprintf(stderr, "Failed to write output file\n");  //TODO: Show error number
             ::fclose(foutput);
@@ -648,16 +663,18 @@ EIterOp cb_save_one(CVolumeCatalogEntry* pEntry, void* opaque)
             return IT_STOP;
         }
     }
+
     ::fclose(foutput);
     return IT_STOP;
 }
 
-void CDiskImage::SaveEntryToExternalFile(const char * sFileName)
+void CDiskImage::SaveEntryToExternalFile(const char * sFileName, bool trimZeroes)
 {
     CHostFile hf(sFileName);
-    struct d_save_one   res;
+    struct d_save_one res;
     res.hf_p = &hf;
     res.di_p = this;
+    res.okTrimZeroes = trimZeroes;
 
     if (!hf.ParseFileName63())
         return; // error
