@@ -25,7 +25,7 @@ Parameters:
  * `<FileName>` is a file name to read from or save to
 
 Options:
- * `-oXXXXX` — Set start offset to XXXXX; 0 by default
+ * `-oXXXXX` — Set start offset to XXXXX; 0 by default (offsets 128 and 256 are detected by word 000240)
  * `-ms0515` — Sector interleaving used for MS0515 disks
  * `-hd32` — Hard disk with 32 MB partitions
 

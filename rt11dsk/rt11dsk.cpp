@@ -128,7 +128,7 @@ void PrintUsage()
            "    <Partn>     is hard disk image partition number, 0..23\n"
            "    <FileName>  is a file name to read from or save to\n"
            "  Options:\n"
-           "    " OPTIONSTR "oXXXXX  Set start offset to XXXXX; 0 by default, 256 for .trd files\n"
+           "    " OPTIONSTR "oXXXXX  Set start offset to XXXXX; 0 by default (offsets 128 and 256 are detected by word 000240)\n"
            "    " OPTIONSTR "ms0515  Sector interleaving used for MS0515 disks\n"
            "    " OPTIONSTR "hd32    Hard disk with 32 MB partitions\n"
           );
