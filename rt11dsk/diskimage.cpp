@@ -152,17 +152,7 @@ CDiskImage::~CDiskImage()
 // Open the specified disk image file
 bool CDiskImage::Attach(const char * sImageFileName, long offset, bool interleaving)
 {
-    m_lStartOffset = offset;
     m_okInterleaving = interleaving;
-    if (m_lStartOffset <= 0)
-    {
-        m_lStartOffset = 0;
-        // Определяем, это .dsk-образ или .rtd-образ - по расширению файла
-        const char * sImageFilenameExt = strrchr(sImageFileName, '.');
-        if (sImageFilenameExt != nullptr && _stricmp(sImageFilenameExt, ".rtd") == 0)
-            m_lStartOffset = NETRT11_IMAGE_HEADER_SIZE;
-        //NOTE: Можно также определять по длине файла: кратна 512 -- .dsk, длина минус 256 кратна 512 -- .rtd
-    }
 
     // Try to open as Normal first, then as ReadOnly
     m_okReadOnly = false;
@@ -175,10 +165,35 @@ bool CDiskImage::Attach(const char * sImageFileName, long offset, bool interleav
             return false;
     }
 
-    // Calculate m_TotalBlocks
     ::fseek(m_fpFile, 0, SEEK_END);
     long lFileSize = ::ftell(m_fpFile);
     m_nTotalBlocks = lFileSize / RT11_BLOCK_SIZE;
+
+    if (offset > 0)
+        m_lStartOffset = offset;
+    else  // Не задан явно offset - пытаемся определить его автоматически
+    {
+        m_lStartOffset = 0;
+
+        // Читаем начало файла, чтобы найти 0-й блок
+        uint8_t buffer[RT11_BLOCK_SIZE];
+        ::fseek(m_fpFile, 0, SEEK_SET);
+        size_t lBytesRead = ::fread(buffer, 1, RT11_BLOCK_SIZE, m_fpFile);
+        if (lBytesRead != RT11_BLOCK_SIZE)
+        {
+            printf("Failed to read the file.\n");
+            exit(-1);
+        }
+
+        if (buffer[0] == 0xA0 && buffer[1] == 0)  // Нашли 000240 по смещению 0
+            m_lStartOffset = 0;
+        else if (buffer[128] == 0xA0 && buffer[128 + 1] == 0)  // Нашли 000240 по смещению 128
+            m_lStartOffset = 128;
+        else if (buffer[256] == 0xA0 && buffer[256 + 1] == 0)  // Нашли 000240 по смещению 256
+            m_lStartOffset = 256;
+    }
+
+    // Calculate m_TotalBlocks
     if (interleaving)
         m_nTotalBlocks -= 10;
 
