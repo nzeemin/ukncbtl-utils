@@ -519,12 +519,39 @@ string PatternProc_CP_XX()
     return buffer;
 }
 
-string PatternProc_BIT_X_A()
+string PatternProc_BIT_B_A()
 {
     int bitno = ((g_command[1] >> 3) & 0x7);
     int mask = 1 << bitno;
     char buffer[40];
     _snprintf(buffer, sizeof(buffer), "BIT #%03o, R0", mask);
+    return buffer;
+}
+
+string PatternProc_RES_B_A()
+{
+    int bitno = ((g_command[1] >> 3) & 0x7);
+    int mask = 1 << bitno;
+    char buffer[40];
+    _snprintf(buffer, sizeof(buffer), "BIC #%03o, R0", mask);
+    return buffer;
+}
+
+string PatternProc_SET_B_A()
+{
+    int bitno = ((g_command[1] >> 3) & 0x7);
+    int mask = 1 << bitno;
+    char buffer[40];
+    _snprintf(buffer, sizeof(buffer), "BIS #%03o, R0", mask);
+    return buffer;
+}
+
+string PatternProc_SET_B_HLADDR()
+{
+    int bitno = ((g_command[1] >> 3) & 0x7);
+    int mask = 1 << bitno;
+    char buffer[40];
+    _snprintf(buffer, sizeof(buffer), "BIS #%03o, (R3)", mask);
     return buffer;
 }
 
@@ -548,6 +575,10 @@ string PatternProc_LDIR()
     _snprintf(buffer, sizeof(buffer), "MOVB (R3)+, (R2)+ / SOB R1, L%04X", g_commandaddr);
     return buffer;
 }
+string PatternProc_LDD()
+{
+    return "MOVB (R3), (R2) / DEC R3 / DEC R2 / DEC R1";
+}
 string PatternProc_LDDR()
 {
     char buffer[50];
@@ -564,6 +595,7 @@ string PatternProc_LD_IXIY_NNNN()
     _snprintf(buffer, sizeof(buffer), "MOV #%06o, R%c or MOV #L%04X, R%c", wparam, r4r5, wparam, r4r5);
     return buffer;
 }
+
 string PatternProc_LD_A_IXIYADDR_00()
 {
     bool ixiy = (g_command[0] & 0x20) == 0;
@@ -574,6 +606,53 @@ string PatternProc_LD_IXIYADDR_00_A()
     bool ixiy = (g_command[0] & 0x20) == 0;
     return ixiy ? "MOVB R0, (R4)" : "MOVB R0, (R5)";
 }
+
+string PatternProc_LD_A_IXIYADDR_DD()
+{
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    char r4r5 = ixiy ? '4' : '5';
+    uint16_t offset = g_command[2];
+    char buffer[40];
+    _snprintf(buffer, sizeof(buffer), "MOVB %06o(R%c), R0", offset, r4r5);
+    return buffer;
+}
+string PatternProc_LD_IXIYADDR_DD_A()
+{
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    char r4r5 = ixiy ? '4' : '5';
+    uint16_t offset = g_command[2];
+    char buffer[40];
+    _snprintf(buffer, sizeof(buffer), "MOVB R0, %06o(R%c)", offset, r4r5);
+    return buffer;
+}
+
+string PatternProc_LD_IXIYADDR_00_NN()  // ld (IX+$00), nn
+{
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    char r4r5 = ixiy ? '4' : '5';
+    uint16_t nn = g_command[3];
+    char buffer[40];
+    if (nn == 0)
+        _snprintf(buffer, sizeof(buffer), "CLRB (R%c)", r4r5);
+    else
+        _snprintf(buffer, sizeof(buffer), "MOVB #%03o, (R%c)", nn, r4r5);
+    return buffer;
+}
+
+string PatternProc_LD_IXIYADDR_DD_NN()  // ld (IX+dd), nn
+{
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    char r4r5 = ixiy ? '4' : '5';
+    uint16_t dd = g_command[2];
+    uint16_t nn = g_command[3];
+    char buffer[40];
+    if (nn == 0)
+        _snprintf(buffer, sizeof(buffer), "CLRB %06o(R%c)", dd, r4r5);
+    else
+        _snprintf(buffer, sizeof(buffer), "MOVB #%03o, %06o(R%c)", nn, dd, r4r5);
+    return buffer;
+}
+
 string PatternProc_INC_IXIY()
 {
     bool ixiy = (g_command[0] & 0x20) == 0;
@@ -668,20 +747,28 @@ Pattern g_patterns[] =
 
     // CB table
     { 2, { 0xCB, 0x3F }, { 0xFF, 0xFF }, PatternProc_SRL_A },
-    { 2, { 0xCB, 0x47 }, { 0xFF, 0xC7 }, PatternProc_BIT_X_A },
+    { 2, { 0xCB, 0x47 }, { 0xFF, 0xC7 }, PatternProc_BIT_B_A },  // bit b,A
+    { 2, { 0xCB, 0x87 }, { 0xFF, 0xC7 }, PatternProc_RES_B_A },  // res b,A
+    { 2, { 0xCB, 0xC7 }, { 0xFF, 0xC7 }, PatternProc_SET_B_A },  // set b,A
+    { 2, { 0xCB, 0xC6 }, { 0xFF, 0xC7 }, PatternProc_SET_B_HLADDR },  // set b,(HL)
 
     // ED table
     { 2, { 0xED, 0x44 }, { 0xFF, 0xFF }, PatternProc_NEG },
     { 2, { 0xED, 0xA0 }, { 0xFF, 0xFF }, PatternProc_LDI },
     { 2, { 0xED, 0xB0 }, { 0xFF, 0xFF }, PatternProc_LDIR },
+    { 2, { 0xED, 0xA8 }, { 0xFF, 0xFF }, PatternProc_LDD },
     { 2, { 0xED, 0xB8 }, { 0xFF, 0xFF }, PatternProc_LDDR },
 
     // DD/FD table
-    { 2, { 0xDD, 0x21 }, { 0xDF, 0xFF }, PatternProc_LD_IXIY_NNNN },
-    { 2, { 0xDD, 0x23 }, { 0xDF, 0xFF }, PatternProc_INC_IXIY },
-    { 2, { 0xDD, 0x2B }, { 0xDF, 0xFF }, PatternProc_DEC_IXIY },
-    { 3, { 0xDD, 0x7E, 0x00 }, { 0xDF, 0xFF, 0xFF }, PatternProc_LD_A_IXIYADDR_00 },
-    { 3, { 0xDD, 0x77, 0x00 }, { 0xDF, 0xFF, 0xFF }, PatternProc_LD_IXIYADDR_00_A },
+    { 2, { 0xDD, 0x21 }, { 0xDF, 0xFF }, PatternProc_LD_IXIY_NNNN },  // ld IX,nnnn
+    { 2, { 0xDD, 0x23 }, { 0xDF, 0xFF }, PatternProc_INC_IXIY },  // inc IX
+    { 2, { 0xDD, 0x2B }, { 0xDF, 0xFF }, PatternProc_DEC_IXIY },  // dec IX
+    { 4, { 0xDD, 0x36, 0x00, 0x00 }, { 0xDF, 0xFF, 0xFF, 0x00 }, PatternProc_LD_IXIYADDR_00_NN },  // ld (IX+$00),nn
+    { 4, { 0xDD, 0x36, 0x00, 0x00 }, { 0xDF, 0xFF, 0x00, 0x00 }, PatternProc_LD_IXIYADDR_DD_NN },  // ld (IX+dd),nn
+    { 3, { 0xDD, 0x7E, 0x00 }, { 0xDF, 0xFF, 0xFF }, PatternProc_LD_A_IXIYADDR_00 },  // ld A,(IX+$00)
+    { 3, { 0xDD, 0x77, 0x00 }, { 0xDF, 0xFF, 0xFF }, PatternProc_LD_IXIYADDR_00_A },  // ld (IX+$00),A
+    { 3, { 0xDD, 0x7E, 0x00 }, { 0xDF, 0xFF, 0x00 }, PatternProc_LD_A_IXIYADDR_DD },  // ld A,(IX+dd)
+    { 3, { 0xDD, 0x77, 0x00 }, { 0xDF, 0xFF, 0x00 }, PatternProc_LD_IXIYADDR_DD_A },  // ld (IX+dd), A
     { 2, { 0xDD, 0xE1 }, { 0xDF, 0xFF }, PatternProc_POP_IXIY },
     { 2, { 0xDD, 0xE5 }, { 0xDF, 0xFF }, PatternProc_PUSH_IXIY },
 
