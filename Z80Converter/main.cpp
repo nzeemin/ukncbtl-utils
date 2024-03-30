@@ -176,6 +176,22 @@ void printcommandhex(std::ostream& sout, int addr, int cmdlen)
     }
 }
 
+// Calculate string width, knowing about 8-char tabs
+int getstringwidth(string& str)
+{
+    int width = 0;
+    for (std::string::iterator it = str.begin(); it != str.end(); ++it)
+    {
+        char ch = *it;
+        if (ch == '\t')
+            width = (width + 7) / 8 * 8;
+        else
+            width++;
+
+    }
+    return width;
+}
+
 int main(int argc, char* argv[])
 {
     std::ios_base::fmtflags coutf(std::cout.flags());  // store flags
@@ -247,6 +263,7 @@ int main(int argc, char* argv[])
         size_t resultspacepos = result.find(" ");
         if (resultspacepos != string::npos)
             result.replace(resultspacepos, 1, "\t");
+        // Trim trailing spaces
 
         foutfile << "L" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << addr << ":\t";
         foutfile.flags(ff);  // restore flags
@@ -255,7 +272,7 @@ int main(int argc, char* argv[])
 
         if (result.empty())
         {
-            foutfile << "???";  // Not converted
+            result = "???";  // Not converted
 
             std::cout << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << addr << ":  ";
             std::cout.flags(coutf);  // restore flags
@@ -264,17 +281,20 @@ int main(int argc, char* argv[])
             std::cout << std::endl;
             std::cout.flags(coutf);  // restore flags
         }
-        else
-        {
-            foutfile << result.c_str();
 
-            if (result.find("???") == string::npos)  // Fully converted?
-                convertedCommands++;
-        }
+        foutfile << result.c_str();
 
-        foutfile << "\t\t; " << std::setw(18) << std::setfill(' ') << std::left << g_commanddisasm.c_str() << "  ";
+        if (result.find("???") == string::npos)  // Fully converted?
+            convertedCommands++;
+
+        int tabnum = getstringwidth(result) / 8;
+        tabnum = tabnum >= 3 ? 0 : 3 - tabnum;
+        for (int i = 0; i < tabnum; i++)
+            foutfile << "\t";
+
+        foutfile << "\t; " << g_commanddisasm.c_str();
+
         foutfile.flags(ff);  // restore flags
-
         foutfile << std::endl;
 
         processedCommands++;

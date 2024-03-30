@@ -309,6 +309,21 @@ string PatternProc_LD_A_HLADDR()
     return "MOVB (R3), R0";
 }
 
+string PatternProc_LD_R_HLADDR()
+{
+    switch (g_command[0])
+    {
+    case 0x7E: /* ld a,(HL) */ return PatternProc_LD_A_HLADDR();
+    case 0x46: /* ld b,(HL) */ return "SWAP R1 / BIC #377, R1 / BISB (R3), R1 / SWAP R1";
+    case 0x4E: /* ld c,(HL) */ return "BIC #377, R1 / BISB (R3), R1";
+    case 0x56: /* ld d,(HL) */ return "SWAP R2 / BIC #377, R2 / BISB (R3), R2 / SWAP R2";
+    case 0x5E: /* ld e,(HL) */ return "BIC #377, R2 / BISB (R3), R2";
+    case 0x66: /* ld h,(HL) */ return "???";
+    case 0x6E: /* ld l,(HL) */ return "???";
+    }
+    return "???";
+}
+
 string PatternProc_INCDEC_HLADDR()
 {
     return (g_command[0] == 0x34) ? "INC (R3)" : "DEC (R3)";
@@ -399,8 +414,8 @@ string PatternProc_ADD_X()
     case 0x83: /* add e */ return "ADD R2 or CLR R5 / MOVB R2, R5 / ADD R5, R0";
     case 0x84: /* add h */ return "???";
     case 0x85: /* add l */ return "ADD R3 or CLR R5 / MOVB R3, R5 / ADD R5, R0";
-    case 0x86: /* add (hl) */ return "???";
-    case 0x87: /* add a */ return "CLR R0";
+    case 0x86: /* add (hl) */ return "CLR R5 / MOVB (R3), R5 / ADD R5, R0";  // тут сложности, потому что добавл€етс€ байт
+    case 0x87: /* add a */ return "ADD R0, R0";
     }
     return "";
 }
@@ -415,7 +430,7 @@ string PatternProc_SUB_X()
     case 0x93: /* sub e */ return "SUB R2 or CLR R5 / MOVB R2, R5 / SUB R5, R0";
     case 0x94: /* sub h */ return "???";
     case 0x95: /* sub l */ return "SUB R3 or CLR R5 / MOVB R3, R5 / SUB R5, R0";
-    case 0x96: /* sub (hl) */ return "???";
+    case 0x96: /* sub (hl) */ return "CLR R5 / MOVB (R3), R5 / SUB R5, R0";  // тут сложности, потому что вычитаетс€ байт
     case 0x97: /* sub a */ return "CLR R0";
     }
     return "";
@@ -552,6 +567,15 @@ string PatternProc_SET_B_HLADDR()
     int mask = 1 << bitno;
     char buffer[40];
     _snprintf(buffer, sizeof(buffer), "BIS #%03o, (R3)", mask);
+    return buffer;
+}
+
+//NOTE:  онвертаци€ в SUB R3, Rx не учитывает состо€ние флага CY
+string PatternProc_SBC_HL_SS()
+{
+    const char* rpname = rpnames_bcdehlsp[(g_command[1] >> 4) & 3];
+    char buffer[40];
+    _snprintf(buffer, sizeof(buffer), "SUB %s, R3", rpname);
     return buffer;
 }
 
@@ -723,7 +747,8 @@ Pattern g_patterns[] =
     { 1, { 0x47 }, { 0xC7 }, PatternProc_LD_X_A },
     { 1, { 0x70 }, { 0xF8 }, PatternProc_LD_HLADDR_X },
     { 1, { 0x78 }, { 0xF8 }, PatternProc_LD_A_X },
-    { 1, { 0x7E }, { 0xFF }, PatternProc_LD_A_HLADDR },
+    { 1, { 0x7E }, { 0xFF }, PatternProc_LD_A_HLADDR },  // ld A,(HL)
+    { 1, { 0x46 }, { 0xC7 }, PatternProc_LD_R_HLADDR },  // ld r,(HL)
     { 1, { 0x86 }, { 0xFF }, PatternProc_ADD_A_HLADDR },
     { 1, { 0x87 }, { 0xFF }, PatternProc_ADD_A_A },
     { 1, { 0x80 }, { 0xF8 }, PatternProc_ADD_X },
@@ -753,6 +778,7 @@ Pattern g_patterns[] =
     { 2, { 0xCB, 0xC6 }, { 0xFF, 0xC7 }, PatternProc_SET_B_HLADDR },  // set b,(HL)
 
     // ED table
+    { 2, { 0xED, 0x42 }, { 0xFF, 0xCF }, PatternProc_SBC_HL_SS },  // sbc HL,ss
     { 2, { 0xED, 0x44 }, { 0xFF, 0xFF }, PatternProc_NEG },
     { 2, { 0xED, 0xA0 }, { 0xFF, 0xFF }, PatternProc_LDI },
     { 2, { 0xED, 0xB0 }, { 0xFF, 0xFF }, PatternProc_LDIR },
