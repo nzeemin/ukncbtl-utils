@@ -253,12 +253,22 @@ int main(int argc, char* argv[])
 
     int processedCommands = 0, convertedCommands = 0;
     int addr = g_wStartAddress;
+    g_skipnextrecomp = false;
     while (addr <= g_wEndAddress)
     {
         int cmdlen = z80disasm(g_commanddisasm, g_memdmp.data() + addr);
 
         // Call recompiler
-        string result = recomp(addr);
+        string result;
+        if (g_skipnextrecomp)
+        {
+            result = "SKIP";
+            g_skipnextrecomp = false;
+        }
+        else
+        {
+            result = recomp(addr);
+        }
         // Replace first space to tab
         size_t resultspacepos = result.find(" ");
         if (resultspacepos != string::npos)
@@ -281,6 +291,8 @@ int main(int argc, char* argv[])
             std::cout << std::endl;
             std::cout.flags(coutf);  // restore flags
         }
+        else if (result == "SKIP")
+            result.clear();
 
         foutfile << result.c_str();
 

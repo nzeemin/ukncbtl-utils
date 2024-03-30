@@ -10,12 +10,16 @@ const size_t MAX_COMMAND_SIZE = 6;
 uint8_t g_command[MAX_COMMAND_SIZE];
 uint16_t g_commandaddr;
 
+bool g_skipnextrecomp = false;  // Flag indicating to skip recomp on the next instruction
+
 
 /////////////////////////////////////////////////////////////////////////////
 
 
 static const char* rpnames_bcdehlsp[] = { "R1", "R2", "R3", "R6" };  // BC, DE, HL, SP
 static const char* rpnames_bcdehlaf[] = { "R1", "R2", "R3", "R0" };  // BC, DE, HL, AF
+static const char* rpnames_bcdeixsp[] = { "R1", "R2", "R4", "R6" };  // BC, DE, IX, SP
+static const char* rpnames_bcdeiysp[] = { "R1", "R2", "R5", "R6" };  // BC, DE, IY, SP
 static const char* rnames_cela[] = { "R1", "R2", "R3", "R0" };  // C, E, L, A
 static const char* rnames_bdhhl[] = { "R1", "R2", "R3", "(R3)" };  // B, D, H, (HL)
 
@@ -48,6 +52,13 @@ string PatternProc_LD_BCDEADDR_A()
         return "MOVB R0, (R1)";
     else
         return "MOVB R0, (R2)";
+}
+string PatternProc_LD_A_BCDEADDR()
+{
+    if (g_command[0] == 0x0A)
+        return "MOVB (R1), R0";
+    else
+        return "MOVB (R2), R0";
 }
 
 string PatternProc_ADD_HL_BCDEHLSP()
@@ -256,6 +267,27 @@ string PatternProc_LD_CELA_NN()
     return buffer;
 }
 
+string PatternProc_LD_BC_HL()
+{
+    g_skipnextrecomp = true;  // Mark to skip recomp on the next instruction
+    return "MOV R3, R1";
+}
+string PatternProc_LD_DE_HL()
+{
+    g_skipnextrecomp = true;  // Mark to skip recomp on the next instruction
+    return "MOV R3, R2";
+}
+string PatternProc_LD_HL_BC()
+{
+    g_skipnextrecomp = true;  // Mark to skip recomp on the next instruction
+    return "MOV R1, R3";
+}
+string PatternProc_LD_DE_IX()
+{
+    g_skipnextrecomp = true;  // Mark to skip recomp on the next instruction
+    return "MOV R4, R2";
+}
+
 string PatternProc_LD_X_A()
 {
     switch (g_command[0])
@@ -403,6 +435,10 @@ string PatternProc_OR_A()
 {
     return "TST R0 or TSTB R0";
 }
+string PatternProc_AND_A()
+{
+    return "MOV R0, R0 or NOP";
+}
 
 string PatternProc_ADD_X()
 {
@@ -534,6 +570,11 @@ string PatternProc_CP_XX()
     return buffer;
 }
 
+string PatternProc_CP_HLADDR()
+{
+    return "CMPB R0, (R3)";
+}
+
 string PatternProc_BIT_B_A()
 {
     int bitno = ((g_command[1] >> 3) & 0x7);
@@ -558,6 +599,15 @@ string PatternProc_SET_B_A()
     int mask = 1 << bitno;
     char buffer[40];
     _snprintf(buffer, sizeof(buffer), "BIS #%03o, R0", mask);
+    return buffer;
+}
+
+string PatternProc_BIT_B_HLADDR()
+{
+    int bitno = ((g_command[1] >> 3) & 0x7);
+    int mask = 1 << bitno;
+    char buffer[40];
+    _snprintf(buffer, sizeof(buffer), "BIT #%03o, (R3)", mask);
     return buffer;
 }
 
@@ -607,6 +657,16 @@ string PatternProc_LDDR()
 {
     char buffer[50];
     _snprintf(buffer, sizeof(buffer), "MOVB (R3), (R2) / DEC R3 / DEC R2 / SOB R1, L%04X", g_commandaddr);
+    return buffer;
+}
+
+string PatternProc_ADD_IXIY_PP()
+{
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    char r4r5 = ixiy ? '4' : '5';
+    const char* rpname = (ixiy ? rpnames_bcdeixsp : rpnames_bcdeiysp)[(g_command[1] >> 4) & 3];
+    char buffer[40];
+    _snprintf(buffer, sizeof(buffer), "ADD %s, R%c", rpname, r4r5);
     return buffer;
 }
 
@@ -715,7 +775,17 @@ struct Pattern
 Pattern g_patterns[] =
 {
     // Special cases
+    { 2, { 0x44, 0x4D }, { 0xFF, 0xFF }, PatternProc_LD_BC_HL },  // ld B,H / ld C,L
+    { 2, { 0x4D, 0x44 }, { 0xFF, 0xFF }, PatternProc_LD_BC_HL },  // ld C,L / ld B,H
+    { 2, { 0x54, 0x5D }, { 0xFF, 0xFF }, PatternProc_LD_DE_HL },  // ld D,H / ld E,L
+    { 2, { 0x5D, 0x54 }, { 0xFF, 0xFF }, PatternProc_LD_DE_HL },  // ld E,L / ld D,H
+    { 2, { 0x60, 0x69 }, { 0xFF, 0xFF }, PatternProc_LD_HL_BC },  // ld H,B / ld L,C
+    { 2, { 0x69, 0x60 }, { 0xFF, 0xFF }, PatternProc_LD_HL_BC },  // ld L,C / ld H,B
+    { 4, { 0xDD, 0x5D, 0xDD, 0x54 }, { 0xFF, 0xFF, 0xFF, 0xFF }, PatternProc_LD_DE_IX },  // ld E,IXl / ld D,IXh
+    { 4, { 0xDD, 0x54, 0xDD, 0x5D }, { 0xFF, 0xFF, 0xFF, 0xFF }, PatternProc_LD_DE_IX },  // ld D,IXh / ld E,IXl
     { 3, { 0x01, 0, 0 }, { 0xCF, 0xFF, 0xFF }, PatternProc_LD_BCDEHLSP_0000 },
+    //TODO: ld A,(HL) / inc HL
+    //TODO: ld (HL),A / inc HL
 
     // Main table
     { 1, { 0x00 }, { 0xFF }, PatternProc_NOP },
@@ -727,6 +797,7 @@ Pattern g_patterns[] =
     { 1, { 0x06 }, { 0xCF }, PatternProc_LD_BDHHL_NN },
     { 1, { 0x07 }, { 0xE7 }, PatternProc_ROLL_A },
     { 1, { 0x09 }, { 0xCF }, PatternProc_ADD_HL_BCDEHLSP },
+    { 1, { 0x0A }, { 0xEF }, PatternProc_LD_A_BCDEADDR },  // ld A,(SS)
     { 1, { 0x0B }, { 0xCF }, PatternProc_DEC_BCDEHLSP },
     { 1, { 0x0C }, { 0xCF }, PatternProc_INC_CELA },
     { 1, { 0x0D }, { 0xCF }, PatternProc_DEC_CELA },
@@ -754,8 +825,10 @@ Pattern g_patterns[] =
     { 1, { 0x80 }, { 0xF8 }, PatternProc_ADD_X },
     { 1, { 0x90 }, { 0xF8 }, PatternProc_SUB_X },
     { 1, { 0xA6 }, { 0xEF }, PatternProc_ANDOR_A_HLADDR },
+    { 1, { 0xA7 }, { 0xFF }, PatternProc_AND_A },
     { 1, { 0xAF }, { 0xFF }, PatternProc_XOR_A },
     { 1, { 0xB7 }, { 0xFF }, PatternProc_OR_A },
+    { 1, { 0xBE }, { 0xFF }, PatternProc_CP_HLADDR },  // cp (HL)
     { 1, { 0xC0 }, { 0xC7 }, PatternProc_RET_CC },
     { 1, { 0xC1 }, { 0xCF }, PatternProc_POP_BCDEHLAF },
     { 1, { 0xC2 }, { 0xC7 }, PatternProc_JP_CC },
@@ -772,6 +845,7 @@ Pattern g_patterns[] =
 
     // CB table
     { 2, { 0xCB, 0x3F }, { 0xFF, 0xFF }, PatternProc_SRL_A },
+    { 2, { 0xCB, 0x46 }, { 0xFF, 0xC7 }, PatternProc_BIT_B_HLADDR },  // bit b,(HL)
     { 2, { 0xCB, 0x47 }, { 0xFF, 0xC7 }, PatternProc_BIT_B_A },  // bit b,A
     { 2, { 0xCB, 0x87 }, { 0xFF, 0xC7 }, PatternProc_RES_B_A },  // res b,A
     { 2, { 0xCB, 0xC7 }, { 0xFF, 0xC7 }, PatternProc_SET_B_A },  // set b,A
@@ -786,6 +860,7 @@ Pattern g_patterns[] =
     { 2, { 0xED, 0xB8 }, { 0xFF, 0xFF }, PatternProc_LDDR },
 
     // DD/FD table
+    { 2, { 0xDD, 0x09 }, { 0xDF, 0xCF }, PatternProc_ADD_IXIY_PP },
     { 2, { 0xDD, 0x21 }, { 0xDF, 0xFF }, PatternProc_LD_IXIY_NNNN },  // ld IX,nnnn
     { 2, { 0xDD, 0x23 }, { 0xDF, 0xFF }, PatternProc_INC_IXIY },  // inc IX
     { 2, { 0xDD, 0x2B }, { 0xDF, 0xFF }, PatternProc_DEC_IXIY },  // dec IX

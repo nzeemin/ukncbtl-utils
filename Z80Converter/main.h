@@ -21,6 +21,8 @@ int DAsm(char *S, unsigned char *A);
 
 extern std::array<uint8_t, 65536> g_memdmp;
 
+extern bool g_skipnextrecomp;  // Flag indicating to skip recomp on the next instruction
+
 
 // Recompiler
 
