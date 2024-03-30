@@ -29,7 +29,7 @@ string PatternProc_LD_BCDEHLSP_0000()
 {
 	const char* rpname = rpnames_bcdehlsp[(g_command[0] >> 4) & 3];
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "CLR %s", rpname);
+	_snprintf(buffer, sizeof(buffer), "CLR %s", rpname);
 	return buffer;
 }
 
@@ -38,7 +38,7 @@ string PatternProc_LD_BCDEHLSP_NNNN()
 	uint16_t wparam = g_command[1] + g_command[2] * 256;
 	const char* rpname = rpnames_bcdehlsp[(g_command[0] >> 4) & 3];
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "MOV #L%04X, %s or MOV #%06o, %s", wparam, rpname, wparam, rpname);
+    _snprintf(buffer, sizeof(buffer), "MOV #L%04X, %s or MOV #%06o, %s", wparam, rpname, wparam, rpname);
 	return buffer;
 }
 
@@ -54,7 +54,7 @@ string PatternProc_ADD_HL_BCDEHLSP()
 {
 	const char* rpname = rpnames_bcdehlsp[(g_command[0] >> 4) & 3];
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "ADD %s, R3", rpname);
+    _snprintf(buffer, sizeof(buffer), "ADD %s, R3", rpname);
 	return buffer;
 }
 
@@ -62,28 +62,28 @@ string PatternProc_INC_CELA()
 {
 	const char* rpname = rnames_cela[(g_command[0] >> 4) & 3];
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "INCB %s or INC %s", rpname, rpname);
+    _snprintf(buffer, sizeof(buffer), "INCB %s or INC %s", rpname, rpname);
 	return buffer;
 }
 string PatternProc_DEC_CELA()
 {
 	const char* rpname = rnames_cela[(g_command[0] >> 4) & 3];
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "DECB %s or DEC %s", rpname, rpname);
+    _snprintf(buffer, sizeof(buffer), "DECB %s or DEC %s", rpname, rpname);
 	return buffer;
 }
 string PatternProc_INC_BCDEHLSP()
 {
 	const char* rpname = rpnames_bcdehlsp[(g_command[0] >> 4) & 3];
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "INC %s", rpname);
+    _snprintf(buffer, sizeof(buffer), "INC %s", rpname);
 	return buffer;
 }
 string PatternProc_DEC_BCDEHLSP()
 {
 	const char* rpname = rpnames_bcdehlsp[(g_command[0] >> 4) & 3];
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "DEC %s", rpname);
+    _snprintf(buffer, sizeof(buffer), "DEC %s", rpname);
 	return buffer;
 }
 
@@ -94,7 +94,7 @@ string PatternProc_INC_BDHHL()
 
 	char buffer[40];
 	const char* rpname = rnames_bdhhl[(g_command[0] >> 4) & 3];
-	snprintf(buffer, sizeof(buffer), "ADD #00400, %s", rpname);
+    _snprintf(buffer, sizeof(buffer), "ADD #00400, %s", rpname);
 	return buffer;
 }
 string PatternProc_DEC_BDHHL()
@@ -104,7 +104,7 @@ string PatternProc_DEC_BDHHL()
 
 	char buffer[40];
 	const char* rpname = rnames_bdhhl[(g_command[0] >> 4) & 3];
-	snprintf(buffer, sizeof(buffer), "SUB #00400, %s", rpname);
+    _snprintf(buffer, sizeof(buffer), "SUB #00400, %s", rpname);
 	return buffer;
 }
 
@@ -115,7 +115,7 @@ string PatternProc_LD_HLADDR_NN()
 	if (bparam == 0)
 		return "CLRB (R3)";
 
-	snprintf(buffer, sizeof(buffer), "MOVB #%03o, (R3)", bparam);
+    _snprintf(buffer, sizeof(buffer), "MOVB #%03o, (R3)", bparam);
 	return buffer;
 }
 string PatternProc_LD_BDHHL_NN()
@@ -128,11 +128,11 @@ string PatternProc_LD_BDHHL_NN()
 	const char* rpname = rnames_bdhhl[(g_command[0] >> 4) & 3];
 	if (bparam == 0)
 	{
-		snprintf(buffer, sizeof(buffer), "BIC #177400, %s", rpname);
+        _snprintf(buffer, sizeof(buffer), "BIC #177400, %s", rpname);
 		return buffer;
 	}
 
-	snprintf(buffer, sizeof(buffer), "BIC #177400, %s / BIS #%06o, %s", rpname, bparam << 8, rpname);
+    _snprintf(buffer, sizeof(buffer), "BIC #177400, %s / BIS #%06o, %s", rpname, bparam << 8, rpname);
 	return buffer;
 }
 
@@ -142,7 +142,7 @@ string PatternProc_DJNZ()
 	int delta = bparam & 0x80 ?  (bparam & 0x7F) - 128 + 2 : ((int)bparam) + 2;
 	uint16_t jmpaddr = g_commandaddr + delta;
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "SOB R1, L%04X", jmpaddr);
+    _snprintf(buffer, sizeof(buffer), "SOB R1, L%04X", jmpaddr);
 	return buffer;
 }
 string PatternProc_JR()
@@ -151,7 +151,7 @@ string PatternProc_JR()
 	int delta = bparam & 0x80 ? (bparam & 0x7F) - 128 + 2 : ((int)bparam) + 2;
 	uint16_t jmpaddr = g_commandaddr + delta;
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "BR L%04X", jmpaddr);
+    _snprintf(buffer, sizeof(buffer), "BR L%04X", jmpaddr);
 	return buffer;
 }
 string PatternProc_JR_ZNZ()
@@ -161,7 +161,7 @@ string PatternProc_JR_ZNZ()
 	uint16_t jmpaddr = g_commandaddr + delta;
 	char buffer[40];
 	const char* op = g_command[0] == 0x20 ? "BNE" : "BEQ";
-	snprintf(buffer, sizeof(buffer), "%s L%04X", op, jmpaddr);
+    _snprintf(buffer, sizeof(buffer), "%s L%04X", op, jmpaddr);
 	return buffer;
 }
 string PatternProc_JR_CNC()
@@ -171,7 +171,7 @@ string PatternProc_JR_CNC()
 	uint16_t jmpaddr = g_commandaddr + delta;
 	char buffer[40];
 	const char* op = g_command[0] == 0x30 ? "BHIS" : "BLO";
-	snprintf(buffer, sizeof(buffer), "%s L%04X", op, jmpaddr);
+    _snprintf(buffer, sizeof(buffer), "%s L%04X", op, jmpaddr);
 	return buffer;
 }
 
@@ -205,7 +205,7 @@ string PatternProc_SCF_CCF()
 	uint16_t wparam = g_command[1] + g_command[2] * 256;
 	char buffer[40];
 	const char* op = g_command[0] == 0x37 ? "SEC" : "CLC";
-	snprintf(buffer, sizeof(buffer), "%s", op);
+	_snprintf(buffer, sizeof(buffer), "%s", op);
 	return buffer;
 }
 
@@ -213,14 +213,14 @@ string PatternProc_LD_ADDR_A()
 {
 	uint16_t wparam = g_command[1] + g_command[2] * 256;
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "MOVB R0, @#L%04X", wparam);
+	_snprintf(buffer, sizeof(buffer), "MOVB R0, @#L%04X", wparam);
 	return buffer;
 }
 string PatternProc_LD_A_ADDR()
 {
 	uint16_t wparam = g_command[1] + g_command[2] * 256;
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "MOVB @#L%04X, R0", wparam);
+	_snprintf(buffer, sizeof(buffer), "MOVB @#L%04X, R0", wparam);
 	return buffer;
 }
 
@@ -231,7 +231,7 @@ string PatternProc_LD_A_NN()
 	if (bparam == 0)
 		return "CLR R0";
 
-	snprintf(buffer, sizeof(buffer), "MOV #%03o, R0", bparam);
+	_snprintf(buffer, sizeof(buffer), "MOV #%03o, R0", bparam);
 	return buffer;
 }
 string PatternProc_LD_CELA_NN()
@@ -243,16 +243,16 @@ string PatternProc_LD_CELA_NN()
 	char buffer[40];
 	if (bparam == 0)
 	{
-		snprintf(buffer, sizeof(buffer), "BIC #377, %s", rpname);
+		_snprintf(buffer, sizeof(buffer), "BIC #377, %s", rpname);
 		return buffer;
 	}
 	if (bparam == 0xFF)
 	{
-		snprintf(buffer, sizeof(buffer), "BIS #377, %s", rpname);
+		_snprintf(buffer, sizeof(buffer), "BIS #377, %s", rpname);
 		return buffer;
 	}
 
-	snprintf(buffer, sizeof(buffer), "BIC #377, %s / BIS #%03o, %s", rpname, bparam, rpname);
+	_snprintf(buffer, sizeof(buffer), "BIC #377, %s / BIS #%03o, %s", rpname, bparam, rpname);
 	return buffer;
 }
 
@@ -317,15 +317,15 @@ string PatternProc_INCDEC_HLADDR()
 string PatternProc_LD_ADDR_HL()
 {
 	uint16_t wparam = g_command[1] + g_command[2] * 256;
-	char buffer[50];
-	snprintf(buffer, sizeof(buffer), "MOVB R3, @#%04X / SWAB R3 / MOVB R3, @#%04X / SWAB R3", wparam, wparam + 1);
+	char buffer[64];
+	_snprintf(buffer, sizeof(buffer), "MOVB R3, @#%04X / SWAB R3 / MOVB R3, @#%04X / SWAB R3", wparam, wparam + 1);
 	return buffer;
 }
 string PatternProc_LD_HL_ADDR()
 {
 	uint16_t wparam = g_command[1] + g_command[2] * 256;
-	char buffer[50];
-	snprintf(buffer, sizeof(buffer), "CLR R3 / BISB @#%04X, R3 / SWAB R3 / BISB @#%04X, R3 / SWAB R3", wparam, wparam + 1);
+	char buffer[64];
+	_snprintf(buffer, sizeof(buffer), "CLR R3 / BISB @#%04X, R3 / SWAB R3 / BISB @#%04X, R3 / SWAB R3", wparam, wparam + 1);
 	return buffer;
 }
 
@@ -337,7 +337,7 @@ string PatternProc_ADD_A_NN()
 {
 	char buffer[40];
 	uint8_t bparam = g_command[1];
-	snprintf(buffer, sizeof(buffer), "ADD #%03o, R0", bparam);
+	_snprintf(buffer, sizeof(buffer), "ADD #%03o, R0", bparam);
 	return buffer;
 }
 string PatternProc_ADD_A_HLADDR()
@@ -348,7 +348,7 @@ string PatternProc_SUB_A_NN()
 {
 	char buffer[40];
 	uint8_t bparam = g_command[1];
-	snprintf(buffer, sizeof(buffer), "SUB #%03o, R0", bparam);
+	_snprintf(buffer, sizeof(buffer), "SUB #%03o, R0", bparam);
 	return buffer;
 }
 
@@ -357,11 +357,11 @@ string PatternProc_ANDOR_A_HLADDR()
 	char buffer[40];
 	if (g_command[0] == 0xA6)  // AND
 	{
-		snprintf(buffer, sizeof(buffer), "??? (R3), R0"); //TODO
+		_snprintf(buffer, sizeof(buffer), "??? (R3), R0"); //TODO
 	}
 	else  // OR
 	{
-		snprintf(buffer, sizeof(buffer), "BISB (R3), R0");
+		_snprintf(buffer, sizeof(buffer), "BISB (R3), R0");
 	}
 	return buffer;
 }
@@ -371,11 +371,11 @@ string PatternProc_ANDOR_A_NN()
 	char buffer[40];
 	if (g_command[0] == 0xE6)  // AND
 	{
-		snprintf(buffer, sizeof(buffer), "BICB #%03o, R0", ~bparam & 0xFF); //TODO
+		_snprintf(buffer, sizeof(buffer), "BICB #%03o, R0", ~bparam & 0xFF); //TODO
 	}
 	else  // OR
 	{
-		snprintf(buffer, sizeof(buffer), "BISB #%03o, R0", bparam);
+		_snprintf(buffer, sizeof(buffer), "BISB #%03o, R0", bparam);
 	}
 	return buffer;
 }
@@ -425,7 +425,7 @@ string PatternProc_JP()
 {
 	uint16_t wparam = g_command[1] + g_command[2] * 256;
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "JMP L%04X", wparam);
+	_snprintf(buffer, sizeof(buffer), "JMP L%04X", wparam);
 	return buffer;
 }
 string PatternProc_JP_CC()
@@ -443,7 +443,7 @@ string PatternProc_JP_CC()
 	}
 	uint16_t wparam = g_command[1] + g_command[2] * 256;
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "%s L%04X / JMP L%04X", op, g_commandaddr + 3, wparam);
+	_snprintf(buffer, sizeof(buffer), "%s L%04X / JMP L%04X", op, g_commandaddr + 3, wparam);
 	return buffer;
 }
 string PatternProc_RET_CC()
@@ -460,7 +460,7 @@ string PatternProc_RET_CC()
 		op = ops[(g_command[0] & 0x30) >> 4];
 	}
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "%s L%04X / RETURN", op, g_commandaddr + 1);
+	_snprintf(buffer, sizeof(buffer), "%s L%04X / RETURN", op, g_commandaddr + 1);
 	return buffer;
 }
 string PatternProc_CALL_CC()
@@ -478,7 +478,7 @@ string PatternProc_CALL_CC()
 		op = ops[(g_command[0] & 0x30) >> 4];
 	}
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "%s L%04X / CALL L%04X", op, g_commandaddr + 3, wparam);
+	_snprintf(buffer, sizeof(buffer), "%s L%04X / CALL L%04X", op, g_commandaddr + 3, wparam);
 	return buffer;
 }
 
@@ -486,14 +486,14 @@ string PatternProc_POP_BCDEHLAF()
 {
 	const char* rpname = rpnames_bcdehlaf[(g_command[0] >> 4) & 3];
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "POP %s", rpname);
+	_snprintf(buffer, sizeof(buffer), "POP %s", rpname);
 	return buffer;
 }
 string PatternProc_PUSH_BCDEHLAF()
 {
 	const char* rpname = rpnames_bcdehlaf[(g_command[0] >> 4) & 3];
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "PUSH %s", rpname);
+	_snprintf(buffer, sizeof(buffer), "PUSH %s", rpname);
 	return buffer;
 }
 
@@ -506,7 +506,7 @@ string PatternProc_CALL()
 {
 	uint16_t wparam = g_command[1] + g_command[2] * 256;
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "CALL L%04X", wparam);
+	_snprintf(buffer, sizeof(buffer), "CALL L%04X", wparam);
 	return buffer;
 }
 
@@ -514,8 +514,8 @@ string PatternProc_CP_XX()
 {
 	uint8_t bparam = g_command[1];
 	char buffer[40];
-	//snprintf(buffer, sizeof(buffer), "CMPB R0, #%d.", bparam);
-	snprintf(buffer, sizeof(buffer), "CMPB R0, #%03o", bparam);
+	//_snprintf(buffer, sizeof(buffer), "CMPB R0, #%d.", bparam);
+	_snprintf(buffer, sizeof(buffer), "CMPB R0, #%03o", bparam);
 	return buffer;
 }
 
@@ -524,7 +524,7 @@ string PatternProc_BIT_X_A()
 	int bitno = ((g_command[1] >> 3) & 0x7);
 	int mask = 1 << bitno;
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "BIT #%03o, R0", mask);
+	_snprintf(buffer, sizeof(buffer), "BIT #%03o, R0", mask);
 	return buffer;
 }
 
@@ -545,32 +545,54 @@ string PatternProc_LDI()
 string PatternProc_LDIR()
 {
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "MOVB (R3)+, (R2)+ / SOB R1, L%04X", g_commandaddr);
+	_snprintf(buffer, sizeof(buffer), "MOVB (R3)+, (R2)+ / SOB R1, L%04X", g_commandaddr);
 	return buffer;
+}
+string PatternProc_LDDR()
+{
+    char buffer[50];
+    _snprintf(buffer, sizeof(buffer), "MOVB (R3), (R2) / DEC R3 / DEC R2 / SOB R1, L%04X", g_commandaddr);
+    return buffer;
 }
 
 string PatternProc_LD_IXIY_NNNN()
 {
-	uint16_t wparam = g_command[1] + g_command[2] * 256;
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    char r4r5 = ixiy ? '4' : '5';
+    uint16_t wparam = g_command[1] + g_command[2] * 256;
 	char buffer[40];
-	snprintf(buffer, sizeof(buffer), "MOV #%06o, R5 or MOV #L%04X, R5", wparam, wparam);
+    _snprintf(buffer, sizeof(buffer), "MOV #%06o, R%c or MOV #L%04X, R%c", wparam, r4r5, wparam, r4r5);
 	return buffer;
+}
+string PatternProc_LD_A_IXIYADDR_00()
+{
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    return ixiy ? "MOVB (R4), R0" : "MOVB (R5), R0";
+}
+string PatternProc_LD_IXIYADDR_00_A()
+{
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    return ixiy ? "MOVB R0, (R4)" : "MOVB R0, (R5)";
 }
 string PatternProc_INC_IXIY()
 {
-	return "INC R5";
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    return ixiy ? "INC R4" : "INC R5";
 }
 string PatternProc_DEC_IXIY()
 {
-	return "DEC R5";
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    return ixiy ? "DEC R4" : "DEC R5";
 }
 string PatternProc_POP_IXIY()
 {
-	return "POP R5";
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    return ixiy ? "POP R4" : "POP R5";
 }
 string PatternProc_PUSH_IXIY()
 {
-	return "PUSH R5";
+    bool ixiy = (g_command[0] & 0x20) == 0;
+    return ixiy ? "PUSH R4" : "PUSH R5";
 }
 
 
@@ -652,12 +674,15 @@ Pattern g_patterns[] =
 	{ 2, { 0xED, 0x44 }, { 0xFF, 0xFF }, PatternProc_NEG },
 	{ 2, { 0xED, 0xA0 }, { 0xFF, 0xFF }, PatternProc_LDI },
 	{ 2, { 0xED, 0xB0 }, { 0xFF, 0xFF }, PatternProc_LDIR },
+    { 2, { 0xED, 0xB8 }, { 0xFF, 0xFF }, PatternProc_LDDR },
 
 	// DD/FD table
 	{ 2, { 0xDD, 0x21 }, { 0xDF, 0xFF }, PatternProc_LD_IXIY_NNNN },
 	{ 2, { 0xDD, 0x23 }, { 0xDF, 0xFF }, PatternProc_INC_IXIY },
 	{ 2, { 0xDD, 0x2B }, { 0xDF, 0xFF }, PatternProc_DEC_IXIY },
-	{ 2, { 0xDD, 0xE1 }, { 0xDF, 0xFF }, PatternProc_POP_IXIY },
+    { 3, { 0xDD, 0x7E, 0x00 }, { 0xDF, 0xFF, 0xFF }, PatternProc_LD_A_IXIYADDR_00 },
+    { 3, { 0xDD, 0x77, 0x00 }, { 0xDF, 0xFF, 0xFF }, PatternProc_LD_IXIYADDR_00_A },
+    { 2, { 0xDD, 0xE1 }, { 0xDF, 0xFF }, PatternProc_POP_IXIY },
 	{ 2, { 0xDD, 0xE5 }, { 0xDF, 0xFF }, PatternProc_PUSH_IXIY },
 
 };

@@ -245,7 +245,7 @@ static const char *MnemonicsXCB[256] =
 int DAsm(char *S, byte *A)
 {
   char R[128],H[10],C;
-  const char *T; const char *P;
+  const char *T; const char *P; char *PP;
   byte *B,J,Offset;
 
   B=A;C='\0';J=0;
@@ -272,7 +272,8 @@ int DAsm(char *S, byte *A)
     strcat(R,H);strcat(R,P+1);
   }
   else strcpy(R,T);
-  //if(P=strchr(R,'%')) *P=C;
+  
+  if(PP=strchr(R,'%')) *PP=C;
 
   if(P=strchr(R,'*'))
   {
