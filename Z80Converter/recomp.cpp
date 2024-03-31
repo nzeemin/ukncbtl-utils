@@ -186,18 +186,6 @@ string PatternProc_JR_CNC()
     return buffer;
 }
 
-string PatternProc_ROLL_A()
-{
-    switch (g_command[0])
-    {
-    case 0x07: /* rlca */ return "ROLB R0";
-    case 0x0F: /* rrca */ return "RORB R0";
-    case 0x17: /* rla */  return "???";
-    case 0x1F: /* rra */  return "???";
-    }
-    return "";
-}
-
 string PatternProc_RLA()
 {
     return "ROLB R0";
@@ -206,6 +194,19 @@ string PatternProc_RRA()
 {
     return "RORB R0";
 }
+
+string PatternProc_ROLL_A()
+{
+    switch (g_command[0])
+    {
+    case 0x07: /* rlca */ return "ROLB R0";
+    case 0x0F: /* rrca */ return "RORB R0";
+    case 0x17: /* rla */  return PatternProc_RLA();
+    case 0x1F: /* rra */  return PatternProc_RRA();
+    }
+    return "???";
+}
+
 string PatternProc_SRL_A()
 {
     return "ASRB R0 or ASR R0";
@@ -431,6 +432,31 @@ string PatternProc_XOR_A()
 {
     return "CLR R0";
 }
+//NOTE: Нет операции XORB
+string PatternProc_XOR_R()
+{
+    switch (g_command[0])
+    {
+    case 0xA8: /* xor b */ return "???";
+    case 0xA9: /* xor c */ return "XOR R1, R0";
+    case 0xAA: /* xor d */ return "???";
+    case 0xAB: /* xor e */ return "XOR R2, R0";
+    case 0xAC: /* xor h */ return "???";
+    case 0xAD: /* xor l */ return "XOR R3, R0";
+    case 0xAE: /* xor (hl) */ return "???";  // тут сложности, потому что нужна байтовая операция
+    case 0xAF: /* xor a */ return PatternProc_XOR_A();
+    }
+    return "???";
+}
+string PatternProc_XOR_NN()
+{
+    uint8_t bparam = g_command[1];
+    char buffer[40];
+    _snprintf(buffer, sizeof(buffer), "XOR #%03o, R0", bparam);
+    return buffer;
+}
+
+
 string PatternProc_OR_A()
 {
     return "TST R0 or TSTB R0";
@@ -470,6 +496,11 @@ string PatternProc_SUB_X()
     case 0x97: /* sub a */ return "CLR R0";
     }
     return "";
+}
+
+string PatternProc_JP_HLADDR()
+{
+    return "JMP (R3)";
 }
 
 string PatternProc_JP()
@@ -827,6 +858,7 @@ Pattern g_patterns[] =
     { 1, { 0xA6 }, { 0xEF }, PatternProc_ANDOR_A_HLADDR },
     { 1, { 0xA7 }, { 0xFF }, PatternProc_AND_A },
     { 1, { 0xAF }, { 0xFF }, PatternProc_XOR_A },
+    { 1, { 0xA8 }, { 0xF8 }, PatternProc_XOR_R },  // xor r, xor (HL)
     { 1, { 0xB7 }, { 0xFF }, PatternProc_OR_A },
     { 1, { 0xBE }, { 0xFF }, PatternProc_CP_HLADDR },  // cp (HL)
     { 1, { 0xC0 }, { 0xC7 }, PatternProc_RET_CC },
@@ -840,7 +872,9 @@ Pattern g_patterns[] =
     { 1, { 0xCD }, { 0xFF }, PatternProc_CALL },
     { 1, { 0xD6 }, { 0xFF }, PatternProc_SUB_A_NN },
     { 1, { 0xE6 }, { 0xEF }, PatternProc_ANDOR_A_NN },
+    { 1, { 0xE9 }, { 0xEF }, PatternProc_JP_HLADDR },
     { 1, { 0xEB }, { 0xEF }, PatternProc_EX_DE_HL },
+    { 1, { 0xEE }, { 0xFF }, PatternProc_XOR_NN },
     { 1, { 0xFE }, { 0xFF }, PatternProc_CP_XX },
 
     // CB table

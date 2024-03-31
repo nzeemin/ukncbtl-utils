@@ -57,7 +57,7 @@ static const char *Mnemonics[256] =
     "RET NC", "POP DE", "JP NC,#h", "OUTA (*h)", "CALL NC,#h", "PUSH DE", "SUB *h", "RST 10h",
     "RET C", "EXX", "JP C,#h", "INA (*h)", "CALL C,#h", "PFX_DD", "SBC *h", "RST 18h",
     "RET PO", "POP HL", "JP PO,#h", "EX HL,(SP)", "CALL PO,#h", "PUSH HL", "AND *h", "RST 20h",
-    "RET PE", "LD PC,HL", "JP PE,#h", "EX DE,HL", "CALL PE,#h", "PFX_ED", "XOR *h", "RST 28h",
+    "RET PE", "JP (HL)", "JP PE,#h", "EX DE,HL", "CALL PE,#h", "PFX_ED", "XOR *h", "RST 28h",
     "RET P", "POP AF", "JP P,#h", "DI", "CALL P,#h", "PUSH AF", "OR *h", "RST 30h",
     "RET M", "LD SP,HL", "JP M,#h", "EI", "CALL M,#h", "PFX_FD", "CP *h", "RST 38h"
 };
