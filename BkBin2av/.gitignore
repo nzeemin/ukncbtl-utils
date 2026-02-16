@@ -1,0 +1,12 @@
+/Debug
+/Release
+/*.ncb
+/*.suo
+*.user
+/ipch
+*.sdf
+*.opensdf
+*.VC.db
+/.vs/*
+*.BIN
+*.SAV
