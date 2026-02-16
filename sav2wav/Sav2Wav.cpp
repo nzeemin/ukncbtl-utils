@@ -329,6 +329,7 @@ void Convert()
 
     // Пауза в конце
     PauseWrite(11000);
+    PauseWrite(22000 * 4);
 
     DefWaveFormat();  // Формируем длину в заголовке WAV-файла
 
