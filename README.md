@@ -6,11 +6,13 @@ Linux/Mac: [![Build Status](https://travis-ci.org/nzeemin/ukncbtl-utils.svg?bran
 [![CodeFactor](https://www.codefactor.io/repository/github/nzeemin/ukncbtl-utils/badge)](https://www.codefactor.io/repository/github/nzeemin/ukncbtl-utils)
 
 Utilites:
+* [BkBin2Sav](https://github.com/nzeemin/ukncbtl-utils/wiki/BkBin2Sav) — converts BK-0010 BIN file format into RT-11 SAV format, to use along with BKTurbo8 assemler.
 * [rt11dsk](https://github.com/nzeemin/ukncbtl-utils/wiki/rt11dsk) — RT-11 disk image utility.
-* [sav2wav](https://github.com/nzeemin/ukncbtl-utils/wiki/sav2wav) — converts RT-11 SAV files to WAV sound files.
+* [Sav2BkBin](https://github.com/nzeemin/ukncbtl-utils/wiki/Sav2BkBin) — converts RT-11 SAV files into BK-0010 BIN file format.
 * [Sav2Cart](https://github.com/nzeemin/ukncbtl-utils/wiki/Sav2Cart) — converts RT-11 SAV files into UKNCBTL cartridge images.
+* [sav2wav](https://github.com/nzeemin/ukncbtl-utils/wiki/sav2wav) — converts RT-11 SAV files to WAV sound files.
 * [SavDisasm](https://github.com/nzeemin/ukncbtl-utils/wiki/SavDisasm) — SAV files disassembler.
-* [Sav2BkBin](https://github.com/nzeemin/ukncbtl-utils/wiki/Sav2BkBin) — converts RT-11 SAV files into BK-0010 BIN file format
+* [UkncArcMan](https://github.com/nzeemin/ukncbtl-utils/wiki/UkncArcMan) — unarchiver for various archive formats used on UKNC, like LZS/LZA/FCU.
 * [UkncComSender](https://github.com/nzeemin/ukncbtl-utils/wiki/UkncComSender) — (experimental) sends RT-11 SAV files to UKNC using serial port.
 
 > **NOTE:**<br/>
