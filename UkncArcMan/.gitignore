@@ -8,6 +8,7 @@
 *.opensdf
 *.VC.db
 /.vs/*
+ukncarcman
 *.LZS
 *.LZA
 *.FCU

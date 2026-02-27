@@ -39,15 +39,6 @@ std::string g_sInputFileName;
 FormatDescriptor* g_pfdesc = nullptr;
 
 
-// Trim from the end (in place)
-inline void rtrim(std::string& s)
-{
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch)
-    {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
-
 uint16_t get_word(const uint8_t* p, size_t offset)
 {
     return ((uint16_t) * (p + offset)) + ((uint16_t)(*(p + offset + 1)) << 8);
@@ -126,7 +117,7 @@ void command_extract_files(std::ifstream& file, format_info& finfo, std::streamp
         else
         {
             std::string outfilename = item.get_name_string();
-            rtrim(outfilename);
+            while (outfilename[outfilename.length() - 1] == ' ') outfilename.erase(outfilename.length() - 1, 1);  // rtrim
             outfilename += ".";
             outfilename += item.get_ext_string();
 

@@ -1,5 +1,6 @@
 /Debug
 /Release
+/x64
 *.suo
 *.user
 *.suppress
@@ -8,4 +9,5 @@
 .vs
 *.VC.db
 ipch
+*.o
 /x-*
