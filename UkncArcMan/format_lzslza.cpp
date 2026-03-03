@@ -51,7 +51,15 @@ struct lzslza_item
 
 
 
-uint16_t lzslza_checksum(const uint8_t* p, size_t sizewords)
+uint16_t lzs_checksum(const uint8_t* p, size_t sizewords)
+{
+    uint16_t sum = 0;
+    for (size_t i = 0; i < sizewords; i++)
+        sum += (uint16_t)get_word(p, i * 2);
+    return sum;
+}
+
+uint16_t lza_checksum(const uint8_t* p, size_t sizewords)
 {
     uint16_t sum = 0;
     for (size_t i = 0; i < sizewords; i++)
@@ -180,7 +188,9 @@ format_extract_result format_lzslza_extract_file(std::ifstream& file, format_inf
     }
 
     // check packed file checksum
-    uint16_t checksum = lzslza_checksum(pcomp, compsizeeven / 2);
+    lzslza_header* pheader = (lzslza_header*)finfo.header;
+    bool islzs = pheader->signature == 0x4F23;
+    uint16_t checksum = islzs ? lzs_checksum(pcomp, compsizeeven / 2) : lza_checksum(pcomp, compsizeeven / 2);
 
     if (checksum != item.packedchecksum)
     {
@@ -189,7 +199,6 @@ format_extract_result format_lzslza_extract_file(std::ifstream& file, format_inf
         return result;
     }
 
-    lzslza_header* pheader = (lzslza_header*)finfo.header;
     uint16_t headmethod = pheader->signature;
     uint16_t buffersize = pheader->buffersize;
 
@@ -242,7 +251,9 @@ format_check_result format_lzslza_check_file(std::ifstream& file, format_info& f
     }
 
     // check packed file checksum
-    uint16_t checksum = lzslza_checksum(pcomp, compsizeeven / 2);
+    lzslza_header* pheader = (lzslza_header*)finfo.header;
+    bool islzs = pheader->signature == 0x4F23;
+    uint16_t checksum = islzs ? lzs_checksum(pcomp, compsizeeven / 2) : lza_checksum(pcomp, compsizeeven / 2);
 
     if (checksum != item.packedchecksum)
     {
