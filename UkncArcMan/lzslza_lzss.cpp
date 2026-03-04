@@ -5,10 +5,8 @@ Based on LZSS.C -- A Data Compression Program -- by Haruhiko Okumura
 **************************************************************/
 
 
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <cstdlib>
+#include <cstdint>
 
 
 // Memory-buffer LZSS decode for LZA (each input byte XORed with 0xFF).

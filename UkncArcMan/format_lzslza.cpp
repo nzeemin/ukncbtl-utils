@@ -175,7 +175,7 @@ format_extract_result format_lzslza_extract_file(std::ifstream& file, format_inf
 
     int origsize = item.origsizeblock * 512;
     size_t compsizeeven = (item.compsize + 1) / 2 * 2;
-    uint8_t* pcomp = (uint8_t*)calloc(compsizeeven, 1);
+    uint8_t* pcomp = static_cast<uint8_t*>(calloc(compsizeeven, 1));
 
     // read compressed block
     file.seekg(item.offset + (std::streampos)16);  // at compressed data
@@ -188,7 +188,7 @@ format_extract_result format_lzslza_extract_file(std::ifstream& file, format_inf
     }
 
     // check packed file checksum
-    lzslza_header* pheader = (lzslza_header*)finfo.header;
+    const lzslza_header* pheader = static_cast<lzslza_header*>(finfo.header);
     bool islzs = pheader->signature == 0x4F23;
     uint16_t checksum = islzs ? lzs_checksum(pcomp, compsizeeven / 2) : lza_checksum(pcomp, compsizeeven / 2);
 
@@ -202,7 +202,7 @@ format_extract_result format_lzslza_extract_file(std::ifstream& file, format_inf
     uint16_t headmethod = pheader->signature;
     uint16_t buffersize = pheader->buffersize;
 
-    uint8_t* pdecomp = (uint8_t*)calloc(origsize, 1);
+    uint8_t* pdecomp = static_cast<uint8_t*>(calloc(origsize, 1));
 
     int decoderes;
     if (headmethod == 0x4F11)  // LZA
@@ -236,9 +236,8 @@ format_check_result format_lzslza_check_file(std::ifstream& file, format_info& f
         return result;
     }
 
-    int origsize = item.origsizeblock * 512;
     size_t compsizeeven = (item.compsize + 1) / 2 * 2;
-    uint8_t* pcomp = (uint8_t*)calloc(compsizeeven, 1);
+    uint8_t* pcomp = static_cast<uint8_t*>(calloc(compsizeeven, 1));
 
     // read compressed block
     file.seekg(item.offset + (std::streampos)16);  // at compressed data
@@ -251,7 +250,7 @@ format_check_result format_lzslza_check_file(std::ifstream& file, format_info& f
     }
 
     // check packed file checksum
-    lzslza_header* pheader = (lzslza_header*)finfo.header;
+    const lzslza_header* pheader = static_cast<lzslza_header*>(finfo.header);
     bool islzs = pheader->signature == 0x4F23;
     uint16_t checksum = islzs ? lzs_checksum(pcomp, compsizeeven / 2) : lza_checksum(pcomp, compsizeeven / 2);
 

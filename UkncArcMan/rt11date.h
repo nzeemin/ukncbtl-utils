@@ -10,13 +10,13 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef _RT11DATE_H
 #define _RT11DATE_H
+
+#include <cstdint>
+#include <ctime>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
-#include <time.h>
-#include <string.h>
 
 #pragma pack(push,1)
     union rt11date

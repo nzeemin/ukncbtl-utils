@@ -12,7 +12,8 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 # define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include <stdio.h>
+#include <cstdio>
+#include <string>
 #include "rt11date.h"
 
 uint16_t clock2rt11date(const time_t clock)

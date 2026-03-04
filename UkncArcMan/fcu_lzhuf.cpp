@@ -8,11 +8,9 @@
      Back to ansi C rewritten by OK2JBG
 **************************************************************/
 
+#include <cstdlib>
 #include <cstdint>
-#include <stdlib.h>
-#include <string.h>
-#include <iostream>
-#include <fstream>
+#include <cstring>
 
 //#include "lzhuf.h"
 
