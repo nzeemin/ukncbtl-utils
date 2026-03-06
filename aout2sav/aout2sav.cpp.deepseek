@@ -1,0 +1,245 @@
+﻿#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <cstdint>
+#include <cstring>
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
+
+// ----------------------------------------------------------------------
+// Simple command line parsing (no external libraries)
+// ----------------------------------------------------------------------
+struct Options
+{
+    std::string in_filename;
+    std::string out_filename;
+    bool binary = false;
+    bool brief = false;
+};
+
+static Options parse_args(int argc, char* argv[])
+{
+    Options opts;
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg = argv[i];
+        if (arg == "-o" || arg == "--out-file")
+        {
+            if (i + 1 < argc)
+            {
+                opts.out_filename = argv[++i];
+            }
+            else
+            {
+                std::cerr << "error: -o requires a filename argument\n";
+                exit(1);
+            }
+        }
+        else if (arg == "-b" || arg == "--binary")
+        {
+            opts.binary = true;
+        }
+        else if (arg == "-s" || arg == "--brief")
+        {
+            opts.brief = true;
+        }
+        else if (arg[0] == '-')
+        {
+            std::cerr << "error: unknown option " << arg << "\n";
+            exit(1);
+        }
+        else
+        {
+            // first non‑option argument is the input file
+            if (opts.in_filename.empty())
+            {
+                opts.in_filename = arg;
+            }
+            else
+            {
+                std::cerr << "error: multiple input files specified\n";
+                exit(1);
+            }
+        }
+    }
+    return opts;
+}
+
+// ----------------------------------------------------------------------
+// a.out header structure (16 bytes, little‑endian 16‑bit words)
+// ----------------------------------------------------------------------
+struct AOutHeader
+{
+    uint16_t a_magic;
+    uint16_t a_text;    // size of text segment
+    uint16_t a_data;    // size of initialized data
+    uint16_t a_bss;     // size of uninitialized data
+    uint16_t a_syms;    // size of symbol table
+    uint16_t a_entry;   // entry point
+    uint16_t a_unused;
+    uint16_t a_flag;    // relocation info stripped
+};
+
+// Read 16 bytes and interpret as little‑endian uint16_t.
+static bool read_header(const std::vector<char>& data, AOutHeader& hdr)
+{
+    if (data.size() < 16) return false;
+    const uint8_t* p = reinterpret_cast<const uint8_t*>(data.data());
+    hdr.a_magic = static_cast<uint16_t>(p[0]) | (static_cast<uint16_t>(p[1]) << 8);
+    hdr.a_text = static_cast<uint16_t>(p[2]) | (static_cast<uint16_t>(p[3]) << 8);
+    hdr.a_data = static_cast<uint16_t>(p[4]) | (static_cast<uint16_t>(p[5]) << 8);
+    hdr.a_bss = static_cast<uint16_t>(p[6]) | (static_cast<uint16_t>(p[7]) << 8);
+    hdr.a_syms = static_cast<uint16_t>(p[8]) | (static_cast<uint16_t>(p[9]) << 8);
+    hdr.a_entry = static_cast<uint16_t>(p[10]) | (static_cast<uint16_t>(p[11]) << 8);
+    hdr.a_unused = static_cast<uint16_t>(p[12]) | (static_cast<uint16_t>(p[13]) << 8);
+    hdr.a_flag = static_cast<uint16_t>(p[14]) | (static_cast<uint16_t>(p[15]) << 8);
+    return true;
+}
+
+// ----------------------------------------------------------------------
+// Main program
+// ----------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
+    Options opts = parse_args(argc, argv);
+    if (opts.in_filename.empty())
+    {
+        std::cerr << "usage: " << argv[0] << " [options] aout_file\n";
+        std::cerr << "options:\n";
+        std::cerr << "  -o NAME, --out-file=NAME   output .SAV filename\n";
+        std::cerr << "  -b, --binary               extract from entry point to end of text\n";
+        std::cerr << "  -s, --brief                 print only minimal info\n";
+        return 1;
+    }
+
+    // ------------------------------------------------------------------
+    // Read entire input file
+    // ------------------------------------------------------------------
+    std::ifstream ifs(opts.in_filename, std::ios::binary | std::ios::ate);
+    if (!ifs)
+    {
+        std::cerr << "error: cannot open input file " << opts.in_filename << "\n";
+        return 1;
+    }
+    std::streamsize size = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+    std::vector<char> buffer(size);
+    if (!ifs.read(buffer.data(), size))
+    {
+        std::cerr << "error: read failed\n";
+        return 1;
+    }
+
+    // ------------------------------------------------------------------
+    // Parse header
+    // ------------------------------------------------------------------
+    AOutHeader hdr;
+    if (!read_header(buffer, hdr))
+    {
+        std::cerr << "error: file too small to contain a.out header\n";
+        return 1;
+    }
+
+    // ------------------------------------------------------------------
+    // Print header information unless brief
+    // ------------------------------------------------------------------
+    if (!opts.brief)
+    {
+        // Magic numbers with descriptive names (as in the Ruby script)
+        const char* magic_desc = "unknown";
+        switch (hdr.a_magic)
+        {
+        case 0407: magic_desc = "normal"; break;
+        case 0410: magic_desc = "read-only text"; break;
+        case 0411: magic_desc = "separated I&D"; break;
+        case 0405: magic_desc = "overlay"; break;
+        case 0430: magic_desc = "auto-overlay (nonseparate)"; break;
+        case 0431: magic_desc = "auto-overlay (separate)"; break;
+        }
+        std::cout << "magic number:               " << std::oct << hdr.a_magic << std::dec
+                << " (" << magic_desc << ")\n";
+        std::cout << "size of text segment:       " << hdr.a_text << "\n";
+        std::cout << "size of initialized data:   " << hdr.a_data << "\n";
+        std::cout << "size of uninitialized data: " << hdr.a_bss << "\n";
+        std::cout << "size of symbol table:       " << hdr.a_syms << "\n";
+        std::cout << "entry point:                " << hdr.a_entry << "\n";
+        std::cout << "not used:                   " << hdr.a_unused << "\n";
+        std::cout << "relocation info stripped:   " << hdr.a_flag << "\n";
+        std::cout << "size - entry:               " << (hdr.a_text - hdr.a_entry) << "\n";
+        std::cout << "entry: " << hdr.a_entry
+                << " size: " << (hdr.a_text - hdr.a_entry)
+                << " ends: " << hdr.a_text << "\n";
+    }
+
+    // ------------------------------------------------------------------
+    // Determine output filename
+    // ------------------------------------------------------------------
+    std::string out_name = opts.out_filename;
+    if (out_name.empty())
+    {
+        // Take base name (part before first dot) and convert to uppercase
+        std::string base = opts.in_filename;
+        std::size_t dotpos = base.find('.');
+        if (dotpos != std::string::npos)
+            base = base.substr(0, dotpos);
+        std::transform(base.begin(), base.end(), base.begin(), ::toupper);
+        out_name = base + ".SAV";
+    }
+
+    // ------------------------------------------------------------------
+    // Write info file (<out>._) with "entry,size,end"
+    // ------------------------------------------------------------------
+    {
+        std::string info_name = out_name + "._";
+        std::ofstream info_ofs(info_name);
+        if (!info_ofs)
+        {
+            std::cerr << "warning: cannot write info file " << info_name << "\n";
+        }
+        else
+        {
+            info_ofs << hdr.a_entry << ","
+                    << (hdr.a_text - hdr.a_entry) << ","
+                    << hdr.a_text << "\n";
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Extract text segment (the part that will become the .SAV file)
+    // ------------------------------------------------------------------
+    // Text segment starts at file offset 0o20 = 16 (decimal)
+    const size_t text_start_in_file = 16;
+    size_t offset = text_start_in_file;
+    size_t length = hdr.a_text;
+
+    if (opts.binary)
+    {
+        // When -b is given, start reading from entry point (file offset 16 + a_entry)
+        offset += hdr.a_entry;
+        // length remains the full text size (as in the Ruby script)
+    }
+
+    // Safety check: do not read beyond the file
+    if (offset + length > buffer.size())
+    {
+        std::cerr << "error: text segment (or requested part) exceeds file size\n";
+        return 1;
+    }
+
+    std::vector<char> sav(buffer.begin() + offset, buffer.begin() + offset + length);
+
+    // ------------------------------------------------------------------
+    // Write the .SAV file
+    // ------------------------------------------------------------------
+    std::ofstream out_ofs(out_name, std::ios::binary);
+    if (!out_ofs)
+    {
+        std::cerr << "error: cannot write output file " << out_name << "\n";
+        return 1;
+    }
+    out_ofs.write(sav.data(), sav.size());
+
+    return 0;
+}
