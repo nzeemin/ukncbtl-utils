@@ -13,7 +13,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 #endif
 
 #include <cstdio>
-#include <string>
+#include <cstring>
 #include "rt11date.h"
 
 uint16_t clock2rt11date(const time_t clock)

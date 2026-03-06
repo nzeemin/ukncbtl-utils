@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
     // Trying to recognize the file format
     FormatDescriptor* pfdesc = nullptr;
     format_info finfo;
-    for (int i = 0; i < g_FormatInfos_count; i++)
+    for (size_t i = 0; i < g_FormatInfos_count; i++)
     {
         file.seekg(0, std::ios::beg);
 

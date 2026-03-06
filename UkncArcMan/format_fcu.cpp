@@ -227,7 +227,7 @@ format_check_result format_fcu_check_file(std::ifstream& file, format_info& finf
     // decompress
     lzhuf_init();
     lzhuf_decode(origsize, (void*)pcomp, (uint32_t)(sizecompressed - 4));
-    uint32_t destsize = lzhuf_length();
+    //uint32_t destsize = lzhuf_length();
     uint8_t* pdecompressed = (uint8_t*)lzhuf_data();
 
     uint16_t destcrc = fcu_checksum(pdecompressed, origsize / 2);

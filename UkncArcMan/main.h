@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <fstream>

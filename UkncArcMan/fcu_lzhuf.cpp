@@ -356,7 +356,7 @@ int DecodePosition()
 
 void lzhuf_decode(uint32_t len, void *data, uint32_t plen)  // decompression
 {
-    uint8_t *ptr = (uint8_t*)&length;
+    //uint8_t *ptr = (uint8_t*)&length;
     int16_t  i, j, k, r, c;
     uint32_t count;
 
