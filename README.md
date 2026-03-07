@@ -2,7 +2,7 @@
 UKNCBTL emulator utilities.
 
 Windows build: [![Build status](https://ci.appveyor.com/api/projects/status/y2mk1kliaxb8n71c?svg=true)](https://ci.appveyor.com/project/nzeemin/ukncbtl-utils)
-Linux/Mac: [![Build Status](https://travis-ci.org/nzeemin/ukncbtl-utils.svg?branch=master)](https://travis-ci.org/nzeemin/ukncbtl-utils)
+Linux/Mac: ![Build Status](https://github.com/nzeemin/ukncbtl-utils/actions/workflows/push-matrix.yml/badge.svg)
 [![CodeFactor](https://www.codefactor.io/repository/github/nzeemin/ukncbtl-utils/badge)](https://www.codefactor.io/repository/github/nzeemin/ukncbtl-utils)
 
 Utilites:

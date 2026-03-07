@@ -21,6 +21,10 @@ jobs:
           os: ubuntu-latest
           cc: "clang"
           cxx: "clang++"
+        - name: "macOS latest Clang"
+          os: macos-latest
+          cc: "clang"
+          cxx: "clang++"
       fail-fast: false
 
     steps:
