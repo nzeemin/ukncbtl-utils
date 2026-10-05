@@ -1,0 +1,6 @@
+[PluginInstall]
+description=RT-11 disk image packer (.dsk)
+type=wcx
+file=rt11dsk.wcx
+defaultdir=rt11dsk
+defaultextension=dsk

@@ -1,0 +1,15 @@
+/Debug
+/Release
+/x64
+/*.ncb
+/*.suo
+*.user
+/ipch
+*.sdf
+*.opensdf
+/.idea
+/rt11dsk-wcx
+/*.DSK
+/*.img
+/*.rtd
+/*.lst
